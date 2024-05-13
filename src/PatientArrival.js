@@ -122,6 +122,19 @@ export default function PatientArrival() {
         justifyContent: "center",
       }}
     >
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          marginTop: 8,
+        }}
+      >
+        <img
+          src="/logoHAUTO.png"
+          alt="AZZ Medical Associates Logo"
+          style={{ maxWidth: "100%", height: "100%" }}
+        />
+      </Box>
       <Container
         component="main"
         maxWidth="sm"
@@ -134,7 +147,7 @@ export default function PatientArrival() {
         }}
       >
         <CssBaseline />
-        <Typography
+        {/* <Typography
           component="h1"
           variant="h5"
           sx={{
@@ -145,8 +158,8 @@ export default function PatientArrival() {
           }}
         >
           Welcome To
-        </Typography>
-        <Box
+        </Typography> */}
+        {/* <Box
           sx={{
             display: "flex",
             justifyContent: "center",
@@ -159,7 +172,7 @@ export default function PatientArrival() {
             alt="AZZ Medical Associates Logo"
             style={{ maxWidth: "70%", height: "70%" }}
           />
-        </Box>
+        </Box> */}
         <Box
           sx={{
             marginTop: 2,
@@ -173,7 +186,7 @@ export default function PatientArrival() {
             <ArrivalIcon />
           </Avatar>
           <Typography component="h1" variant="h5">
-            Mark Arrival
+            Check In
           </Typography>
           <Box component="form" noValidate sx={{ mt: 1, width: "100%" }}>
             <TextField
@@ -212,7 +225,7 @@ export default function PatientArrival() {
               required
               fullWidth
               id="doctor"
-              label="Doctor"
+              label="Provider"
               name="doctor"
               autoComplete="doctor"
               value={selectedDoctor}
@@ -225,23 +238,31 @@ export default function PatientArrival() {
                 </MenuItem>
               ))}
             </TextField>
-            <Button
-              onClick={handleArrival}
-              fullWidth
-              variant="contained"
+            <Box
               sx={{
-                mt: 3,
-                mb: 2,
-                bgcolor: "primary.main",
-                "@media (max-width: 600px)": {
-                  padding: "4px 8px",
-                  fontSize: "small",
-                  marginTop: 0,
-                },
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
               }}
             >
-              Mark Arrival
-            </Button>
+              <Button
+                onClick={handleArrival}
+                variant="contained"
+                sx={{
+                  mt: 3,
+                  mb: 2,
+                  bgcolor: "primary.main",
+                  px: 6,
+                  "@media (max-width: 600px)": {
+                    padding: "4px 8px",
+                    fontSize: "small",
+                    marginTop: 0,
+                  },
+                }}
+              >
+                Submit
+              </Button>
+            </Box>
           </Box>
         </Box>
       </Container>
@@ -314,6 +335,7 @@ export default function PatientArrival() {
           bottom: "2rem",
           right: "2rem",
           zIndex: 999,
+          px: 5,
           "@media (max-width: 600px)": {
             padding: "4px 8px",
             fontSize: "small",
@@ -338,6 +360,7 @@ export default function PatientArrival() {
           alignItems: "center",
           textTransform: "none",
           fontSize: "small",
+          px: 5,
           "@media (max-width: 600px)": {
             padding: "4px 8px",
             fontSize: "small",

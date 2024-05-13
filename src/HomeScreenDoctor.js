@@ -134,7 +134,7 @@ export default function HomeScreenDoctor(props) {
   const generateAudio = (name) => {
     if ("speechSynthesis" in window) {
       const message = new SpeechSynthesisUtterance(
-        `${name}, please come inside.The Doctor is waiting for you `
+        `${name}, please come inside. The Doctor is waiting for you `
       );
       window.speechSynthesis.speak(message);
     } else {
