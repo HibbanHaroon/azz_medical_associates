@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 115.2142817609 32.0596004666">
+  <defs>
+    <style>
+      .cls-1 {
+        letter-spacing: .2059936523em;
+      }
+
+      .cls-2 {
+        fill: #8978d6;
+        font-family: PirulenRg-Regular, Pirulen;
+        font-size: 8px;
+        stroke: #8978d6;
+        stroke-miterlimit: 10;
+        stroke-width: .451000005px;
+      }
+
+      .cls-3 {
+        fill: url(#linear-gradient);
+      }
+
+      .cls-4 {
+        fill: url(#linear-gradient-2);
+      }
+
+      .cls-5 {
+        letter-spacing: .2290039062em;
+      }
+    </style>
+    <linearGradient id="linear-gradient" x1="22.9781711743" y1=".1517391024" x2="13.0679408854" y2="15.7884519629" gradientTransform="translate(-.2699958342 1.2185193627) rotate(-1.3171185028)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8777d7"/>
+      <stop offset=".2181694762" stop-color="#8a79d5"/>
+      <stop offset=".4231727562" stop-color="#967fd2"/>
+      <stop offset=".6229440144" stop-color="#a98bcd"/>
+      <stop offset=".8182856073" stop-color="#c39ac6"/>
+      <stop offset=".9336780386" stop-color="#d7a6c1"/>
+    </linearGradient>
+    <linearGradient id="linear-gradient-2" x1="-2.9956051222" y1="27.7320518178" x2="11.2654622273" y2="15.6694145408" gradientTransform="translate(.2306490581 -.9487686036) rotate(1.0305475449)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8777d7"/>
+      <stop offset=".2181694762" stop-color="#8a79d5"/>
+      <stop offset=".4231727562" stop-color="#967fd2"/>
+      <stop offset=".6229440144" stop-color="#a98bcd"/>
+      <stop offset=".8182856073" stop-color="#c39ac6"/>
+      <stop offset=".9336780386" stop-color="#d7a6c1"/>
+    </linearGradient>
+  </defs>
+  <path class="cls-3" d="M3.7152360536,7.8808206162L11.8371615062,0l11.1538185739,11.5941910981-.2783701698,13.7420688534L9.2467163321,11.3002762394l2.4889037232-2.17881193,4.2924384033,4.4113170782,2.1834320865-1.9581797574-6.4726057821-6.8248694788-3.871822474,3.6957440978s-2.0968714544,1.3402491582-4.1518262354-.5646556331Z"/>
+  <path class="cls-4" d="M19.2848335601,24.1587950998l-8.1024861122,7.9008053667L0,20.4929223975,.2445152281,6.7502094693l13.5004308829,14.0027673907-2.4835285864,2.1849368251-4.3032928213-4.4007291106-2.1786014123,1.9635527813,6.4893994603,6.8089032639,3.862706122-3.7052712615s2.0935633379-1.3454108119,4.1532046868,.5544257415Z"/>
+  <text class="cls-2" transform="translate(27.6045098314 19.6616036721)"><tspan class="cls-1" x="0" y="0">S</tspan><tspan class="cls-5" x="9.255859375" y="0">tepupSol</tspan></text>
+</svg>

@@ -1,0 +1,529 @@
+import React, { useEffect, useState } from "react";
+import {
+  Container,
+  CssBaseline,
+  Avatar,
+  Typography,
+  TextField,
+  Button,
+  Box,
+  MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+} from "@mui/material";
+import ArrivalIcon from "@mui/icons-material/EmojiPeople";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CloseIcon from "@mui/icons-material/Close";
+import CallIcon from "@mui/icons-material/Call";
+import MedicalServicesIcon from "@mui/icons-material/MedicalServices";
+import { useNavigate } from "react-router-dom";
+import Popup from "./components/Pop";
+
+// Imports for Date Picker
+import dayjs from "dayjs";
+import { DemoContainer, DemoItem } from "@mui/x-date-pickers/internals/demo";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+
+export default function PatientArrival() {
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedDoctor, setSelectedDoctor] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [dob, setDob] = useState("");
+  const [doctorLinks, setDoctorLinks] = useState([]);
+  const [showPopup, setShowPopup] = useState(false);
+  const [callStack, setCallStack] = useState([]);
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        const response = await fetch(
+          "https://az-medical.onrender.com/api/doctors"
+        );
+        const data = await response.json();
+        setDoctorLinks(data);
+      } catch (error) {
+        console.error("Error fetching doctor links:", error);
+      }
+    };
+    const fetchCallRequests = async () => {
+      try {
+        const response = await fetch("https://az-medical.onrender.com/api/calls");
+        const data = await response.json();
+        setCallStack(data);
+        console.log(data)
+      } catch (error) {
+        console.error("Error fetching call requests:", error);
+      }
+    };  
+    fetchDoctors();
+    fetchCallRequests();
+
+    const interval = setInterval(fetchCallRequests, 3000); 
+    return () => clearInterval(interval);
+   
+  }, []);
+  
+  useEffect(() => {
+    const interval = setInterval(processCallStack, 2500); // Adjust interval as needed
+    return () => clearInterval(interval);
+  }, [callStack]);
+
+  const handleCallAttended = async (id) => {
+    try {
+      console.log("audio done + updating now")
+      const response = await fetch("https://az-medical.onrender.com/api/calls", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id, requestAttended: true }),
+      });
+      console.log(response)
+      if (response.ok) {
+        const updatedStack = callStack.filter((item) => item.id !== id);
+        setCallStack(updatedStack);
+        console.log(updatedStack)
+        console.log("operation successfull")
+      } else {
+        console.error("Error updating call request:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error updating call request:", error);
+    }
+  };
+  
+  const processCallStack = () => {
+    if (callStack.length > 0) {
+      const callRequest = callStack.pop();
+      console.log("voice called for "+callRequest.DoctorName + callRequest.patientName + callRequest.patientLastName)
+      generateVoiceMessage(callRequest.DoctorName, callRequest.patientName, callRequest.patientLastName);
+      handleCallAttended(callRequest.id); 
+    }
+  };
+
+
+
+  
+  const handleDialogClose = () => {
+    setOpenDialog(false);
+    setSelectedDoctor("");
+    setFirstName("");
+    setLastName("");
+    setDob("");
+  };
+
+  const handleArrival = async () => {
+    if (firstName && lastName && dob && selectedDoctor) {
+      try {
+        const response = await fetch(
+          "https://az-medical.onrender.com/api/arrivals",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              arrivalTime: Date.now(),
+              askedToWait: false,
+              calledInTime: null,
+              calledInside: false,
+              startTime: null,
+              inProgress: false,
+              endTime: null,
+              markExit: false,
+              dob,
+              doctorID: selectedDoctor,
+              firstName,
+              lastName,
+            }),
+          }
+        );
+        if (response.ok) {
+          setOpenDialog(true);
+          setFirstName("");
+          setLastName("");
+          setDob("");
+          setSelectedDoctor("");
+        } else {
+          console.error("Error submitting arrival data:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Error submitting arrival data:", error);
+      }
+    } else {
+      alert("Please fill in all fields before marking arrival.");
+    }
+  };
+
+  const handleLiveCall = () => {
+    // setShowPopup(true);
+    // setTimeout(() => setShowPopup(false), 3000);
+
+    //redirect
+    window.location.href =
+      "https://meet.jit.si/moderated/675bc45dbef4950dd78a7a71d17892dc1c9839c307b49dc1a73ec21bab5537b8";
+  };
+
+
+  const generateAudio = (doctorName, firstName, lastName) => {
+    console.log("check3")
+    if ("speechSynthesis" in window) {
+      console.log("check4")
+      const message = new SpeechSynthesisUtterance(
+        `${firstName} ${lastName} please come inside ${doctorName} is waiting for you.`
+      );
+      window.speechSynthesis.speak(message);
+      window.speechSynthesis.speak(message);
+    } else {
+      console.error("Speech synthesis not supported");
+    }
+  };
+
+  const generateVoiceMessage = (doctorName, firstName, lastName) => {
+    console.log("check2")
+    generateAudio(doctorName, firstName, lastName);
+  };
+
+
+  const handleLoginAsDoctor = () => {
+    navigate("/login");
+  };
+
+  return (
+    <div
+      style={{
+        backgroundImage: "url(/BGBG.svg)",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        width: "100vw",
+        height: "100vh",
+        position: "absolute",
+        top: 0,
+        left: 0,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          marginTop: 8,
+        }}
+      >
+        <img
+          src="/logoHAUTO.png"
+          alt="AZZ Medical Associates Logo"
+          style={{ maxWidth: "100%", height: "100%" }}
+        />
+      </Box>
+      <Container
+        component="main"
+        maxWidth="xs"
+        sx={{
+          backgroundColor: "rgba(255, 255, 255, 0.8)",
+          borderRadius: "10px",
+          boxShadow: 3,
+          marginTop: 4,
+          marginBottom: "2rem",
+        }}
+      >
+        <CssBaseline />
+        {/* <Typography
+          component="h1"
+          variant="h5"
+          sx={{
+            mt: 5,
+            color: "primary.main",
+            textAlign: "center",
+            fontWeight: "bold",
+          }}
+        >
+          Welcome To
+        </Typography> */}
+        {/* <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            marginBottom: 3,
+            marginTop: 0,
+          }}
+        >
+          <img
+            src="/logoHAUTO.png"
+            alt="AZZ Medical Associates Logo"
+            style={{ maxWidth: "70%", height: "70%" }}
+          />
+        </Box> */}
+        <Box
+          sx={{
+            marginTop: 2,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            padding: 3,
+          }}
+        >
+          <Avatar sx={{ m: 1, bgcolor: "primary.main" }}>
+            <ArrivalIcon />
+          </Avatar>
+          <Typography component="h1" variant="h5">
+            Check In
+          </Typography>
+          <Box component="form" noValidate sx={{ mt: 1, width: "100%" }}>
+            <Box
+              sx={{
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <TextField
+                variant="outlined"
+                margin="normal"
+                required
+                fullWidth
+                id="fname"
+                label="First Name"
+                name="fname"
+                autoComplete="fname"
+                autoFocus
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                sx={{ mb: 1 }}
+              />
+
+              <Box sx={{ width: 24 }}></Box>
+
+              <TextField
+                variant="outlined"
+                margin="normal"
+                required
+                fullWidth
+                id="lname"
+                label="Last Name"
+                name="lname"
+                autoComplete="lname"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                sx={{ mb: 1 }}
+              />
+            </Box>
+
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DemoContainer components={["DatePicker"]}>
+                <DemoItem>
+                  <DatePicker
+                    label="Date of Birth"
+                    onChange={(newValue) => setDob(newValue)}
+                    format="MM-DD-YYYY"
+                    slotProps={{
+                      textField: {
+                        required: true,
+                        fullWidth: true,
+                        sx: {
+                          mb: 1,
+                        },
+                      },
+                    }}
+                  />
+                </DemoItem>
+              </DemoContainer>
+            </LocalizationProvider>
+
+            {/* <TextField
+              variant="outlined"
+              margin="normal"
+              required
+              fullWidth
+              id="dob"
+              label="Date of Birth"
+              type="date"
+              InputLabelProps={{ shrink: true }}
+              name="dob"
+              autoComplete="dob"
+              defaultValue="24-05-1996"
+              value={dob}
+              onChange={(e) => setDob(e.target.value)}
+              sx={{ mb: 1 }}
+            /> */}
+
+            <TextField
+              select
+              variant="outlined"
+              margin="normal"
+              required
+              fullWidth
+              id="doctor"
+              label="Provider"
+              name="doctor"
+              autoComplete="doctor"
+              value={selectedDoctor}
+              onChange={(e) => setSelectedDoctor(e.target.value)}
+              sx={{ mb: 1 }}
+            >
+              {doctorLinks.map((doctor) => (
+                <MenuItem key={doctor.id} value={doctor.id}>
+                  {doctor.name}
+                </MenuItem>
+              ))}
+            </TextField>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Button
+                onClick={handleArrival}
+                variant="contained"
+                sx={{
+                  mt: 3,
+                  mb: 2,
+                  bgcolor: "primary.main",
+                  px: 6,
+                  "@media (max-width: 600px)": {
+                    padding: "4px 8px",
+                    fontSize: "small",
+                    marginTop: 0,
+                  },
+                }}
+              >
+                Submit
+              </Button>
+            </Box>
+          </Box>
+        </Box>
+      </Container>
+      <Dialog open={openDialog} onClose={handleDialogClose}>
+        <DialogTitle>
+          <Box display="flex" flexDirection="column" alignItems="center">
+            <Box
+              sx={{
+                backgroundColor: "success.main",
+                borderRadius: "50%",
+                width: "80px",
+                height: "80px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <CheckCircleIcon color="white" sx={{ fontSize: "3rem" }} />
+            </Box>
+            <Typography
+              variant="h6"
+              sx={{ textAlign: "center", mt: 2, fontWeight: "bold" }}
+            >
+              Notification Sent
+            </Typography>
+            <Typography variant="body1" sx={{ textAlign: "center", mb: 2 }}>
+              to{" "}
+              {doctorLinks.find((doctor) => doctor.id === selectedDoctor)?.name}
+            </Typography>
+            <IconButton
+              onClick={handleDialogClose}
+              sx={{ position: "absolute", top: "8px", right: "8px" }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ textAlign: "center", mb: 2 }}>
+            Please be seated and wait for your turn.{" "}
+            <span style={{ fontWeight: "bold", color: "primary.main" }}>
+              You will be called soon!
+            </span>
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: "center" }}>
+          <Button
+            onClick={handleDialogClose}
+            color="primary"
+            autoFocus
+            variant="contained"
+          >
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Popup
+        message="This feature will be available soon"
+        duration={3000}
+        onClose={() => setShowPopup(false)}
+        visible={showPopup}
+      />
+
+      <Button
+        onClick={handleLiveCall}
+        variant="contained"
+        color="primary"
+        sx={{
+          position: "fixed",
+          bottom: "2rem",
+          right: "2rem",
+          zIndex: 999,
+          padding: 1,
+          "@media (max-width: 600px)": {
+            padding: "4px 8px",
+            fontSize: "large",
+            marginTop: 90,
+          },
+        }}
+      >
+        <CallIcon fontSize="large" />
+      </Button>
+      <Button
+        onClick={handleLoginAsDoctor}
+        variant="contained"
+        color="primary"
+        sx={{
+          position: "fixed",
+          bottom: "2rem",
+          left: "2rem",
+          zIndex: 999,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          textTransform: "none",
+          fontSize: "small",
+          px: 5,
+          "@media (max-width: 600px)": {
+            padding: "4px 8px",
+            fontSize: "small",
+            marginTop: 40,
+          },
+        }}
+        startIcon={window.innerWidth >= 600 ? <MedicalServicesIcon /> : null}
+      >
+        Login as a Provider
+      </Button>
+      <Box
+        sx={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          display: "flex",
+          alignItems: "center",
+          zIndex: 9999,
+          margin: "1rem",
+        }}
+      >
+        <img src="/STLT.png" alt="Step UPSOL Logo" style={{ width: "180px" }} />
+      </Box>
+    </div>
+  );
+}
