@@ -55,22 +55,23 @@ export default function PatientArrival() {
     };
     const fetchCallRequests = async () => {
       try {
-        const response = await fetch("https://az-medical.onrender.com/api/calls");
+        const response = await fetch(
+          "https://az-medical.onrender.com/api/calls"
+        );
         const data = await response.json();
         setCallStack(data);
-        console.log(data)
+        console.log(data);
       } catch (error) {
         console.error("Error fetching call requests:", error);
       }
-    };  
+    };
     fetchDoctors();
     fetchCallRequests();
 
-    const interval = setInterval(fetchCallRequests, 3000); 
+    const interval = setInterval(fetchCallRequests, 3000);
     return () => clearInterval(interval);
-   
   }, []);
-  
+
   useEffect(() => {
     const interval = setInterval(processCallStack, 2500); // Adjust interval as needed
     return () => clearInterval(interval);
@@ -78,20 +79,23 @@ export default function PatientArrival() {
 
   const handleCallAttended = async (id) => {
     try {
-      console.log("audio done + updating now")
-      const response = await fetch("https://az-medical.onrender.com/api/calls", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id, requestAttended: true }),
-      });
-      console.log(response)
+      console.log("audio done + updating now");
+      const response = await fetch(
+        "https://az-medical.onrender.com/api/calls",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id, requestAttended: true }),
+        }
+      );
+      console.log(response);
       if (response.ok) {
         const updatedStack = callStack.filter((item) => item.id !== id);
         setCallStack(updatedStack);
-        console.log(updatedStack)
-        console.log("operation successfull")
+        console.log(updatedStack);
+        console.log("operation successfull");
       } else {
         console.error("Error updating call request:", response.statusText);
       }
@@ -99,19 +103,25 @@ export default function PatientArrival() {
       console.error("Error updating call request:", error);
     }
   };
-  
+
   const processCallStack = () => {
     if (callStack.length > 0) {
       const callRequest = callStack.pop();
-      console.log("voice called for "+callRequest.DoctorName + callRequest.patientName + callRequest.patientLastName)
-      generateVoiceMessage(callRequest.DoctorName, callRequest.patientName, callRequest.patientLastName);
-      handleCallAttended(callRequest.id); 
+      console.log(
+        "voice called for " +
+          callRequest.DoctorName +
+          callRequest.patientName +
+          callRequest.patientLastName
+      );
+      generateVoiceMessage(
+        callRequest.DoctorName,
+        callRequest.patientName,
+        callRequest.patientLastName
+      );
+      handleCallAttended(callRequest.id);
     }
   };
 
-
-
-  
   const handleDialogClose = () => {
     setOpenDialog(false);
     setSelectedDoctor("");
@@ -172,11 +182,10 @@ export default function PatientArrival() {
       "https://meet.jit.si/moderated/675bc45dbef4950dd78a7a71d17892dc1c9839c307b49dc1a73ec21bab5537b8";
   };
 
-
   const generateAudio = (doctorName, firstName, lastName) => {
-    console.log("check3")
+    console.log("check3");
     if ("speechSynthesis" in window) {
-      console.log("check4")
+      console.log("check4");
       const message = new SpeechSynthesisUtterance(
         `${firstName} ${lastName} please come inside ${doctorName} is waiting for you.`
       );
@@ -188,10 +197,9 @@ export default function PatientArrival() {
   };
 
   const generateVoiceMessage = (doctorName, firstName, lastName) => {
-    console.log("check2")
+    console.log("check2");
     generateAudio(doctorName, firstName, lastName);
   };
-
 
   const handleLoginAsDoctor = () => {
     navigate("/login");
@@ -394,6 +402,7 @@ export default function PatientArrival() {
                   mb: 2,
                   bgcolor: "primary.main",
                   px: 6,
+                  fontWeight: "bold",
                   "@media (max-width: 600px)": {
                     padding: "4px 8px",
                     fontSize: "small",
@@ -485,6 +494,7 @@ export default function PatientArrival() {
         }}
       >
         <CallIcon fontSize="large" />
+        For Help
       </Button>
       <Button
         onClick={handleLoginAsDoctor}
@@ -511,7 +521,7 @@ export default function PatientArrival() {
       >
         Login as a Provider
       </Button>
-      <Box
+      {/* <Box
         sx={{
           position: "absolute",
           top: 0,
@@ -523,7 +533,7 @@ export default function PatientArrival() {
         }}
       >
         <img src="/STLT.png" alt="Step UPSOL Logo" style={{ width: "180px" }} />
-      </Box>
+      </Box> */}
     </div>
   );
 }

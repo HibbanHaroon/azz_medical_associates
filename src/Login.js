@@ -187,7 +187,7 @@ export default function Login() {
           </Box>
         </Box>
       </Container>
-      <Box
+      {/* <Box
         sx={{
           position: "absolute",
           top: 0,
@@ -199,7 +199,7 @@ export default function Login() {
         }}
       >
         <img src="/STLT.png" alt="Step UPSOL Logo" style={{ width: "180px" }} />
-      </Box>
+      </Box> */}
     </div>
   );
 }

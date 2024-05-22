@@ -21,7 +21,9 @@ export default function HomeScreenDoctor(props) {
   useEffect(() => {
     const fetchDoctorDetails = async () => {
       try {
-        const response = await fetch(`https://az-medical.onrender.com/api/doctors`);
+        const response = await fetch(
+          `https://az-medical.onrender.com/api/doctors`
+        );
         const data = await response.json();
         const doctor = data.find((doc) => doc.id === doctorId);
         if (doctor) {
@@ -132,23 +134,22 @@ export default function HomeScreenDoctor(props) {
 
     const patient = patients.find((patient) => patient.id === id);
 
-    if(patient){
-      try{
+    if (patient) {
+      try {
         await fetch(`https://az-medical.onrender.com/api/calls`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        DoctorName: doctorName,
-        patientName: patient.firstName,
-        patientLastName: patient.lastName,
-      }),
-    });
-  
-  } catch (error) {
-    console.error("Error updating calledInside status:", error);
-  }
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            DoctorName: doctorName,
+            patientName: patient.firstName,
+            patientLastName: patient.lastName,
+          }),
+        });
+      } catch (error) {
+        console.error("Error updating calledInside status:", error);
+      }
     }
   };
 
@@ -234,23 +235,22 @@ export default function HomeScreenDoctor(props) {
 
   const handleCallAgain = async (id) => {
     const patient = patients.find((patient) => patient.id === id);
-    if(patient){
-      try{
+    if (patient) {
+      try {
         await fetch(`https://az-medical.onrender.com/api/calls`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        DoctorName: doctorName,
-        patientName: patient.firstName,
-        patientLastName: patient.lastName,
-      }),
-    });
-  
-  } catch (error) {
-    console.error("Error updating calledInside status:", error);
-  }
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            DoctorName: doctorName,
+            patientName: patient.firstName,
+            patientLastName: patient.lastName,
+          }),
+        });
+      } catch (error) {
+        console.error("Error updating calledInside status:", error);
+      }
     }
   };
 
@@ -585,7 +585,7 @@ export default function HomeScreenDoctor(props) {
           </Box>
         </Box>
       </Container>
-      <Box
+      {/* <Box
         sx={{
           position: "absolute",
           top: 0,
@@ -597,7 +597,7 @@ export default function HomeScreenDoctor(props) {
         }}
       >
         <img src="/STLT.png" alt="Step UPSOL Logo" style={{ width: "180px" }} />
-      </Box>
+      </Box> */}
     </div>
   );
 }

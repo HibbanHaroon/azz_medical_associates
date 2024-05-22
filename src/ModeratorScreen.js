@@ -144,7 +144,7 @@ export default function ModeratorScreen(props) {
             <LocalHospitalIcon />
           </Avatar>
           <Typography component="h1" variant="h5">
-            All Arrivals
+            All Providers
           </Typography>
           <TextField
             variant="outlined"
@@ -158,7 +158,7 @@ export default function ModeratorScreen(props) {
             sx={{ mb: 1 }}
           />
           <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel id="doctor-select-label">Doctor</InputLabel>
+            <InputLabel id="doctor-select-label">Provider</InputLabel>
             <Select
               labelId="doctor-select-label"
               id="doctor-select"
@@ -167,7 +167,7 @@ export default function ModeratorScreen(props) {
               onChange={(e) => setSelectedDoctor(e.target.value)}
             >
               <MenuItem value="">
-                <em>All Doctors</em>
+                <em>All Providers</em>
               </MenuItem>
               {doctors.map((doctor) => (
                 <MenuItem key={doctor.id} value={doctor.id}>
@@ -194,15 +194,10 @@ export default function ModeratorScreen(props) {
                   }}
                 >
                   <Box>
-                    <Typography
-                      variant="subtitle1"
-                      sx={{ fontWeight: "bold" }}
-                    >
+                    <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
                       {patient.firstName + " " + patient.lastName}
                     </Typography>
-                    <Typography variant="body2">
-                      DOB: {patient.dob}
-                    </Typography>
+                    <Typography variant="body2">DOB: {patient.dob}</Typography>
                     <Typography variant="body2">
                       Arrival Time: {patient.arrivalTime}
                     </Typography>
@@ -219,9 +214,11 @@ export default function ModeratorScreen(props) {
                     )}
                     {!selectedDoctor && (
                       <Typography variant="body2">
-                        Doctor:{" "}
-                        {doctors.find((doc) => doc.id === patient.doctorId)
-                          ?.name}
+                        Provider:{" "}
+                        {
+                          doctors.find((doc) => doc.id === patient.doctorId)
+                            ?.name
+                        }
                       </Typography>
                     )}
                   </Box>
@@ -249,7 +246,7 @@ export default function ModeratorScreen(props) {
           </Box>
         </Box>
       </Container>
-      <Box
+      {/* <Box
         sx={{
           position: "absolute",
           top: 0,
@@ -261,7 +258,7 @@ export default function ModeratorScreen(props) {
         }}
       >
         <img src="/STLT.png" alt="Step UPSOL Logo" style={{ width: "180px" }} />
-      </Box>
+      </Box> */}
     </div>
   );
 }

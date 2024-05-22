@@ -6,6 +6,7 @@ import Login from "./Login";
 import { ThemeProvider } from "@mui/material/styles";
 import theme from "./theme";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import PatientWaitingScreen from "./PatientWaitingScreen";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Route path="/" element={<PatientArrival />} />
           <Route path="home" element={<HomeScreenDoctor />} />
           <Route path="moderator" element={<ModeratorScreen />} />
+          <Route path="waiting" element={<PatientWaitingScreen />} />
         </Routes>
       </Router>
     </ThemeProvider>
