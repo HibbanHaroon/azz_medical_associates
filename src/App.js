@@ -15,9 +15,9 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<PatientArrival />} />
-          <Route path="home" element={<HomeScreenDoctor />} />
-          <Route path="moderator" element={<ModeratorScreen />} />
-          <Route path="waiting" element={<PatientWaitingScreen />} />
+          <Route path="/home" element={<HomeScreenDoctor />} />
+          <Route path="/moderator" element={<ModeratorScreen />} />
+          <Route path="/waiting" element={<PatientWaitingScreen />} />
         </Routes>
       </Router>
     </ThemeProvider>
