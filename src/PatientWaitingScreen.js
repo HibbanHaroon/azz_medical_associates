@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Container, CssBaseline, Avatar, Typography, Box } from "@mui/material";
+import { indigo } from "@mui/material/colors";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
@@ -49,30 +50,50 @@ export default function PatientWaitingScreen(props) {
         };
       });
 
-      setPatientsByDoctor((prev) => ({ ...prev, [id]: formattedArrivals }));
+      const filteredArrivals = formattedArrivals.filter(
+        (arrival) => !arrival.markExit
+      );
+      const sortedArrivals = filteredArrivals
+        .sort((a, b) => {
+          if (a.inProgress !== b.inProgress) {
+            return a.inProgress ? -1 : 1;
+          }
+          if (a.askedToWait !== b.askedToWait) {
+            return a.askedToWait ? -1 : 1;
+          }
+          return 0;
+        })
+        .slice(0, 4);
+
+      setPatientsByDoctor((prev) => ({ ...prev, [id]: sortedArrivals }));
     } catch (error) {
       console.error("Error fetching arrivals:", error);
     }
   };
 
-  useEffect(() => {
-    const fetchDoctors = async () => {
-      try {
-        const response = await fetch(
-          "https://az-medical.onrender.com/api/doctors"
-        );
-        const data = await response.json();
-        setDoctors(data);
+  const fetchAllData = async () => {
+    try {
+      const doctorResponse = await fetch(
+        "https://az-medical.onrender.com/api/doctors"
+      );
+      const doctorData = await doctorResponse.json();
+      setDoctors(doctorData);
 
-        // Fetch arrivals for each doctor
-        data.forEach((doctor) => {
-          fetchArrivalsById(doctor.id);
-        });
-      } catch (error) {
-        console.error("Error fetching doctors:", error);
-      }
-    };
-    fetchDoctors();
+      // Fetch arrivals for each doctor
+      const fetchArrivalsPromises = doctorData.map((doctor) =>
+        fetchArrivalsById(doctor.id)
+      );
+      await Promise.all(fetchArrivalsPromises);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllData();
+
+    const interval = setInterval(fetchAllData, 3000);
+    return () => clearInterval(interval);
   }, []);
 
   const settings = {
@@ -162,6 +183,9 @@ export default function PatientWaitingScreen(props) {
                         border: 1,
                         borderColor: "grey.400",
                         borderRadius: "5px",
+                        backgroundColor: patient.inProgress
+                          ? indigo[50]
+                          : "white",
                         p: 2,
                         mt: 2,
                         display: "flex",
