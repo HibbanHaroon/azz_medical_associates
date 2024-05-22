@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Container, CssBaseline, Avatar, Typography, Box } from "@mui/material";
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 
 export default function PatientWaitingScreen(props) {
   const [doctors, setDoctors] = useState([]);
@@ -72,14 +75,14 @@ export default function PatientWaitingScreen(props) {
     fetchDoctors();
   }, []);
 
-  const getGridTemplateColumns = () => {
-    if (doctors.length >= 7) {
-      return "repeat(4, 1fr)";
-    } else if (doctors.length >= 5) {
-      return "repeat(3, 1fr)";
-    } else {
-      return "repeat(2, 1fr)";
-    }
+  const settings = {
+    dots: true,
+    infinite: true,
+    speed: 500,
+    slidesToShow: 3,
+    slidesToScroll: 3,
+    autoplay: true,
+    autoplaySpeed: 5000,
   };
 
   return (
@@ -100,115 +103,123 @@ export default function PatientWaitingScreen(props) {
     >
       <Box
         sx={{
-          display: "grid",
-          gridTemplateColumns: getGridTemplateColumns(),
-          gap: 2,
           width: "90%",
         }}
       >
-        {doctors.map((doctor) => (
-          <Container component="main" maxWidth="xs" key={doctor.id}>
-            <CssBaseline />
-            <Box
-              sx={{
-                marginTop: 2,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                bgcolor: "background.paper",
-                padding: 3,
-                borderRadius: 1,
-                boxShadow: 3,
-              }}
+        <Slider {...settings}>
+          {doctors.map((doctor) => (
+            <Container
+              component="main"
+              maxWidth="xs"
+              key={doctor.id}
+              sx={{ height: "500px", marginBottom: 3 }}
             >
+              <CssBaseline />
               <Box
                 sx={{
-                  width: "100%",
+                  marginTop: 2,
                   display: "flex",
+                  flexDirection: "column",
                   alignItems: "center",
-                  justifyContent: "center",
-                  borderBottom: 1,
+                  bgcolor: "background.paper",
+                  padding: 3,
+                  borderRadius: 1,
+                  boxShadow: 3,
+                  height: "100%",
                 }}
               >
-                <Avatar
-                  src="/doctor-avatar.png"
-                  sx={{ m: 1, p: 1, bgcolor: "primary.main" }}
-                ></Avatar>
-                <Typography
-                  component="h1"
-                  variant="h5"
+                <Box
                   sx={{
-                    marginLeft: 1,
-                    color: "primary.main",
-                    textAlign: "center",
-                    fontWeight: "bold",
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderBottom: 1,
                   }}
                 >
-                  Dr. {doctor.name}
-                </Typography>
-              </Box>
-              {patientsByDoctor[doctor.id] &&
-                patientsByDoctor[doctor.id].map((patient) => (
-                  <Box
-                    key={patient.id}
+                  <Avatar
+                    src="/doctor-avatar.png"
+                    sx={{ m: 1, p: 1, bgcolor: "primary.main" }}
+                  ></Avatar>
+                  <Typography
+                    component="h1"
+                    variant="h5"
                     sx={{
-                      border: 1,
-                      borderColor: "grey.400",
-                      borderRadius: "5px",
-                      p: 2,
-                      mt: 2,
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      width: "100%",
+                      marginLeft: 1,
+                      color: "primary.main",
+                      textAlign: "center",
+                      fontWeight: "bold",
                     }}
                   >
+                    {doctor.name}
+                  </Typography>
+                </Box>
+                {patientsByDoctor[doctor.id] &&
+                  patientsByDoctor[doctor.id].map((patient) => (
                     <Box
+                      key={patient.id}
                       sx={{
-                        width: "100%",
+                        border: 1,
+                        borderColor: "grey.400",
+                        borderRadius: "5px",
+                        p: 2,
+                        mt: 2,
                         display: "flex",
-                        justifyContent: "start",
+                        flexDirection: "column",
                         alignItems: "center",
+                        width: "100%",
                       }}
                     >
-                      <Typography
-                        variant="subtitle1"
-                        sx={{ fontWeight: "bold" }}
+                      <Box
+                        sx={{
+                          width: "100%",
+                          display: "flex",
+                          justifyContent: "start",
+                          alignItems: "center",
+                        }}
                       >
-                        {patient.firstName + " " + patient.lastName}
-                      </Typography>
-                    </Box>
-                    <Box
-                      sx={{
-                        width: "100%",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <Typography variant="body2">
-                        Status:{" "}
-                        {patient.inProgress
-                          ? "In Progress"
-                          : patient.askedToWait
-                          ? "Asked to Wait"
-                          : "Arrived"}
-                      </Typography>
+                        <Typography
+                          variant="subtitle1"
+                          sx={{ fontWeight: "bold" }}
+                        >
+                          {patient.firstName + " " + patient.lastName}
+                        </Typography>
+                      </Box>
+                      <Box
+                        sx={{
+                          width: "100%",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
+                        <Typography variant="body2">
+                          Status:{" "}
+                          {patient.inProgress
+                            ? "In Progress"
+                            : patient.askedToWait
+                            ? "Asked to Wait"
+                            : "Arrived"}
+                        </Typography>
 
-                      <Typography variant="body2">
-                        Checked In at :{" "}
-                        {new Date(patient.arrivalTime).toLocaleString("en-US", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: true,
-                        })}
-                      </Typography>
+                        <Typography variant="body2">
+                          Checked In at :{" "}
+                          {new Date(patient.arrivalTime).toLocaleString(
+                            "en-US",
+                            {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: true,
+                            }
+                          )}
+                        </Typography>
+                      </Box>
                     </Box>
-                  </Box>
-                ))}
-            </Box>
-          </Container>
-        ))}
+                  ))}
+              </Box>
+            </Container>
+          ))}
+        </Slider>
       </Box>
       <Box
         sx={{
