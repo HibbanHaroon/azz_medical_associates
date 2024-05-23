@@ -58,6 +58,9 @@ export default function PatientWaitingScreen(props) {
           if (a.inProgress !== b.inProgress) {
             return a.inProgress ? -1 : 1;
           }
+          if (a.calledInside !== b.calledInside) {
+            return a.calledInside ? -1 : 1;
+          }
           if (a.askedToWait !== b.askedToWait) {
             return a.askedToWait ? -1 : 1;
           }
@@ -103,7 +106,7 @@ export default function PatientWaitingScreen(props) {
     slidesToShow: 3,
     slidesToScroll: 3,
     autoplay: true,
-    autoplaySpeed: 5000,
+    autoplaySpeed: 10000,
   };
 
   return (
@@ -221,6 +224,8 @@ export default function PatientWaitingScreen(props) {
                           Status:{" "}
                           {patient.inProgress
                             ? "In Progress"
+                            : patient.calledInside
+                            ? "Called Inside"
                             : patient.askedToWait
                             ? "Asked to Wait"
                             : "Arrived"}
