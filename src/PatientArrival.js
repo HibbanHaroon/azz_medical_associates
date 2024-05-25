@@ -476,26 +476,31 @@ export default function PatientArrival() {
         visible={showPopup}
       />
 
-      <Button
-        onClick={handleLiveCall}
-        variant="contained"
-        color="primary"
-        sx={{
-          position: "fixed",
-          bottom: "2rem",
-          right: "2rem",
-          zIndex: 999,
-          padding: 1,
-          "@media (max-width: 600px)": {
-            padding: "4px 8px",
-            fontSize: "large",
-            marginTop: 90,
-          },
-        }}
-      >
-        <CallIcon fontSize="large" />
-        For Help
-      </Button>
+<Button
+    onClick={handleLiveCall}
+    variant="contained"
+    color="primary"
+    sx={{
+      position: "fixed",
+      bottom: "2rem",
+      right: "2rem",
+      zIndex: 999,
+      padding: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      "@media (max-width: 600px)": {
+        padding: "4px 8px",
+        fontSize: "large",
+        marginTop: 90,
+      },
+    }}
+  >
+    <Box display="flex" flexDirection="column" alignItems="center">
+      <CallIcon fontSize="large" />
+      <Typography variant="body2">For Help</Typography>
+    </Box>
+  </Button>
       <Button
         onClick={handleLoginAsDoctor}
         variant="contained"
