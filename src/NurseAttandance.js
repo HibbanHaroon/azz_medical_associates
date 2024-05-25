@@ -184,8 +184,8 @@ export default function NurseAttendance() {
           </Box>
         </DialogTitle>
         <DialogContent>
-          <Typography variant="body2" sx={{ textAlign: "center", mb: 2 }}>
-            Thank you!
+          <Typography variant="body2" sx={{ textAlign: "center", mb: 2,  fontWeight:'bold'}}>
+            This feature wil implemented soon!
           </Typography>
         </DialogContent>
         <DialogActions sx={{ justifyContent: "center" }}>

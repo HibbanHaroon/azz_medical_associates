@@ -288,7 +288,7 @@ setBarChartData(barChartData);
           {/* Avg interaction time pie chart */}
           <Box sx={{ width: "45%", marginBottom: 4 }}>
   <Typography variant="h6" gutterBottom fontWeight='bold'>
-    Comming Soon: Avg Interaction Time of Doctors
+    Coming Soon: Avg Interaction Time of Doctors
   </Typography>
   <ResponsiveContainer width="100%" height={250}>
     <PieChart>
