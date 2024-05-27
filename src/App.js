@@ -2,6 +2,8 @@ import React from "react";
 import PatientArrival from "./PatientArrival";
 import HomeScreenDoctor from "./HomeScreenDoctor";
 import ModeratorScreen from "./ModeratorScreen";
+import AdminScreen from "./AdminScreen";
+import NurseAttendance from "./NurseAttandance";
 import Login from "./Login";
 import { ThemeProvider } from "@mui/material/styles";
 import theme from "./theme";
@@ -18,6 +20,8 @@ function App() {
           <Route path="/home" element={<HomeScreenDoctor />} />
           <Route path="/moderator" element={<ModeratorScreen />} />
           <Route path="/waiting" element={<PatientWaitingScreen />} />
+          <Route path="/admin" element={<AdminScreen />} />
+          <Route path="/attendance" element={<NurseAttendance />} />
         </Routes>
       </Router>
     </ThemeProvider>

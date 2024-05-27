@@ -83,6 +83,8 @@ export default function HomeScreenDoctor(props) {
     };
     fetchDoctorDetails();
     fetchArrivals();
+    const interval = setInterval(fetchArrivals, 3000);
+    return () => clearInterval(interval);
   }, []);
 
   // May change the sortedPatients logic to sort by startTime and endTime
