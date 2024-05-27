@@ -98,6 +98,21 @@ export default function ModeratorScreen(props) {
     ? filteredArrivals.filter((patient) => patient.doctorId === selectedDoctor)
     : filteredArrivals;
 
+  const sortedArrivals = filteredByDoctor.sort((a, b) => {
+    const statusOrder = (patient) => {
+      if (patient.markExit) return 5; // Exited
+      if (patient.inProgress) return 1; // In Progress
+      if (patient.calledInside) return 2; // Called Inside
+      if (patient.askedToWait) return 3; // Asked to Wait
+      return 4; // Arrived
+    };
+
+    const statusComparison = statusOrder(a) - statusOrder(b);
+    if (statusComparison !== 0) return statusComparison;
+
+    return new Date(b.arrivalTime) - new Date(a.arrivalTime);
+  });
+
   const selectedDoctorName =
     selectedDoctor && doctors.find((doc) => doc.id === selectedDoctor)?.name;
 
@@ -177,8 +192,8 @@ export default function ModeratorScreen(props) {
             </Select>
           </FormControl>
           <Box sx={{ maxHeight: "50vh", overflowY: "auto", width: "100%" }}>
-            {filteredByDoctor.length > 0 ? (
-              filteredByDoctor.map((patient) => (
+            {sortedArrivals.length > 0 ? (
+              sortedArrivals.map((patient) => (
                 <Box
                   key={patient.id}
                   sx={{
@@ -201,7 +216,19 @@ export default function ModeratorScreen(props) {
                     <Typography variant="body2">
                       Arrival Time: {patient.arrivalTime}
                     </Typography>
-                    {patient.inProgress && (
+                    <Typography variant="body2">
+                      Status:{" "}
+                      {patient.markExit
+                        ? "Exited"
+                        : patient.inProgress
+                        ? "In Progress"
+                        : patient.calledInside
+                        ? "Called Inside"
+                        : patient.askedToWait
+                        ? "Asked to Wait"
+                        : "Arrived"}
+                    </Typography>
+                    {patient.inProgress && !patient.markExit && (
                       <Typography variant="body2">
                         Start Time:{" "}
                         {new Date(patient.startTime).toLocaleString()}
@@ -246,19 +273,6 @@ export default function ModeratorScreen(props) {
           </Box>
         </Box>
       </Container>
-      {/* <Box
-        sx={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          display: "flex",
-          alignItems: "center",
-          zIndex: 9999,
-          margin: "1rem",
-        }}
-      >
-        <img src="/STLT.png" alt="Step UPSOL Logo" style={{ width: "180px" }} />
-      </Box> */}
     </div>
   );
 }
