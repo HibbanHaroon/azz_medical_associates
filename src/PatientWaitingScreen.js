@@ -10,16 +10,22 @@ export default function PatientWaitingScreen(props) {
   const [doctors, setDoctors] = useState([]);
   const [patientsByDoctor, setPatientsByDoctor] = useState({});
 
-  const socket = io("https://az-medical.onrender.com");
-  // const socket = io("http://localhost:3001");
-
-  // Fetch all data from the server if the broadcast is received
   useEffect(() => {
+    const socket = io("https://az-medical.onrender.com");
+    // const socket = io("http://localhost:3001");
+
+    // Fetch all data from the server if the broadcast is received
     socket.on("updateArrivals", () => {
       console.log("New arrival added");
       fetchAllData();
     });
-  }, [socket]);
+  }, []);
+  // useEffect(() => {
+  //   socket.on("updateArrivals", () => {
+  //     console.log("New arrival added");
+  //     fetchAllData();
+  //   });
+  // }, [socket]);
 
   const fetchArrivalsById = async (id) => {
     try {

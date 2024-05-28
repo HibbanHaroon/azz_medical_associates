@@ -18,22 +18,28 @@ export default function HomeScreenDoctor(props) {
   const [searchQuery, setSearchQuery] = useState("");
   const [patients, setPatients] = useState([]);
   const [doctorName, setDoctorName] = useState("");
+  const [socket, setSocket] = useState(io("https://az-medical.onrender.com"));
 
-  const socket = io("https://az-medical.onrender.com");
-  // const socket = io("http://localhost:3001");
+  useEffect(() => {
+    // const socket = io("http://localhost:3001");
+
+    // Fetch arrivals again if the broadcast is received
+    socket.on("updateArrivals", () => {
+      console.log("New arrival added");
+      fetchArrivals();
+    });
+  }, []);
 
   // Notify the socket server about the arrival status change
   const notifyArrivalStatusChange = (status) => {
     socket.emit("arrivalStatusChanged", { status: status });
   };
-
-  // Fetch arrivals again if the broadcast is received
-  useEffect(() => {
-    socket.on("updateArrivals", () => {
-      console.log("New arrival added");
-      fetchArrivals();
-    });
-  }, [socket]);
+  // useEffect(() => {
+  //   socket.on("updateArrivals", () => {
+  //     console.log("New arrival added");
+  //     fetchArrivals();
+  //   });
+  // }, [socket]);
 
   const fetchDoctorDetails = async () => {
     try {

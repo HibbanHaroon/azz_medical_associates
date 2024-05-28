@@ -41,7 +41,8 @@ export default function PatientArrival() {
 
   const navigate = useNavigate();
 
-  const socket = io("https://az-medical.onrender.com");
+  const [socket, setSocket] = useState(io("https://az-medical.onrender.com"));
+
   // const socket = io("http://localhost:3001");
 
   const notifyNewArrival = () => {

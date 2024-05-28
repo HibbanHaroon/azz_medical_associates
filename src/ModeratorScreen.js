@@ -20,16 +20,16 @@ export default function ModeratorScreen(props) {
   const [patientsByDoctor, setPatientsByDoctor] = useState({});
   const [selectedDoctor, setSelectedDoctor] = useState("");
 
-  const socket = io("https://az-medical.onrender.com");
-  // const socket = io("http://localhost:3001");
-
-  // Fetch arrivals again if the broadcast is received
   useEffect(() => {
+    const socket = io("https://az-medical.onrender.com");
+    // const socket = io("http://localhost:3001");
+
+    // Fetch arrivals again if the broadcast is received
     socket.on("updateArrivals", () => {
       console.log("New arrival added");
       fetchDoctors();
     });
-  }, [socket]);
+  }, []);
 
   const fetchArrivalsById = async (id) => {
     try {
