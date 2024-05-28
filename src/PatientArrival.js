@@ -21,7 +21,7 @@ import CallIcon from "@mui/icons-material/Call";
 import MedicalServicesIcon from "@mui/icons-material/MedicalServices";
 import { useNavigate } from "react-router-dom";
 import Popup from "./components/Pop";
-
+import io from "socket.io-client";
 // Imports for Date Picker
 import dayjs from "dayjs";
 import { DemoContainer, DemoItem } from "@mui/x-date-pickers/internals/demo";
@@ -40,6 +40,13 @@ export default function PatientArrival() {
   const [callStack, setCallStack] = useState([]);
 
   const navigate = useNavigate();
+
+  const socket = io("https://az-medical.onrender.com");
+  // const socket = io("http://localhost:3001");
+
+  const notifyNewArrival = () => {
+    socket.emit("newArrival", { arrivalTime: Date.now() });
+  };
 
   useEffect(() => {
     const fetchDoctors = async () => {
@@ -162,6 +169,9 @@ export default function PatientArrival() {
           setLastName("");
           setDob("");
           setSelectedDoctor("");
+
+          // Call the socket io here that a new arrival is added.
+          notifyNewArrival();
         } else {
           console.error("Error submitting arrival data:", response.statusText);
         }
@@ -476,31 +486,31 @@ export default function PatientArrival() {
         visible={showPopup}
       />
 
-<Button
-    onClick={handleLiveCall}
-    variant="contained"
-    color="primary"
-    sx={{
-      position: "fixed",
-      bottom: "2rem",
-      right: "2rem",
-      zIndex: 999,
-      padding: 1,
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      "@media (max-width: 600px)": {
-        padding: "4px 8px",
-        fontSize: "large",
-        marginTop: 90,
-      },
-    }}
-  >
-    <Box display="flex" flexDirection="column" alignItems="center">
-      <CallIcon fontSize="large" />
-      <Typography variant="body2">For Help</Typography>
-    </Box>
-  </Button>
+      <Button
+        onClick={handleLiveCall}
+        variant="contained"
+        color="primary"
+        sx={{
+          position: "fixed",
+          bottom: "2rem",
+          right: "2rem",
+          zIndex: 999,
+          padding: 1,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          "@media (max-width: 600px)": {
+            padding: "4px 8px",
+            fontSize: "large",
+            marginTop: 90,
+          },
+        }}
+      >
+        <Box display="flex" flexDirection="column" alignItems="center">
+          <CallIcon fontSize="large" />
+          <Typography variant="body2">For Help</Typography>
+        </Box>
+      </Button>
       <Button
         onClick={handleLoginAsDoctor}
         variant="contained"

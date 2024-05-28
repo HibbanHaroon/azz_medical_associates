@@ -12,12 +12,24 @@ import {
   InputLabel,
 } from "@mui/material";
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
+import io from "socket.io-client";
 
 export default function ModeratorScreen(props) {
   const [searchQuery, setSearchQuery] = useState("");
   const [doctors, setDoctors] = useState([]);
   const [patientsByDoctor, setPatientsByDoctor] = useState({});
   const [selectedDoctor, setSelectedDoctor] = useState("");
+
+  const socket = io("https://az-medical.onrender.com");
+  // const socket = io("http://localhost:3001");
+
+  // Fetch arrivals again if the broadcast is received
+  useEffect(() => {
+    socket.on("updateArrivals", () => {
+      console.log("New arrival added");
+      fetchDoctors();
+    });
+  }, [socket]);
 
   const fetchArrivalsById = async (id) => {
     try {
@@ -66,23 +78,24 @@ export default function ModeratorScreen(props) {
     }
   };
 
-  useEffect(() => {
-    const fetchDoctors = async () => {
-      try {
-        const response = await fetch(
-          "https://az-medical.onrender.com/api/doctors"
-        );
-        const data = await response.json();
-        setDoctors(data);
+  const fetchDoctors = async () => {
+    try {
+      const response = await fetch(
+        "https://az-medical.onrender.com/api/doctors"
+      );
+      const data = await response.json();
+      setDoctors(data);
 
-        // Fetch arrivals for each doctor
-        data.forEach((doctor) => {
-          fetchArrivalsById(doctor.id);
-        });
-      } catch (error) {
-        console.error("Error fetching doctors:", error);
-      }
-    };
+      // Fetch arrivals for each doctor
+      data.forEach((doctor) => {
+        fetchArrivalsById(doctor.id);
+      });
+    } catch (error) {
+      console.error("Error fetching doctors:", error);
+    }
+  };
+
+  useEffect(() => {
     fetchDoctors();
   }, []);
 

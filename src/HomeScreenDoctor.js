@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import { useLocation } from "react-router-dom";
 import GroupIcon from "@mui/icons-material/Group";
+import io from "socket.io-client";
 
 export default function HomeScreenDoctor(props) {
   const location = useLocation();
@@ -18,73 +19,88 @@ export default function HomeScreenDoctor(props) {
   const [patients, setPatients] = useState([]);
   const [doctorName, setDoctorName] = useState("");
 
+  const socket = io("https://az-medical.onrender.com");
+  // const socket = io("http://localhost:3001");
+
+  // Notify the socket server about the arrival status change
+  const notifyArrivalStatusChange = (status) => {
+    socket.emit("arrivalStatusChanged", { status: status });
+  };
+
+  // Fetch arrivals again if the broadcast is received
   useEffect(() => {
-    const fetchDoctorDetails = async () => {
-      try {
-        const response = await fetch(
-          `https://az-medical.onrender.com/api/doctors`
-        );
-        const data = await response.json();
-        const doctor = data.find((doc) => doc.id === doctorId);
-        if (doctor) {
-          setDoctorName(doctor.name);
-        }
-      } catch (error) {
-        console.error("Error fetching doctor details:", error);
+    socket.on("updateArrivals", () => {
+      console.log("New arrival added");
+      fetchArrivals();
+    });
+  }, [socket]);
+
+  const fetchDoctorDetails = async () => {
+    try {
+      const response = await fetch(
+        `https://az-medical.onrender.com/api/doctors`
+      );
+      const data = await response.json();
+      const doctor = data.find((doc) => doc.id === doctorId);
+      if (doctor) {
+        setDoctorName(doctor.name);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching doctor details:", error);
+    }
+  };
 
-    const fetchArrivals = async () => {
-      try {
-        const id = doctorId;
-        const response = await fetch(
-          `https://az-medical.onrender.com/api/arrivals/${id}`
+  const fetchArrivals = async () => {
+    try {
+      const id = doctorId;
+      const response = await fetch(
+        `https://az-medical.onrender.com/api/arrivals/${id}`
+      );
+      const data = await response.json();
+
+      const arrivals = data.arrivals;
+
+      const formattedArrivals = arrivals.map((arrival) => {
+        const dob = new Date(arrival.dob).toISOString().split("T")[0];
+        const arrivalTime = new Date(arrival.arrivalTime).toLocaleString(
+          "en-US",
+          {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true,
+          }
         );
-        const data = await response.json();
 
-        const arrivals = data.arrivals;
+        return {
+          id: arrival.id,
+          firstName: arrival.firstName,
+          lastName: arrival.lastName,
+          dob: dob,
+          arrivalTime: arrivalTime,
+          calledInside: arrival.calledInside,
+          calledInTime: arrival.calledInTime,
+          inProgress: arrival.inProgress,
+          startTime: arrival.startTime,
+          markExit: arrival.markExit,
+          endTime: arrival.endTime,
+          askedToWait: arrival.askedToWait,
+        };
+      });
 
-        const formattedArrivals = arrivals.map((arrival) => {
-          const dob = new Date(arrival.dob).toISOString().split("T")[0];
-          const arrivalTime = new Date(arrival.arrivalTime).toLocaleString(
-            "en-US",
-            {
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-              hour12: true,
-            }
-          );
+      console.log(formattedArrivals);
+      setPatients(formattedArrivals);
+    } catch (error) {
+      console.error("Error fetching arrivals:", error);
+    }
+  };
 
-          return {
-            id: arrival.id,
-            firstName: arrival.firstName,
-            lastName: arrival.lastName,
-            dob: dob,
-            arrivalTime: arrivalTime,
-            calledInside: arrival.calledInside,
-            calledInTime: arrival.calledInTime,
-            inProgress: arrival.inProgress,
-            startTime: arrival.startTime,
-            markExit: arrival.markExit,
-            endTime: arrival.endTime,
-            askedToWait: arrival.askedToWait,
-          };
-        });
-
-        console.log(formattedArrivals);
-        setPatients(formattedArrivals);
-      } catch (error) {
-        console.error("Error fetching arrivals:", error);
-      }
-    };
+  useEffect(() => {
     fetchDoctorDetails();
     fetchArrivals();
-    const interval = setInterval(fetchArrivals, 3000);
-    return () => clearInterval(interval);
   }, []);
 
   // May change the sortedPatients logic to sort by startTime and endTime
@@ -149,6 +165,9 @@ export default function HomeScreenDoctor(props) {
             patientLastName: patient.lastName,
           }),
         });
+
+        // Notify the arrival status change to the socket server
+        notifyArrivalStatusChange("calledInside");
       } catch (error) {
         console.error("Error updating calledInside status:", error);
       }
@@ -179,6 +198,9 @@ export default function HomeScreenDoctor(props) {
 
     if (!response.ok) {
       throw new Error("Failed to update inProgress status in the database");
+    } else {
+      // Notify the arrival status change to the socket server
+      notifyArrivalStatusChange("inProgress");
     }
   };
 
@@ -206,6 +228,9 @@ export default function HomeScreenDoctor(props) {
 
     if (!response.ok) {
       throw new Error("Failed to update markExit status in the database");
+    } else {
+      // Notify the arrival status change to the socket server
+      notifyArrivalStatusChange("markExit");
     }
   };
 
@@ -227,6 +252,9 @@ export default function HomeScreenDoctor(props) {
           patient.id === id ? { ...patient, askedToWait: true } : patient
         );
         setPatients(updatedPatients);
+
+        // Notify the arrival status change to the socket server
+        notifyArrivalStatusChange("askedToWait");
       } else {
         console.error("Error updating arrival:", response.statusText);
       }

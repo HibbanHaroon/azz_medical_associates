@@ -4,10 +4,22 @@ import { indigo } from "@mui/material/colors";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+import io from "socket.io-client";
 
 export default function PatientWaitingScreen(props) {
   const [doctors, setDoctors] = useState([]);
   const [patientsByDoctor, setPatientsByDoctor] = useState({});
+
+  const socket = io("https://az-medical.onrender.com");
+  // const socket = io("http://localhost:3001");
+
+  // Fetch all data from the server if the broadcast is received
+  useEffect(() => {
+    socket.on("updateArrivals", () => {
+      console.log("New arrival added");
+      fetchAllData();
+    });
+  }, [socket]);
 
   const fetchArrivalsById = async (id) => {
     try {
@@ -94,9 +106,6 @@ export default function PatientWaitingScreen(props) {
 
   useEffect(() => {
     fetchAllData();
-
-    const interval = setInterval(fetchAllData, 3000);
-    return () => clearInterval(interval);
   }, []);
 
   const settings = {
