@@ -132,7 +132,7 @@ export default function ModeratorScreen(props) {
   return (
     <div
       style={{
-        backgroundImage: "url(/BGBG.svg)",
+        backgroundImage: "url(/assets/images/backgroundImage.svg)",
         backgroundSize: "cover",
         backgroundPosition: "center",
         width: "100vw",

@@ -12,13 +12,16 @@ import { useLocation } from "react-router-dom";
 import GroupIcon from "@mui/icons-material/Group";
 import io from "socket.io-client";
 
-export default function HomeScreenDoctor(props) {
+export default function DoctorScreen(props) {
   const location = useLocation();
   const doctorId = location.state.id;
   const [searchQuery, setSearchQuery] = useState("");
   const [patients, setPatients] = useState([]);
   const [doctorName, setDoctorName] = useState("");
-  const [socket, setSocket] = useState(io("https://az-medical.onrender.com"));
+
+  // const [socket, setSocket] = useState(io("https://az-medical.onrender.com"));
+
+  const socket = io("https://az-medical.onrender.com");
 
   useEffect(() => {
     // const socket = io("http://localhost:3001");
@@ -34,12 +37,6 @@ export default function HomeScreenDoctor(props) {
   const notifyArrivalStatusChange = (status) => {
     socket.emit("arrivalStatusChanged", { status: status });
   };
-  // useEffect(() => {
-  //   socket.on("updateArrivals", () => {
-  //     console.log("New arrival added");
-  //     fetchArrivals();
-  //   });
-  // }, [socket]);
 
   const fetchDoctorDetails = async () => {
     try {
@@ -298,7 +295,7 @@ export default function HomeScreenDoctor(props) {
   return (
     <div
       style={{
-        backgroundImage: "url(/BGBG.svg)",
+        backgroundImage: "url(/assets/images/backgroundImage.svg)",
         backgroundSize: "cover",
         backgroundPosition: "center",
         width: "100vw",
@@ -632,7 +629,7 @@ export default function HomeScreenDoctor(props) {
           margin: "1rem",
         }}
       >
-        <img src="/STLT.png" alt="Step UPSOL Logo" style={{ width: "180px" }} />
+        <img src="/assets/logos/logoSUS.png" alt="Step UPSOL Logo" style={{ width: "180px" }} />
       </Box> */}
     </div>
   );

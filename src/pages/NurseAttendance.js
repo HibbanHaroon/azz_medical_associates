@@ -60,7 +60,7 @@ export default function NurseAttendance() {
   return (
     <div
       style={{
-        backgroundImage: "url(/BGBG.svg)",
+        backgroundImage: "url(/assets/images/backgroundImage.svg)",
         backgroundSize: "cover",
         backgroundPosition: "center",
         width: "100vw",
@@ -83,7 +83,7 @@ export default function NurseAttendance() {
         }}
       >
         <img
-          src="/logoHAUTO.png"
+          src="/assets/logos/logoHAUTO.png"
           alt="AZZ Medical Associates Logo"
           style={{ maxWidth: "50%", height: "auto" }} // Adjusted logo size
         />
@@ -184,7 +184,10 @@ export default function NurseAttendance() {
           </Box>
         </DialogTitle>
         <DialogContent>
-          <Typography variant="body2" sx={{ textAlign: "center", mb: 2,  fontWeight:'bold'}}>
+          <Typography
+            variant="body2"
+            sx={{ textAlign: "center", mb: 2, fontWeight: "bold" }}
+          >
             This feature wil implemented soon!
           </Typography>
         </DialogContent>

@@ -20,10 +20,10 @@ import CloseIcon from "@mui/icons-material/Close";
 import CallIcon from "@mui/icons-material/Call";
 import MedicalServicesIcon from "@mui/icons-material/MedicalServices";
 import { useNavigate } from "react-router-dom";
-import Popup from "./components/Pop";
+import Popup from "../components/Pop";
 import io from "socket.io-client";
+
 // Imports for Date Picker
-import dayjs from "dayjs";
 import { DemoContainer, DemoItem } from "@mui/x-date-pickers/internals/demo";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -41,9 +41,9 @@ export default function PatientArrival() {
 
   const navigate = useNavigate();
 
-  const [socket, setSocket] = useState(io("https://az-medical.onrender.com"));
+  // const [socket, setSocket] = useState(io("https://az-medical.onrender.com"));
 
-  // const socket = io("http://localhost:3001");
+  const socket = io("https://az-medical.onrender.com");
 
   const notifyNewArrival = () => {
     socket.emit("newArrival", { arrivalTime: Date.now() });
@@ -219,7 +219,7 @@ export default function PatientArrival() {
   return (
     <div
       style={{
-        backgroundImage: "url(/BGBG.svg)",
+        backgroundImage: "url(/assets/logos/backgroundImage.svg)",
         backgroundSize: "cover",
         backgroundPosition: "center",
         width: "100vw",
@@ -241,7 +241,7 @@ export default function PatientArrival() {
         }}
       >
         <img
-          src="/logoHAUTO.png"
+          src="/assets/logos/logoHAUTO.png"
           alt="AZZ Medical Associates Logo"
           style={{ maxWidth: "100%", height: "100%" }}
         />
@@ -279,7 +279,7 @@ export default function PatientArrival() {
           }}
         >
           <img
-            src="/logoHAUTO.png"
+            src="/assets/logos/logoHAUTO.png"
             alt="AZZ Medical Associates Logo"
             style={{ maxWidth: "70%", height: "70%" }}
           />
@@ -548,7 +548,7 @@ export default function PatientArrival() {
           margin: "1rem",
         }}
       >
-        <img src="/STLT.png" alt="Step UPSOL Logo" style={{ width: "180px" }} />
+        <img src="/assets/logoSUS.png" alt="Step UPSOL Logo" style={{ width: "180px" }} />
       </Box> */}
     </div>
   );

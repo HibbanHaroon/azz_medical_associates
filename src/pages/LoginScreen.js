@@ -12,7 +12,7 @@ import {
 } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 
-export default function Login() {
+export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -75,7 +75,7 @@ export default function Login() {
   return (
     <div
       style={{
-        backgroundImage: "url(/BG.jpg)",
+        backgroundImage: "url(/assets/images/background.jpg)",
         backgroundSize: "cover",
         backgroundPosition: "center",
         width: "100vw",
@@ -111,7 +111,7 @@ export default function Login() {
           }}
         >
           <img
-            src="/logoHAUTO.png"
+            src="/assets/logos/logoHAUTO.png"
             alt="AZZ Medical Associates Logo"
             style={{ maxWidth: "70%", height: "70%" }}
           />
@@ -198,7 +198,7 @@ export default function Login() {
           margin: "1rem",
         }}
       >
-        <img src="/STLT.png" alt="Step UPSOL Logo" style={{ width: "180px" }} />
+        <img src="/assets/logos/logoSUS.png" alt="Step UPSOL Logo" style={{ width: "180px" }} />
       </Box> */}
     </div>
   );

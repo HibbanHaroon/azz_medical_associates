@@ -20,12 +20,6 @@ export default function PatientWaitingScreen(props) {
       fetchAllData();
     });
   }, []);
-  // useEffect(() => {
-  //   socket.on("updateArrivals", () => {
-  //     console.log("New arrival added");
-  //     fetchAllData();
-  //   });
-  // }, [socket]);
 
   const fetchArrivalsById = async (id) => {
     try {
@@ -127,7 +121,7 @@ export default function PatientWaitingScreen(props) {
   return (
     <div
       style={{
-        backgroundImage: "url(/BG.jpg)",
+        backgroundImage: "url(/assets/images/background.jpg)",
         backgroundSize: "cover",
         backgroundPosition: "center",
         width: "100vw",
@@ -177,7 +171,7 @@ export default function PatientWaitingScreen(props) {
                   }}
                 >
                   <Avatar
-                    src="/doctor-avatar.png"
+                    src="/assets/images/doctorAvatar.png"
                     sx={{ m: 1, p: 1, bgcolor: "primary.main" }}
                   ></Avatar>
                   <Typography
@@ -279,7 +273,7 @@ export default function PatientWaitingScreen(props) {
         }}
       >
         <img
-          src="/logoHAUTO.png"
+          src="/assets/logos/logoHAUTO.png"
           alt="AZZ Medical Associates Logo"
           style={{ maxWidth: "60%", height: "60%", paddingLeft: 40 }}
         />

@@ -1,23 +1,23 @@
 import React from "react";
-import PatientArrival from "./PatientArrival";
-import HomeScreenDoctor from "./HomeScreenDoctor";
-import ModeratorScreen from "./ModeratorScreen";
-import AdminScreen from "./AdminScreen";
-import NurseAttendance from "./NurseAttandance";
-import Login from "./Login";
+import PatientArrival from "./pages/PatientArrival";
+import DoctorScreen from "./pages/DoctorScreen";
+import ModeratorScreen from "./pages/ModeratorScreen";
+import AdminScreen from "./pages/AdminScreen";
+import NurseAttendance from "./pages/NurseAttendance";
+import LoginScreen from "./pages/LoginScreen";
+import PatientWaitingScreen from "./pages/PatientWaitingScreen";
 import { ThemeProvider } from "@mui/material/styles";
-import theme from "./theme";
+import theme from "./constants/theme";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import PatientWaitingScreen from "./PatientWaitingScreen";
 
 function App() {
   return (
     <ThemeProvider theme={theme}>
       <Router>
         <Routes>
-          <Route path="/login" element={<Login />} />
+          <Route path="/login" element={<LoginScreen />} />
           <Route path="/" element={<PatientArrival />} />
-          <Route path="/home" element={<HomeScreenDoctor />} />
+          <Route path="/home" element={<DoctorScreen />} />
           <Route path="/moderator" element={<ModeratorScreen />} />
           <Route path="/waiting" element={<PatientWaitingScreen />} />
           <Route path="/admin" element={<AdminScreen />} />
