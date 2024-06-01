@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+// ModalForm.js
+import React, { useState, useEffect } from "react";
 import { Modal, Box, Typography, TextField, Button } from "@mui/material";
 
 const modalStyle = {
@@ -13,7 +14,14 @@ const modalStyle = {
   borderRadius: "10px",
 };
 
-const ModalForm = ({ open, handleClose, mode, type, onSubmit }) => {
+const ModalForm = ({
+  open,
+  handleClose,
+  mode,
+  type,
+  onSubmit,
+  selectedClinic,
+}) => {
   const isDoctor = type === "doctor";
 
   const [formData, setFormData] = useState({
@@ -24,6 +32,24 @@ const ModalForm = ({ open, handleClose, mode, type, onSubmit }) => {
   });
 
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (mode === "edit" && selectedClinic) {
+      setFormData({
+        name: selectedClinic.name || "",
+        domain: selectedClinic.domain || "",
+        email: selectedClinic.email || "",
+        password: selectedClinic.password || "",
+      });
+    } else {
+      setFormData({
+        name: "",
+        domain: "",
+        email: "",
+        password: "",
+      });
+    }
+  }, [mode, selectedClinic]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -58,6 +84,12 @@ const ModalForm = ({ open, handleClose, mode, type, onSubmit }) => {
       setErrors(newErrors);
     } else {
       onSubmit(formData);
+      setFormData({
+        name: "",
+        domain: "",
+        email: "",
+        password: "",
+      });
       handleClose();
     }
   };

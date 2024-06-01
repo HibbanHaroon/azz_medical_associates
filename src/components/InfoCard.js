@@ -10,6 +10,7 @@ const InfoCard = ({
   secondaryText,
   onClick,
   onDelete,
+  onEdit,
 }) => {
   const [hovered, setHovered] = useState(false);
 
@@ -89,7 +90,8 @@ const InfoCard = ({
           style={{ height: 30 }}
           startIcon={<EditIcon />}
           onClick={(e) => {
-            e.stopPropagation(); // Prevent triggering the card's onClick event
+            onEdit();
+            e.stopPropagation();
           }}
         >
           Edit
@@ -101,8 +103,8 @@ const InfoCard = ({
           style={{ height: 30, marginLeft: 10 }}
           startIcon={<DeleteIcon />}
           onClick={(e) => {
-            e.stopPropagation(); // Prevent triggering the card's onClick event
-            onDelete(); // Call onDelete function when delete button is clicked
+            onDelete();
+            e.stopPropagation();
           }}
         >
           Delete
@@ -116,7 +118,7 @@ const InfoCard = ({
           }}
           onClick={(e) => {
             onClick();
-            e.stopPropagation(); // Prevent triggering the card's onClick event
+            e.stopPropagation();
           }}
         >
           <ChevronRightIcon />

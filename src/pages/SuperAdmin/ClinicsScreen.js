@@ -1,5 +1,5 @@
 // ClinicsScreen.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Container,
@@ -13,15 +13,37 @@ import AddIcon from "@mui/icons-material/Add";
 import InfoCard from "../../components/InfoCard";
 import ModalForm from "../../components/ModalForm";
 import DeleteModalForm from "../../components/DeleteModalForm";
+import {
+  getAllClinics,
+  addClinic,
+  updateClinic,
+  deleteClinic,
+} from "../../services/clinicService";
 
 const ClinicsScreen = () => {
   const navigate = useNavigate();
+  const [clinics, setClinics] = useState([]);
+  const [selectedClinic, setSelectedClinic] = useState(null);
   const [openAddModal, setOpenAddModal] = useState(false);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [modalMode, setModalMode] = useState("add");
 
-  const handleOpenAddModal = (mode) => {
+  useEffect(() => {
+    fetchClinics();
+  }, []);
+
+  const fetchClinics = async () => {
+    try {
+      const data = await getAllClinics();
+      setClinics(data);
+    } catch (error) {
+      console.error("Failed to fetch clinics", error);
+    }
+  };
+
+  const handleOpenAddModal = (mode, clinic = null) => {
     setModalMode(mode);
+    setSelectedClinic(clinic);
     setOpenAddModal(true);
   };
 
@@ -29,7 +51,8 @@ const ClinicsScreen = () => {
     setOpenAddModal(false);
   };
 
-  const handleOpenDeleteModal = () => {
+  const handleOpenDeleteModal = (clinic) => {
+    setSelectedClinic(clinic);
     setOpenDeleteModal(true);
   };
 
@@ -37,18 +60,34 @@ const ClinicsScreen = () => {
     setOpenDeleteModal(false);
   };
 
-  const handleConfirmDelete = () => {
-    // Add delete logic here
-    console.log("Confirmed delete");
-    handleCloseDeleteModal();
+  const handleConfirmDelete = async () => {
+    try {
+      await deleteClinic(selectedClinic.id);
+      fetchClinics();
+      handleCloseDeleteModal();
+    } catch (error) {
+      console.error("Failed to delete clinic", error);
+    }
   };
 
   const handleCardClick = (clinicName) => {
     navigate(`/individual-clinic`, { state: { name: clinicName } });
   };
 
-  const handleSubmit = (formData) => {
-    console.log(formData); // Handle form submission logic
+  const handleSubmit = async (formData) => {
+    try {
+      if (modalMode === "add") {
+        await addClinic({ name: formData.name });
+      } else {
+        await updateClinic(selectedClinic.id, { name: formData.name });
+      }
+      fetchClinics();
+    } catch (error) {
+      console.error(
+        `Failed to ${modalMode === "add" ? "add" : "edit"} clinic`,
+        error
+      );
+    }
   };
 
   return (
@@ -127,18 +166,16 @@ const ClinicsScreen = () => {
               backgroundColor: "primary.main",
             }}
           />
-          <InfoCard
-            number={1}
-            primaryText="Clinic Houston"
-            onClick={() => handleCardClick("Clinic Houston")}
-            onDelete={() => handleOpenDeleteModal()}
-          />
-          <InfoCard
-            number={2}
-            primaryText="Clinic Dallas"
-            onClick={() => handleCardClick("Clinic Dallas")}
-            onDelete={() => handleOpenDeleteModal()}
-          />
+          {clinics.map((clinic, index) => (
+            <InfoCard
+              key={clinic.id}
+              number={index + 1}
+              primaryText={clinic.name}
+              onClick={() => handleCardClick(clinic.name)}
+              onDelete={() => handleOpenDeleteModal(clinic)}
+              onEdit={() => handleOpenAddModal("edit", clinic)}
+            />
+          ))}
         </Box>
       </Container>
       <ModalForm
@@ -146,6 +183,7 @@ const ClinicsScreen = () => {
         handleClose={handleCloseAddModal}
         mode={modalMode}
         type="clinic"
+        selectedClinic={selectedClinic}
         onSubmit={handleSubmit}
       />
       <DeleteModalForm
