@@ -1,4 +1,5 @@
-import React from "react";
+// ClinicsScreen.js
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Container,
@@ -10,12 +11,44 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import InfoCard from "../../components/InfoCard";
+import ModalForm from "../../components/ModalForm";
+import DeleteModalForm from "../../components/DeleteModalForm";
 
 const ClinicsScreen = () => {
   const navigate = useNavigate();
+  const [openAddModal, setOpenAddModal] = useState(false);
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
+  const [modalMode, setModalMode] = useState("add");
+
+  const handleOpenAddModal = (mode) => {
+    setModalMode(mode);
+    setOpenAddModal(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setOpenAddModal(false);
+  };
+
+  const handleOpenDeleteModal = () => {
+    setOpenDeleteModal(true);
+  };
+
+  const handleCloseDeleteModal = () => {
+    setOpenDeleteModal(false);
+  };
+
+  const handleConfirmDelete = () => {
+    // Add delete logic here
+    console.log("Confirmed delete");
+    handleCloseDeleteModal();
+  };
 
   const handleCardClick = (clinicName) => {
     navigate(`/individual-clinic`, { state: { name: clinicName } });
+  };
+
+  const handleSubmit = (formData) => {
+    console.log(formData); // Handle form submission logic
   };
 
   return (
@@ -80,6 +113,7 @@ const ClinicsScreen = () => {
               size="large"
               style={{ height: 40 }}
               startIcon={<AddIcon />}
+              onClick={() => handleOpenAddModal("add")}
             >
               New Clinic
             </Button>
@@ -97,14 +131,29 @@ const ClinicsScreen = () => {
             number={1}
             primaryText="Clinic Houston"
             onClick={() => handleCardClick("Clinic Houston")}
+            onDelete={() => handleOpenDeleteModal()}
           />
           <InfoCard
             number={2}
             primaryText="Clinic Dallas"
             onClick={() => handleCardClick("Clinic Dallas")}
+            onDelete={() => handleOpenDeleteModal()}
           />
         </Box>
       </Container>
+      <ModalForm
+        open={openAddModal}
+        handleClose={handleCloseAddModal}
+        mode={modalMode}
+        type="clinic"
+        onSubmit={handleSubmit}
+      />
+      <DeleteModalForm
+        open={openDeleteModal}
+        handleClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+        message="Are you sure you want to delete this clinic?"
+      />
       <Box
         sx={{
           position: "absolute",

@@ -1,4 +1,5 @@
 import React from "react";
+import HomeScreen from "./pages/HomeScreen";
 import PatientArrival from "./pages/PatientArrival";
 import DoctorScreen from "./pages/DoctorScreen";
 import ModeratorScreen from "./pages/ModeratorScreen";
@@ -10,15 +11,16 @@ import { ThemeProvider } from "@mui/material/styles";
 import theme from "./constants/theme";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ClinicsScreen from "./pages/SuperAdmin/ClinicsScreen";
-import IndividualClinicScreen from "./pages/SuperAdmin/IndividualScreen";
+import IndividualClinicScreen from "./pages/SuperAdmin/IndividualClinicScreen";
 
 function App() {
   return (
     <ThemeProvider theme={theme}>
       <Router>
         <Routes>
+          <Route path="/" element={<HomeScreen />} />
           <Route path="/login" element={<LoginScreen />} />
-          <Route path="/" element={<PatientArrival />} />
+          <Route path="/arrival" element={<PatientArrival />} />
           <Route path="/home" element={<DoctorScreen />} />
           <Route path="/moderator" element={<ModeratorScreen />} />
           <Route path="/waiting" element={<PatientWaitingScreen />} />

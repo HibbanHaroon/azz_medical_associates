@@ -4,7 +4,13 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 
-const InfoCard = ({ number, primaryText, secondaryText, onClick }) => {
+const InfoCard = ({
+  number,
+  primaryText,
+  secondaryText,
+  onClick,
+  onDelete,
+}) => {
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -21,9 +27,9 @@ const InfoCard = ({ number, primaryText, secondaryText, onClick }) => {
         mt: 1,
         mb: 1,
         position: "relative",
-        cursor: "pointer", // To indicate that the card is clickable
+        cursor: "pointer",
         "&:hover": {
-          boxShadow: 4, // Optional: to add a visual effect on hover
+          boxShadow: 4,
         },
       }}
       onMouseEnter={() => setHovered(true)}
@@ -96,6 +102,7 @@ const InfoCard = ({ number, primaryText, secondaryText, onClick }) => {
           startIcon={<DeleteIcon />}
           onClick={(e) => {
             e.stopPropagation(); // Prevent triggering the card's onClick event
+            onDelete(); // Call onDelete function when delete button is clicked
           }}
         >
           Delete
@@ -108,6 +115,7 @@ const InfoCard = ({ number, primaryText, secondaryText, onClick }) => {
             visibility: hovered ? "visible" : "hidden",
           }}
           onClick={(e) => {
+            onClick();
             e.stopPropagation(); // Prevent triggering the card's onClick event
           }}
         >
