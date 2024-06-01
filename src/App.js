@@ -9,6 +9,8 @@ import PatientWaitingScreen from "./pages/PatientWaitingScreen";
 import { ThemeProvider } from "@mui/material/styles";
 import theme from "./constants/theme";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import ClinicsScreen from "./pages/SuperAdmin/ClinicsScreen";
+import IndividualClinicScreen from "./pages/SuperAdmin/IndividualScreen";
 
 function App() {
   return (
@@ -22,6 +24,11 @@ function App() {
           <Route path="/waiting" element={<PatientWaitingScreen />} />
           <Route path="/admin" element={<AdminScreen />} />
           <Route path="/attendance" element={<NurseAttendance />} />
+          <Route path="/clinics" element={<ClinicsScreen />} />
+          <Route
+            path="/individual-clinic"
+            element={<IndividualClinicScreen />}
+          />
         </Routes>
       </Router>
     </ThemeProvider>
