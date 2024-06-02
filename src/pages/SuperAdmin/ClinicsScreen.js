@@ -70,8 +70,10 @@ const ClinicsScreen = () => {
     }
   };
 
-  const handleCardClick = (clinicName) => {
-    navigate(`/individual-clinic`, { state: { name: clinicName } });
+  const handleCardClick = (clinicName, clinicId) => {
+    navigate(`/individual-clinic`, {
+      state: { name: clinicName, clinicId: clinicId },
+    });
   };
 
   const handleSubmit = async (formData) => {
@@ -171,7 +173,7 @@ const ClinicsScreen = () => {
               key={clinic.id}
               number={index + 1}
               primaryText={clinic.name}
-              onClick={() => handleCardClick(clinic.name)}
+              onClick={() => handleCardClick(clinic.name, clinic.id)}
               onDelete={() => handleOpenDeleteModal(clinic)}
               onEdit={() => handleOpenAddModal("edit", clinic)}
             />

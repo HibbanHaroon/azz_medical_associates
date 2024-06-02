@@ -21,6 +21,7 @@ const ModalForm = ({
   type,
   onSubmit,
   selectedClinic,
+  clinicId,
 }) => {
   const isDoctor = type === "doctor";
 
@@ -28,7 +29,6 @@ const ModalForm = ({
     name: "",
     domain: "",
     email: "",
-    password: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -39,14 +39,12 @@ const ModalForm = ({
         name: selectedClinic.name || "",
         domain: selectedClinic.domain || "",
         email: selectedClinic.email || "",
-        password: selectedClinic.password || "",
       });
     } else {
       setFormData({
         name: "",
         domain: "",
         email: "",
-        password: "",
       });
     }
   }, [mode, selectedClinic]);
@@ -76,19 +74,16 @@ const ModalForm = ({
     if (isDoctor && !formData.email) {
       newErrors.email = "Email is required";
     }
-    if (isDoctor && !formData.password) {
-      newErrors.password = "Password is required";
-    }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
     } else {
-      onSubmit(formData);
+      const doctorData = { ...formData, clinicId };
+      onSubmit(doctorData);
       setFormData({
         name: "",
         domain: "",
         email: "",
-        password: "",
       });
       handleClose();
     }
@@ -152,18 +147,6 @@ const ModalForm = ({
                 onChange={handleChange}
                 error={!!errors.email}
                 helperText={errors.email}
-              />
-              <TextField
-                required
-                fullWidth
-                id="password"
-                label="Password"
-                name="password"
-                type="password"
-                value={formData.password}
-                onChange={handleChange}
-                error={!!errors.password}
-                helperText={errors.password}
               />
             </>
           )}

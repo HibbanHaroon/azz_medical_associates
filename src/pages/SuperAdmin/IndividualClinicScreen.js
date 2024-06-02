@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import {
   Container,
@@ -12,17 +12,39 @@ import AddIcon from "@mui/icons-material/Add";
 import InfoCard from "../../components/InfoCard";
 import ModalForm from "../../components/ModalForm";
 import DeleteModalForm from "../../components/DeleteModalForm";
+import {
+  fetchDoctors,
+  addDoctor,
+  updateDoctor,
+  deleteDoctor,
+} from "../../services/doctorService";
 
 const IndividualClinicScreen = () => {
   const { state } = useLocation();
-  const { name } = state;
+  const { name, clinicId } = state;
 
+  const [doctors, setDoctors] = useState([]);
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [openAddModal, setOpenAddModal] = useState(false);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [modalMode, setModalMode] = useState("add");
 
-  const handleOpenAddModal = (mode) => {
+  useEffect(() => {
+    const loadDoctors = async () => {
+      try {
+        const fetchedDoctors = await fetchDoctors();
+        setDoctors(fetchedDoctors);
+      } catch (error) {
+        console.error("Error fetching doctors:", error);
+      }
+    };
+
+    loadDoctors();
+  }, []);
+
+  const handleOpenAddModal = (mode, doctor = null) => {
     setModalMode(mode);
+    setSelectedDoctor(doctor);
     setOpenAddModal(true);
   };
 
@@ -30,7 +52,8 @@ const IndividualClinicScreen = () => {
     setOpenAddModal(false);
   };
 
-  const handleOpenDeleteModal = () => {
+  const handleOpenDeleteModal = (doctor) => {
+    setSelectedDoctor(doctor);
     setOpenDeleteModal(true);
   };
 
@@ -38,14 +61,35 @@ const IndividualClinicScreen = () => {
     setOpenDeleteModal(false);
   };
 
-  const handleConfirmDelete = () => {
-    // Add delete logic here
-    console.log("Confirmed delete");
-    handleCloseDeleteModal();
+  const handleConfirmDelete = async () => {
+    try {
+      await deleteDoctor(selectedDoctor.id);
+      setDoctors(doctors.filter((doctor) => doctor.id !== selectedDoctor.id));
+      handleCloseDeleteModal();
+    } catch (error) {
+      console.error("Error deleting doctor:", error);
+    }
   };
 
-  const handleSubmit = (formData) => {
-    console.log(formData); // Handle form submission logic
+  const handleSubmit = async (formData) => {
+    var doctorData;
+    try {
+      if (modalMode === "add") {
+        doctorData = { ...formData, clinicId };
+        const newDoctor = await addDoctor(doctorData);
+        setDoctors([...doctors, newDoctor]);
+      } else if (modalMode === "edit") {
+        const updatedDoctor = await updateDoctor(selectedDoctor.id, formData);
+        setDoctors(
+          doctors.map((doctor) =>
+            doctor.id === selectedDoctor.id ? updatedDoctor : doctor
+          )
+        );
+      }
+      handleCloseAddModal();
+    } catch (error) {
+      console.error("Error submitting form:", error);
+    }
   };
 
   return (
@@ -124,18 +168,17 @@ const IndividualClinicScreen = () => {
               backgroundColor: "primary.main",
             }}
           />
-          <InfoCard
-            number={1}
-            primaryText="Shahid Meer"
-            secondaryText="Cardiologist"
-            onDelete={handleOpenDeleteModal}
-          />
-          <InfoCard
-            number={2}
-            primaryText="Sarah Khan"
-            secondaryText="Neurologist"
-            onDelete={handleOpenDeleteModal}
-          />
+          {doctors.map((doctor, index) => (
+            <InfoCard
+              key={doctor.id}
+              number={index + 1}
+              primaryText={doctor.name}
+              secondaryText={doctor.domain}
+              onClick={() => handleOpenAddModal("edit", doctor)}
+              onDelete={() => handleOpenDeleteModal(doctor)}
+              onEdit={() => handleOpenAddModal("edit", doctor)}
+            />
+          ))}
         </Box>
       </Container>
       <ModalForm
@@ -144,12 +187,14 @@ const IndividualClinicScreen = () => {
         mode={modalMode}
         type="doctor"
         onSubmit={handleSubmit}
+        selectedClinic={selectedDoctor}
+        clinicId={clinicId}
       />
       <DeleteModalForm
         open={openDeleteModal}
         handleClose={handleCloseDeleteModal}
         onConfirm={handleConfirmDelete}
-        message="Are you sure you want to delete this doctor?"
+        message={`Are you sure you want to delete Dr. ${selectedDoctor?.name}?`}
       />
       <Box
         sx={{
