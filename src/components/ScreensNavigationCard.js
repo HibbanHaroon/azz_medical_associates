@@ -6,18 +6,18 @@ import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import ChecklistIcon from "@mui/icons-material/Checklist";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 
-const ScreensNavigationCard = ({ screenName }) => {
+const ScreensNavigationCard = ({ screenName, onClick }) => {
   const getIcon = () => {
     switch (screenName) {
-      case "Admin Screen":
+      case "Admin":
         return <SupervisedUserCircleIcon fontSize="large" color="primary" />;
-      case "Arrival Screen":
+      case "Arrival":
         return <LocalHospitalIcon fontSize="large" color="primary" />;
-      case "Moderator Screen":
+      case "Moderator":
         return <SupervisorAccountIcon fontSize="large" color="primary" />;
-      case "Nurse Attendance Screen":
+      case "Nurse Attendance":
         return <ChecklistIcon fontSize="large" color="primary" />;
-      case "Patient Waiting Screen":
+      case "Patient Waiting":
         return <AccessTimeIcon fontSize="large" color="primary" />;
       default:
         return null;
@@ -39,6 +39,7 @@ const ScreensNavigationCard = ({ screenName }) => {
           boxShadow: 4,
         },
       }}
+      onClick={onClick}
     >
       <Typography
         component="h1"

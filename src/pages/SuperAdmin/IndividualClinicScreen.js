@@ -32,7 +32,12 @@ const IndividualClinicScreen = () => {
   useEffect(() => {
     const loadDoctors = async () => {
       try {
-        const fetchedDoctors = await fetchDoctors();
+        var fetchedDoctors = await fetchDoctors();
+        console.log(fetchedDoctors);
+        console.log(clinicId);
+        fetchedDoctors = fetchedDoctors.filter(
+          (doctor) => doctor.clinicId === clinicId
+        );
         setDoctors(fetchedDoctors);
       } catch (error) {
         console.error("Error fetching doctors:", error);
@@ -115,8 +120,8 @@ const IndividualClinicScreen = () => {
           backgroundColor: "rgba(255, 255, 255, 0.8)",
           borderRadius: "10px",
           boxShadow: 3,
-          overflowY: "hidden",
-          maxHeight: "90vh",
+          overflowY: "auto",
+          maxHeight: "80vh",
         }}
       >
         <CssBaseline />

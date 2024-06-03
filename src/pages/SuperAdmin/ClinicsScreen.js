@@ -115,8 +115,8 @@ const ClinicsScreen = () => {
           backgroundColor: "rgba(255, 255, 255, 0.8)",
           borderRadius: "10px",
           boxShadow: 3,
-          overflowY: "hidden",
-          maxHeight: "90vh",
+          overflowY: "auto",
+          maxHeight: "80vh",
         }}
       >
         <CssBaseline />

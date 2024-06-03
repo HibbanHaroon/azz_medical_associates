@@ -1,11 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ScreensNavigationCard from "../components/ScreensNavigationCard";
 import { useNavigate } from "react-router-dom";
 import {
   Container,
   CssBaseline,
-  Typography,
-  Button,
   Box,
   Divider,
   FormControl,
@@ -13,13 +11,35 @@ import {
   MenuItem,
   Grid,
 } from "@mui/material";
+import { getAllClinics } from "../services/clinicService";
 
 const HomeScreen = () => {
   const [selectedClinic, setSelectedClinic] = useState("");
-  const clinicOptions = [
-    { id: 1, name: "Clinic Houston" },
-    { id: 2, name: "Clinic Dallas" },
-  ];
+  const [clinics, setClinics] = useState([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchClinics = async () => {
+      try {
+        const fetchedClinics = await getAllClinics();
+        setClinics(fetchedClinics);
+      } catch (error) {
+        console.error("Failed to fetch clinics", error);
+      }
+    };
+
+    fetchClinics();
+  }, []);
+
+  const handleCardClick = (screenName) => {
+    if (selectedClinic) {
+      navigate(`/${screenName.toLowerCase()}`, {
+        state: { clinicId: selectedClinic },
+      });
+    } else {
+      alert("Please select a clinic first.");
+    }
+  };
 
   return (
     <div
@@ -67,7 +87,7 @@ const HomeScreen = () => {
               <MenuItem value="" disabled>
                 Select Clinic
               </MenuItem>
-              {clinicOptions.map((clinic) => (
+              {clinics.map((clinic) => (
                 <MenuItem key={clinic.id} value={clinic.id}>
                   {clinic.name}
                 </MenuItem>
@@ -86,43 +106,39 @@ const HomeScreen = () => {
           <Box>
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6} md={4}>
-                <ScreensNavigationCard screenName="Admin Screen" />
+                <ScreensNavigationCard
+                  screenName="Admin"
+                  onClick={() => handleCardClick("admin")}
+                />
               </Grid>
               <Grid item xs={12} sm={6} md={4}>
-                <ScreensNavigationCard screenName="Arrival Screen" />
+                <ScreensNavigationCard
+                  screenName="Arrival"
+                  onClick={() => handleCardClick("arrival")}
+                />
               </Grid>
               <Grid item xs={12} sm={6} md={4}>
-                <ScreensNavigationCard screenName="Moderator Screen" />
+                <ScreensNavigationCard
+                  screenName="Moderator"
+                  onClick={() => handleCardClick("moderator")}
+                />
               </Grid>
               <Grid item xs={12} sm={6} md={4}>
-                <ScreensNavigationCard screenName="Nurse Attendance Screen" />
+                <ScreensNavigationCard
+                  screenName="Nurse Attendance"
+                  onClick={() => handleCardClick("attendance")}
+                />
               </Grid>
               <Grid item xs={12} sm={6} md={4}>
-                <ScreensNavigationCard screenName="Patient Waiting Screen" />
+                <ScreensNavigationCard
+                  screenName="Patient Waiting"
+                  onClick={() => handleCardClick("waiting")}
+                />
               </Grid>
             </Grid>
           </Box>
         </Box>
       </Container>
-      <Box
-        sx={{
-          position: "absolute",
-          width: "95%",
-          top: 0,
-          left: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          zIndex: 9999,
-          margin: "1rem",
-        }}
-      >
-        <img
-          src="/assets/logos/logoHAUTO.png"
-          alt="AZZ Medical Associates Logo"
-          style={{ maxWidth: "60%", height: "60%", paddingLeft: 40 }}
-        />
-      </Box>
     </div>
   );
 };

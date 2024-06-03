@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import {
   Container,
   CssBaseline,
@@ -30,6 +31,8 @@ const COLORS = [
 ];
 
 const AdminScreen = () => {
+  const { state } = useLocation();
+  const { clinicId } = state;
   const [selectedDoctor, setSelectedDoctor] = useState("");
   const [arrivalsPerHourData, setArrivalsPerHourData] = useState(null);
   const [barChartData, setBarChartData] = useState(null);
@@ -132,7 +135,9 @@ const AdminScreen = () => {
       );
       const arrivalsPerDoctor = {};
       filteredArrivals.forEach((arrival) => {
-        const doctor = doctors.find((doc) => doc.id === arrival.doctorID);
+        const doctor = doctors.find(
+          (doc) => doc.id === arrival.doctorID && doc.clinicId === clinicId
+        );
         const doctorName = doctor ? doctor.name : "Unknown";
         arrivalsPerDoctor[doctorName] =
           (arrivalsPerDoctor[doctorName] || 0) + 1;

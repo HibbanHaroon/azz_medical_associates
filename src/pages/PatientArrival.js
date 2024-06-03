@@ -22,6 +22,7 @@ import MedicalServicesIcon from "@mui/icons-material/MedicalServices";
 import { useNavigate } from "react-router-dom";
 import Popup from "../components/Pop";
 import io from "socket.io-client";
+import { useLocation } from "react-router-dom";
 
 // Imports for Date Picker
 import { DemoContainer, DemoItem } from "@mui/x-date-pickers/internals/demo";
@@ -30,6 +31,8 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
 export default function PatientArrival() {
+  const { state } = useLocation();
+  const { clinicId } = state;
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -56,7 +59,11 @@ export default function PatientArrival() {
           "https://az-medical.onrender.com/api/doctors"
         );
         const data = await response.json();
-        setDoctorLinks(data);
+        // befire setting the doctor links... filter with respect to this condition doctor.clinicId === clinicId
+        const filteredData = data.filter(
+          (doctor) => doctor.clinicId === clinicId
+        );
+        setDoctorLinks(filteredData);
       } catch (error) {
         console.error("Error fetching doctor links:", error);
       }
