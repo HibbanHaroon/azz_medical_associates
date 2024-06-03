@@ -1,11 +1,11 @@
 // services/doctorService.js
 
-// const API_URL = "http://localhost:3001/api/doctors";
-const API_URL = "https://az-medical.onrender.com/api/doctors";
+const API_URL = "http://localhost:3001/api/doctors";
+// const API_URL = "https://az-medical.onrender.com/api/doctors";
 
-export const fetchDoctors = async () => {
+export const fetchDoctors = async (clinicId) => {
   try {
-    const response = await fetch(API_URL);
+    const response = await fetch(`${API_URL}/${clinicId}`);
     if (!response.ok) {
       throw new Error("Error fetching doctors");
     }
@@ -17,9 +17,9 @@ export const fetchDoctors = async () => {
   }
 };
 
-export const addDoctor = async (doctorData) => {
+export const addDoctor = async (clinicId, doctorData) => {
   try {
-    const response = await fetch(API_URL, {
+    const response = await fetch(`${API_URL}/${clinicId}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -37,9 +37,9 @@ export const addDoctor = async (doctorData) => {
   }
 };
 
-export const updateDoctor = async (id, doctorData) => {
+export const updateDoctor = async (clinicId, id, doctorData) => {
   try {
-    const response = await fetch(`${API_URL}/${id}`, {
+    const response = await fetch(`${API_URL}/${clinicId}/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -57,9 +57,9 @@ export const updateDoctor = async (id, doctorData) => {
   }
 };
 
-export const deleteDoctor = async (id) => {
+export const deleteDoctor = async (clinicId, id) => {
   try {
-    const response = await fetch(`${API_URL}/${id}`, {
+    const response = await fetch(`${API_URL}/${clinicId}/${id}`, {
       method: "DELETE",
     });
     if (!response.ok) {

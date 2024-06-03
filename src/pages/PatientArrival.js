@@ -29,6 +29,7 @@ import { DemoContainer, DemoItem } from "@mui/x-date-pickers/internals/demo";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { fetchDoctors } from "../services/doctorService";
 
 export default function PatientArrival() {
   const { state } = useLocation();
@@ -53,21 +54,11 @@ export default function PatientArrival() {
   };
 
   useEffect(() => {
-    const fetchDoctors = async () => {
-      try {
-        const response = await fetch(
-          "https://az-medical.onrender.com/api/doctors"
-        );
-        const data = await response.json();
-        // befire setting the doctor links... filter with respect to this condition doctor.clinicId === clinicId
-        const filteredData = data.filter(
-          (doctor) => doctor.clinicId === clinicId
-        );
-        setDoctorLinks(filteredData);
-      } catch (error) {
-        console.error("Error fetching doctor links:", error);
-      }
+    const fetchDoctorsOnce = async () => {
+      const doctors = await fetchDoctors(clinicId);
+      setDoctorLinks(doctors);
     };
+
     const fetchCallRequests = async () => {
       try {
         const response = await fetch(
@@ -80,7 +71,7 @@ export default function PatientArrival() {
         console.error("Error fetching call requests:", error);
       }
     };
-    fetchDoctors();
+    fetchDoctorsOnce();
     fetchCallRequests();
 
     const interval = setInterval(fetchCallRequests, 3000);

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import {
   Container,
   CssBaseline,
@@ -21,6 +22,8 @@ import Webcam from "react-webcam";
 import { useNavigate } from "react-router-dom";
 
 export default function NurseAttendance() {
+  const { state } = useLocation();
+  const { clinicId } = state;
   const [selectedNurse, setSelectedNurse] = useState("");
   const [showCamera, setShowCamera] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);

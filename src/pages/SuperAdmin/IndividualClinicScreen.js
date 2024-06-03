@@ -32,12 +32,9 @@ const IndividualClinicScreen = () => {
   useEffect(() => {
     const loadDoctors = async () => {
       try {
-        var fetchedDoctors = await fetchDoctors();
+        var fetchedDoctors = await fetchDoctors(clinicId);
         console.log(fetchedDoctors);
         console.log(clinicId);
-        fetchedDoctors = fetchedDoctors.filter(
-          (doctor) => doctor.clinicId === clinicId
-        );
         setDoctors(fetchedDoctors);
       } catch (error) {
         console.error("Error fetching doctors:", error);
@@ -68,7 +65,7 @@ const IndividualClinicScreen = () => {
 
   const handleConfirmDelete = async () => {
     try {
-      await deleteDoctor(selectedDoctor.id);
+      await deleteDoctor(clinicId, selectedDoctor.id);
       setDoctors(doctors.filter((doctor) => doctor.id !== selectedDoctor.id));
       handleCloseDeleteModal();
     } catch (error) {
@@ -80,11 +77,15 @@ const IndividualClinicScreen = () => {
     var doctorData;
     try {
       if (modalMode === "add") {
-        doctorData = { ...formData, clinicId };
-        const newDoctor = await addDoctor(doctorData);
+        doctorData = { ...formData };
+        const newDoctor = await addDoctor(clinicId, doctorData);
         setDoctors([...doctors, newDoctor]);
       } else if (modalMode === "edit") {
-        const updatedDoctor = await updateDoctor(selectedDoctor.id, formData);
+        const updatedDoctor = await updateDoctor(
+          clinicId,
+          selectedDoctor.id,
+          formData
+        );
         setDoctors(
           doctors.map((doctor) =>
             doctor.id === selectedDoctor.id ? updatedDoctor : doctor

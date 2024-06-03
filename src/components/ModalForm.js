@@ -21,7 +21,6 @@ const ModalForm = ({
   type,
   onSubmit,
   selectedClinic,
-  clinicId,
 }) => {
   const isDoctor = type === "doctor";
 
@@ -78,7 +77,7 @@ const ModalForm = ({
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
     } else {
-      const doctorData = { ...formData, clinicId };
+      const doctorData = { ...formData };
       onSubmit(doctorData);
       setFormData({
         name: "",

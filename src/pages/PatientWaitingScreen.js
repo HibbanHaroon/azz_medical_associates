@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { Container, CssBaseline, Avatar, Typography, Box } from "@mui/material";
 import { indigo } from "@mui/material/colors";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import io from "socket.io-client";
+import { fetchDoctors } from "../services/doctorService";
 
 export default function PatientWaitingScreen(props) {
+  const { state } = useLocation();
+  const { clinicId } = state;
   const [doctors, setDoctors] = useState([]);
   const [patientsByDoctor, setPatientsByDoctor] = useState({});
 
@@ -88,14 +92,11 @@ export default function PatientWaitingScreen(props) {
 
   const fetchAllData = async () => {
     try {
-      const doctorResponse = await fetch(
-        "https://az-medical.onrender.com/api/doctors"
-      );
-      const doctorData = await doctorResponse.json();
-      setDoctors(doctorData);
+      const doctors = await fetchDoctors(clinicId);
+      setDoctors(doctors);
 
       // Fetch arrivals for each doctor
-      const fetchArrivalsPromises = doctorData.map((doctor) =>
+      const fetchArrivalsPromises = doctors.map((doctor) =>
         fetchArrivalsById(doctor.id)
       );
       await Promise.all(fetchArrivalsPromises);

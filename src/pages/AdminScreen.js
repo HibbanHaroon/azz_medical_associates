@@ -9,7 +9,7 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
-
+import { fetchDoctors } from "../services/doctorService";
 import {
   CartesianGrid,
   XAxis,
@@ -122,10 +122,7 @@ const AdminScreen = () => {
 
       console.log(arrivals);
       // Fetch doctors data
-      const responseDoctors = await fetch(
-        "https://az-medical.onrender.com/api/doctors"
-      );
-      const doctors = await responseDoctors.json();
+      const doctors = await fetchDoctors(clinicId);
       console.log(doctors);
       // Filter arrivals for the past week and count arrivals for each doctor
       const currentDate = new Date();
@@ -135,9 +132,7 @@ const AdminScreen = () => {
       );
       const arrivalsPerDoctor = {};
       filteredArrivals.forEach((arrival) => {
-        const doctor = doctors.find(
-          (doc) => doc.id === arrival.doctorID && doc.clinicId === clinicId
-        );
+        const doctor = doctors.find((doc) => doc.id === arrival.doctorID);
         const doctorName = doctor ? doctor.name : "Unknown";
         arrivalsPerDoctor[doctorName] =
           (arrivalsPerDoctor[doctorName] || 0) + 1;

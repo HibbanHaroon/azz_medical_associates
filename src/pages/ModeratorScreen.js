@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import {
   Container,
   CssBaseline,
@@ -13,8 +14,11 @@ import {
 } from "@mui/material";
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import io from "socket.io-client";
+import { fetchDoctors } from "../services/doctorService";
 
 export default function ModeratorScreen(props) {
+  const { state } = useLocation();
+  const { clinicId } = state;
   const [searchQuery, setSearchQuery] = useState("");
   const [doctors, setDoctors] = useState([]);
   const [patientsByDoctor, setPatientsByDoctor] = useState({});
@@ -27,7 +31,7 @@ export default function ModeratorScreen(props) {
     // Fetch arrivals again if the broadcast is received
     socket.on("updateArrivals", () => {
       console.log("New arrival added");
-      fetchDoctors();
+      fetchDoctorsModerator();
     });
   }, []);
 
@@ -78,16 +82,13 @@ export default function ModeratorScreen(props) {
     }
   };
 
-  const fetchDoctors = async () => {
+  const fetchDoctorsModerator = async () => {
     try {
-      const response = await fetch(
-        "https://az-medical.onrender.com/api/doctors"
-      );
-      const data = await response.json();
-      setDoctors(data);
+      const doctors = await fetchDoctors(clinicId);
+      setDoctors(doctors);
 
       // Fetch arrivals for each doctor
-      data.forEach((doctor) => {
+      doctors.forEach((doctor) => {
         fetchArrivalsById(doctor.id);
       });
     } catch (error) {
@@ -96,7 +97,7 @@ export default function ModeratorScreen(props) {
   };
 
   useEffect(() => {
-    fetchDoctors();
+    fetchDoctorsModerator();
   }, []);
 
   const filteredArrivals = Object.values(patientsByDoctor)
