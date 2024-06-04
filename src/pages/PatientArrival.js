@@ -30,6 +30,8 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { fetchDoctors } from "../services/doctorService";
+import { addArrival } from "../services/arrivalsService";
+import { fetchCallRequests, updateCallRequest } from "../services/callService";
 
 export default function PatientArrival() {
   const { state } = useLocation();
@@ -59,12 +61,9 @@ export default function PatientArrival() {
       setDoctorLinks(doctors);
     };
 
-    const fetchCallRequests = async () => {
+    const fetchCalls = async () => {
       try {
-        const response = await fetch(
-          "https://az-medical.onrender.com/api/calls"
-        );
-        const data = await response.json();
+        const data = await fetchCallRequests(clinicId);
         setCallStack(data);
         console.log(data);
       } catch (error) {
@@ -72,9 +71,9 @@ export default function PatientArrival() {
       }
     };
     fetchDoctorsOnce();
-    fetchCallRequests();
+    fetchCalls();
 
-    const interval = setInterval(fetchCallRequests, 3000);
+    const interval = setInterval(fetchCalls, 3000);
     return () => clearInterval(interval);
   }, []);
 
@@ -86,16 +85,19 @@ export default function PatientArrival() {
   const handleCallAttended = async (id) => {
     try {
       console.log("audio done + updating now");
-      const response = await fetch(
-        "https://az-medical.onrender.com/api/calls",
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ id, requestAttended: true }),
-        }
-      );
+
+      const response = await updateCallRequest(clinicId, id, true);
+
+      // const response = await fetch(
+      //   "https://az-medical.onrender.com/api/calls",
+      //   {
+      //     method: "PUT",
+      //     headers: {
+      //       "Content-Type": "application/json",
+      //     },
+      //     body: JSON.stringify({ id, requestAttended: true }),
+      //   }
+      // );
       console.log(response);
       if (response.ok) {
         const updatedStack = callStack.filter((item) => item.id !== id);
@@ -139,29 +141,47 @@ export default function PatientArrival() {
   const handleArrival = async () => {
     if (firstName && lastName && dob && selectedDoctor) {
       try {
-        const response = await fetch(
-          "https://az-medical.onrender.com/api/arrivals",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              arrivalTime: Date.now(),
-              askedToWait: false,
-              calledInTime: null,
-              calledInside: false,
-              startTime: null,
-              inProgress: false,
-              endTime: null,
-              markExit: false,
-              dob,
-              doctorID: selectedDoctor,
-              firstName,
-              lastName,
-            }),
-          }
-        );
+        const arrivalData = {
+          arrivalTime: Date.now(),
+          askedToWait: false,
+          calledInTime: null,
+          calledInside: false,
+          startTime: null,
+          inProgress: false,
+          endTime: null,
+          markExit: false,
+          dob,
+          doctorID: selectedDoctor,
+          firstName,
+          lastName,
+        };
+
+        const response = await addArrival(clinicId, arrivalData);
+
+        // const response = await fetch(
+        //   "https://az-medical.onrender.com/api/arrivals",
+        //   {
+        //     method: "POST",
+        //     headers: {
+        //       "Content-Type": "application/json",
+        //     },
+        //     body: JSON.stringify({
+        //       arrivalTime: Date.now(),
+        //       askedToWait: false,
+        //       calledInTime: null,
+        //       calledInside: false,
+        //       startTime: null,
+        //       inProgress: false,
+        //       endTime: null,
+        //       markExit: false,
+        //       dob,
+        //       doctorID: selectedDoctor,
+        //       firstName,
+        //       lastName,
+        //     }),
+        //   }
+        // );
+
         if (response.ok) {
           setOpenDialog(true);
           setFirstName("");

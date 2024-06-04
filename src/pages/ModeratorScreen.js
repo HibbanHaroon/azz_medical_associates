@@ -15,6 +15,7 @@ import {
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import io from "socket.io-client";
 import { fetchDoctors } from "../services/doctorService";
+import { fetchArrivals } from "../services/arrivalsService";
 
 export default function ModeratorScreen(props) {
   const { state } = useLocation();
@@ -37,12 +38,7 @@ export default function ModeratorScreen(props) {
 
   const fetchArrivalsById = async (id) => {
     try {
-      const response = await fetch(
-        `https://az-medical.onrender.com/api/arrivals/${id}`
-      );
-      const data = await response.json();
-
-      const arrivals = data.arrivals;
+      const arrivals = await fetchArrivals(clinicId, id);
 
       const formattedArrivals = arrivals.map((arrival) => {
         const dob = new Date(arrival.dob).toISOString().split("T")[0];

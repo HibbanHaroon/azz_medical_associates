@@ -11,8 +11,12 @@ import {
   CircularProgress,
 } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import { fetchDoctors } from "../services/doctorService";
+import { useLocation } from "react-router-dom";
 
 export default function LoginScreen() {
+  const { state } = useLocation();
+  const { clinicId } = state;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -21,22 +25,19 @@ export default function LoginScreen() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchDoctors = async () => {
+    const fetchDoctorsOnce = async () => {
       try {
         setLoading(true);
-        const response = await fetch(
-          "https://az-medical.onrender.com/api/doctors"
-        );
-        const data = await response.json();
-        setDoctors(data);
-        console.log("Doctors data:", data);
+        const doctors = await fetchDoctors(clinicId);
+        setDoctors(doctors);
+        console.log("Doctors data:", doctors);
       } catch (error) {
         console.error("Error fetching doctors:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchDoctors();
+    fetchDoctorsOnce();
   }, []);
 
   const handleEmailChange = (event) => {

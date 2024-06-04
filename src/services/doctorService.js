@@ -1,7 +1,7 @@
 // services/doctorService.js
 
-const API_URL = "http://localhost:3001/api/doctors";
-// const API_URL = "https://az-medical.onrender.com/api/doctors";
+// const API_URL = "http://localhost:3001/api/doctors";
+const API_URL = "https://az-medical.onrender.com/api/doctors";
 
 export const fetchDoctors = async (clinicId) => {
   try {

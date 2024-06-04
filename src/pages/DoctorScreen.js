@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import {
   Container,
   CssBaseline,
@@ -11,10 +12,17 @@ import {
 import { useLocation } from "react-router-dom";
 import GroupIcon from "@mui/icons-material/Group";
 import io from "socket.io-client";
+import {
+  updateArrivalAskedToWait,
+  updateArrivalCalledInside,
+  updateArrivalInProgress,
+  updateArrivalMarkExit,
+} from "../services/arrivalsService";
+import { addCallRequest } from "../services/callService";
 
 export default function DoctorScreen(props) {
-  const location = useLocation();
-  const doctorId = location.state.id;
+  const { state } = useLocation();
+  const { clinicId, doctorId } = state;
   const [searchQuery, setSearchQuery] = useState("");
   const [patients, setPatients] = useState([]);
   const [doctorName, setDoctorName] = useState("");
@@ -40,11 +48,8 @@ export default function DoctorScreen(props) {
 
   const fetchDoctorDetails = async () => {
     try {
-      const response = await fetch(
-        `https://az-medical.onrender.com/api/doctors`
-      );
-      const data = await response.json();
-      const doctor = data.find((doc) => doc.id === doctorId);
+      const doctors = await fetchDoctors(clinicId);
+      const doctor = doctors.find((doc) => doc.id === doctorId);
       if (doctor) {
         setDoctorName(doctor.name);
       }
@@ -55,13 +60,7 @@ export default function DoctorScreen(props) {
 
   const fetchArrivals = async () => {
     try {
-      const id = doctorId;
-      const response = await fetch(
-        `https://az-medical.onrender.com/api/arrivals/${id}`
-      );
-      const data = await response.json();
-
-      const arrivals = data.arrivals;
+      const arrivals = await fetchArrivals(clinicId, doctorId);
 
       const formattedArrivals = arrivals.map((arrival) => {
         const dob = new Date(arrival.dob).toISOString().split("T")[0];
@@ -137,17 +136,21 @@ export default function DoctorScreen(props) {
     const callT = Date.now();
     console.log(id, callT);
     setPatients(updatedPatients);
-    const response = await fetch(
-      `https://az-medical.onrender.com/api/arrivals/${id}/calledInside`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
 
-        body: JSON.stringify({ calledInTime: callT }),
-      }
-    );
+    const response = await updateArrivalCalledInside(clinicId, id, {
+      calledInTime: callT,
+    });
+    // const response = await fetch(
+    //   `https://az-medical.onrender.com/api/arrivals/${id}/calledInside`,
+    //   {
+    //     method: "PUT",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //     },
+
+    //     body: JSON.stringify({ calledInTime: callT }),
+    //   }
+    // );
 
     if (!response.ok) {
       throw new Error("Failed to update calledInside status in the database");
@@ -157,17 +160,23 @@ export default function DoctorScreen(props) {
 
     if (patient) {
       try {
-        await fetch(`https://az-medical.onrender.com/api/calls`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            DoctorName: doctorName,
-            patientName: patient.firstName,
-            patientLastName: patient.lastName,
-          }),
-        });
+        const callRequestData = {
+          DoctorName: doctorName,
+          patientName: patient.firstName,
+          patientLastName: patient.lastName,
+        };
+        await addCallRequest(clinicId, callRequestData);
+        // await fetch(`https://az-medical.onrender.com/api/calls`, {
+        //   method: "POST",
+        //   headers: {
+        //     "Content-Type": "application/json",
+        //   },
+        //   body: JSON.stringify({
+        //     DoctorName: doctorName,
+        //     patientName: patient.firstName,
+        //     patientLastName: patient.lastName,
+        //   }),
+        // });
 
         // Notify the arrival status change to the socket server
         notifyArrivalStatusChange("calledInside");
@@ -187,17 +196,22 @@ export default function DoctorScreen(props) {
     const progressT = Date.now();
     console.log(id, progressT);
     setPatients(updatedPatients);
-    const response = await fetch(
-      `https://az-medical.onrender.com/api/arrivals/${id}/inProgress`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
 
-        body: JSON.stringify({ startTime: progressT }),
-      }
-    );
+    const response = await updateArrivalInProgress(clinicId, id, {
+      startTime: progressT,
+    });
+
+    // const response = await fetch(
+    //   `https://az-medical.onrender.com/api/arrivals/${id}/inProgress`,
+    //   {
+    //     method: "PUT",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //     },
+
+    //     body: JSON.stringify({ startTime: progressT }),
+    //   }
+    // );
 
     if (!response.ok) {
       throw new Error("Failed to update inProgress status in the database");
@@ -217,17 +231,22 @@ export default function DoctorScreen(props) {
     const exitT = Date.now();
     console.log(id, exitT);
     setPatients(updatedPatients);
-    const response = await fetch(
-      `https://az-medical.onrender.com/api/arrivals/${id}/markExit`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
 
-        body: JSON.stringify({ endTime: exitT }),
-      }
-    );
+    const response = await updateArrivalMarkExit(clinicId, id, {
+      endTime: exitT,
+    });
+
+    // const response = await fetch(
+    //   `https://az-medical.onrender.com/api/arrivals/${id}/markExit`,
+    //   {
+    //     method: "PUT",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //     },
+
+    //     body: JSON.stringify({ endTime: exitT }),
+    //   }
+    // );
 
     if (!response.ok) {
       throw new Error("Failed to update markExit status in the database");
@@ -239,16 +258,17 @@ export default function DoctorScreen(props) {
 
   const handleWait = async (id) => {
     try {
-      const response = await fetch(
-        `https://az-medical.onrender.com/api/arrivals/${id}/askedToWait`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({}),
-        }
-      );
+      const response = await updateArrivalAskedToWait(clinicId, id, {});
+      // const response = await fetch(
+      //   `https://az-medical.onrender.com/api/arrivals/${id}/askedToWait`,
+      //   {
+      //     method: "PUT",
+      //     headers: {
+      //       "Content-Type": "application/json",
+      //     },
+      //     body: JSON.stringify({}),
+      //   }
+      // );
 
       if (response.ok) {
         const updatedPatients = patients.map((patient) =>
@@ -270,17 +290,23 @@ export default function DoctorScreen(props) {
     const patient = patients.find((patient) => patient.id === id);
     if (patient) {
       try {
-        await fetch(`https://az-medical.onrender.com/api/calls`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            DoctorName: doctorName,
-            patientName: patient.firstName,
-            patientLastName: patient.lastName,
-          }),
-        });
+        const callRequestData = {
+          DoctorName: doctorName,
+          patientName: patient.firstName,
+          patientLastName: patient.lastName,
+        };
+        await addCallRequest(clinicId, callRequestData);
+        // await fetch(`https://az-medical.onrender.com/api/calls`, {
+        //   method: "POST",
+        //   headers: {
+        //     "Content-Type": "application/json",
+        //   },
+        //   body: JSON.stringify({
+        //     DoctorName: doctorName,
+        //     patientName: patient.firstName,
+        //     patientLastName: patient.lastName,
+        //   }),
+        // });
       } catch (error) {
         console.error("Error updating calledInside status:", error);
       }

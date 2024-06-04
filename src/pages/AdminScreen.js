@@ -19,6 +19,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell } from "recharts";
+import { fetchAllArrivals } from "../services/arrivalsService";
 // import { Doughnut } from "react-chartjs-2";
 // Define an array of colors for the pie chart segments
 const COLORS = [
@@ -39,13 +40,11 @@ const AdminScreen = () => {
 
   async function fetchArrivals() {
     try {
-      const response = await fetch(
-        "https://az-medical.onrender.com/api/allArrivals"
-      );
-      const arrivals = await response.json();
+      // Fetch arrivals data
+      const arrivals = await fetchAllArrivals(clinicId);
       return arrivals;
     } catch (error) {
-      console.error("Error fetching arrivals:", error);
+      console.error("Error fetching all arrivals:", error);
       return [];
     }
   }
@@ -115,10 +114,7 @@ const AdminScreen = () => {
   async function updateBarChartData() {
     try {
       // Fetch arrivals data
-      const responseArrivals = await fetch(
-        "https://az-medical.onrender.com/api/allArrivals"
-      );
-      const arrivals = await responseArrivals.json();
+      const arrivals = await fetchAllArrivals(clinicId);
 
       console.log(arrivals);
       // Fetch doctors data
