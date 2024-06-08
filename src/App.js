@@ -1,4 +1,5 @@
 import React from "react";
+import SigninScreen from "./pages/SigninScreen";
 import HomeScreen from "./pages/HomeScreen";
 import PatientArrival from "./pages/PatientArrival";
 import DoctorScreen from "./pages/DoctorScreen";
@@ -20,6 +21,7 @@ function App() {
         <Routes>
           <Route path="/" element={<HomeScreen />} />
           <Route path="/login" element={<LoginScreen />} />
+          <Route path="/signin" element={<SigninScreen />} />
           <Route path="/arrival" element={<PatientArrival />} />
           <Route path="/home" element={<DoctorScreen />} />
           <Route path="/moderator" element={<ModeratorScreen />} />
