@@ -9,7 +9,6 @@ import {
   Button,
   Box,
 } from "@mui/material";
-import { useLocation } from "react-router-dom";
 import GroupIcon from "@mui/icons-material/Group";
 import io from "socket.io-client";
 import {
@@ -18,11 +17,15 @@ import {
   updateArrivalInProgress,
   updateArrivalMarkExit,
 } from "../services/arrivalsService";
+import { fetchDoctors } from "../services/doctorService";
+import { fetchArrivals } from "../services/arrivalsService";
 import { addCallRequest } from "../services/callService";
 
 export default function DoctorScreen(props) {
   const { state } = useLocation();
   const { clinicId, doctorId } = state;
+  console.log(clinicId);
+  console.log(doctorId);
   const [searchQuery, setSearchQuery] = useState("");
   const [patients, setPatients] = useState([]);
   const [doctorName, setDoctorName] = useState("");
@@ -37,7 +40,7 @@ export default function DoctorScreen(props) {
     // Fetch arrivals again if the broadcast is received
     socket.on("updateArrivals", () => {
       console.log("New arrival added");
-      fetchArrivals();
+      fetchArrivalsOnce();
     });
   }, []);
 
@@ -58,7 +61,7 @@ export default function DoctorScreen(props) {
     }
   };
 
-  const fetchArrivals = async () => {
+  const fetchArrivalsOnce = async () => {
     try {
       const arrivals = await fetchArrivals(clinicId, doctorId);
 
@@ -102,7 +105,7 @@ export default function DoctorScreen(props) {
 
   useEffect(() => {
     fetchDoctorDetails();
-    fetchArrivals();
+    fetchArrivalsOnce();
   }, []);
 
   // May change the sortedPatients logic to sort by startTime and endTime

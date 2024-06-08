@@ -6,6 +6,8 @@ const API_URL = "https://az-medical.onrender.com/api/arrivals";
 
 export const fetchArrivals = async (clinicId, doctorId) => {
   try {
+    console.log(clinicId);
+    console.log(doctorId);
     const response = await fetch(`${API_URL}/${clinicId}/${doctorId}`);
     if (!response.ok) {
       throw new Error("Error fetching arrivals");

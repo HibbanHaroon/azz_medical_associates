@@ -13,6 +13,8 @@ import {
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { fetchDoctors } from "../services/doctorService";
 import { useLocation } from "react-router-dom";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebase";
 
 export default function LoginScreen() {
   const { state } = useLocation();
@@ -51,26 +53,33 @@ export default function LoginScreen() {
   };
 
   const handleLoginSuccess = (doctorId) => {
-    navigate(`/home`, { state: { id: doctorId } });
+    navigate(`/home`, { state: { doctorId: doctorId, clinicId: clinicId } });
     setEmail("");
     setPassword("");
   };
 
   const handleSubmit = async (event) => {
+    var userId;
     event.preventDefault();
     if (!email || !password) {
       setErrorMessage("Email and password are required.");
       return;
     }
-    const matchedDoctor = doctors.find(
-      (doctor) => doctor.email === email && doctor.password === password
-    );
-    if (matchedDoctor) {
-      console.log("Matched Doctor ID:", matchedDoctor.id);
-      handleLoginSuccess(matchedDoctor.id);
-    } else {
-      setErrorMessage("No matching doctor found.");
-    }
+
+    signInWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        // Signed in
+        const user = userCredential.user;
+        userId = user.uid;
+        console.log(userId);
+
+        handleLoginSuccess(userId);
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        console.log(errorCode, errorMessage);
+      });
   };
 
   return (

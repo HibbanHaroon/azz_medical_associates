@@ -231,7 +231,9 @@ export default function PatientArrival() {
   };
 
   const handleLoginAsDoctor = () => {
-    navigate("/login");
+    navigate("/login", {
+      state: { clinicId: clinicId },
+    });
   };
 
   return (

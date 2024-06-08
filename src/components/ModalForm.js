@@ -1,4 +1,3 @@
-// ModalForm.js
 import React, { useState, useEffect } from "react";
 import { Modal, Box, Typography, TextField, Button } from "@mui/material";
 
@@ -28,6 +27,7 @@ const ModalForm = ({
     name: "",
     domain: "",
     email: "",
+    password: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -37,13 +37,13 @@ const ModalForm = ({
       setFormData({
         name: selectedClinic.name || "",
         domain: selectedClinic.domain || "",
-        email: selectedClinic.email || "",
       });
     } else {
       setFormData({
         name: "",
         domain: "",
         email: "",
+        password: "",
       });
     }
   }, [mode, selectedClinic]);
@@ -70,8 +70,11 @@ const ModalForm = ({
     if (isDoctor && !formData.domain) {
       newErrors.domain = "Professional domain is required";
     }
-    if (isDoctor && !formData.email) {
+    if (mode === "add" && isDoctor && !formData.email) {
       newErrors.email = "Email is required";
+    }
+    if (mode === "add" && isDoctor && !formData.password) {
+      newErrors.password = "Password is required";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -83,6 +86,7 @@ const ModalForm = ({
         name: "",
         domain: "",
         email: "",
+        password: "",
       });
       handleClose();
     }
@@ -136,17 +140,34 @@ const ModalForm = ({
                 error={!!errors.domain}
                 helperText={errors.domain}
               />
-              <TextField
-                required
-                fullWidth
-                id="email"
-                label="Email Address"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                error={!!errors.email}
-                helperText={errors.email}
-              />
+
+              {mode === "add" && (
+                <>
+                  <TextField
+                    required
+                    fullWidth
+                    id="email"
+                    label="Email Address"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    error={!!errors.email}
+                    helperText={errors.email}
+                  />
+                  <TextField
+                    required
+                    fullWidth
+                    id="password"
+                    label="Password"
+                    name="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    error={!!errors.password}
+                    helperText={errors.password}
+                  />
+                </>
+              )}
             </>
           )}
           <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>

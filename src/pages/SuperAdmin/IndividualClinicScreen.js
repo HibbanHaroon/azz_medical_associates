@@ -12,6 +12,8 @@ import AddIcon from "@mui/icons-material/Add";
 import InfoCard from "../../components/InfoCard";
 import ModalForm from "../../components/ModalForm";
 import DeleteModalForm from "../../components/DeleteModalForm";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../../firebase";
 import {
   fetchDoctors,
   addDoctor,
@@ -75,9 +77,31 @@ const IndividualClinicScreen = () => {
 
   const handleSubmit = async (formData) => {
     var doctorData;
+    var doctorId;
     try {
       if (modalMode === "add") {
         doctorData = { ...formData };
+
+        const email = formData.email;
+        const password = formData.password;
+
+        //Registering through Firebase Authentication
+        await createUserWithEmailAndPassword(auth, email, password)
+          .then((userCredential) => {
+            // Signed in
+            const user = userCredential.user;
+            console.log(user);
+            doctorId = user.uid;
+          })
+          .catch((error) => {
+            const errorCode = error.code;
+            const errorMessage = error.message;
+            console.log(errorCode, errorMessage);
+          });
+
+        // add doctorId to the doctorData as doctorId
+        doctorData.doctorId = doctorId;
+
         const newDoctor = await addDoctor(clinicId, doctorData);
         setDoctors([...doctors, newDoctor]);
       } else if (modalMode === "edit") {
