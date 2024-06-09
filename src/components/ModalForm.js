@@ -19,13 +19,12 @@ const ModalForm = ({
   mode,
   type,
   onSubmit,
-  selectedClinic,
+  selectedUser,
 }) => {
   const isDoctor = type === "doctor";
-
   const [formData, setFormData] = useState({
     name: "",
-    domain: "",
+    domain: isDoctor ? "" : undefined,
     email: "",
     password: "",
   });
@@ -33,20 +32,22 @@ const ModalForm = ({
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    if (mode === "edit" && selectedClinic) {
+    if (mode === "edit" && selectedUser) {
       setFormData({
-        name: selectedClinic.name || "",
-        domain: selectedClinic.domain || "",
+        name: selectedUser.name || "",
+        domain: isDoctor ? selectedUser.domain || "" : undefined,
+        email: selectedUser.email || "",
+        password: "",
       });
     } else {
       setFormData({
         name: "",
-        domain: "",
+        domain: isDoctor ? "" : undefined,
         email: "",
         password: "",
       });
     }
-  }, [mode, selectedClinic]);
+  }, [mode, selectedUser, isDoctor]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -70,21 +71,21 @@ const ModalForm = ({
     if (isDoctor && !formData.domain) {
       newErrors.domain = "Professional domain is required";
     }
-    if (mode === "add" && isDoctor && !formData.email) {
+    if (mode === "add" && !formData.email) {
       newErrors.email = "Email is required";
     }
-    if (mode === "add" && isDoctor && !formData.password) {
+    if (mode === "add" && !formData.password) {
       newErrors.password = "Password is required";
     }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
     } else {
-      const doctorData = { ...formData };
-      onSubmit(doctorData);
+      const userData = { ...formData };
+      onSubmit(userData);
       setFormData({
         name: "",
-        domain: "",
+        domain: isDoctor ? "" : undefined,
         email: "",
         password: "",
       });
@@ -102,8 +103,8 @@ const ModalForm = ({
       <Box sx={modalStyle}>
         <Typography id="modal-modal-title" variant="h6" component="h2">
           {mode === "add"
-            ? `Add ${isDoctor ? "Doctor" : "Clinic"}`
-            : `Edit ${isDoctor ? "Doctor" : "Clinic"}`}
+            ? `Add ${type.charAt(0).toUpperCase() + type.slice(1)}`
+            : `Edit ${type.charAt(0).toUpperCase() + type.slice(1)}`}
         </Typography>
         <Box
           component="form"
@@ -120,7 +121,7 @@ const ModalForm = ({
             required
             fullWidth
             id="name"
-            label={isDoctor ? "Doctor Name" : "Clinic Name"}
+            label="Name"
             name="name"
             value={formData.name}
             onChange={handleChange}
@@ -128,46 +129,43 @@ const ModalForm = ({
             helperText={errors.name}
           />
           {isDoctor && (
+            <TextField
+              required
+              fullWidth
+              id="domain"
+              label="Professional Domain"
+              name="domain"
+              value={formData.domain}
+              onChange={handleChange}
+              error={!!errors.domain}
+              helperText={errors.domain}
+            />
+          )}
+          {mode === "add" && (
             <>
               <TextField
                 required
                 fullWidth
-                id="domain"
-                label="Professional Domain"
-                name="domain"
-                value={formData.domain}
+                id="email"
+                label="Email Address"
+                name="email"
+                value={formData.email}
                 onChange={handleChange}
-                error={!!errors.domain}
-                helperText={errors.domain}
+                error={!!errors.email}
+                helperText={errors.email}
               />
-
-              {mode === "add" && (
-                <>
-                  <TextField
-                    required
-                    fullWidth
-                    id="email"
-                    label="Email Address"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    error={!!errors.email}
-                    helperText={errors.email}
-                  />
-                  <TextField
-                    required
-                    fullWidth
-                    id="password"
-                    label="Password"
-                    name="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    error={!!errors.password}
-                    helperText={errors.password}
-                  />
-                </>
-              )}
+              <TextField
+                required
+                fullWidth
+                id="password"
+                label="Password"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleChange}
+                error={!!errors.password}
+                helperText={errors.password}
+              />
             </>
           )}
           <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>

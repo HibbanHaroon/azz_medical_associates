@@ -5,6 +5,7 @@ import SupervisorAccountIcon from "@mui/icons-material/SupervisorAccount";
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import ChecklistIcon from "@mui/icons-material/Checklist";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import PersonIcon from "@mui/icons-material/Person";
 
 const ScreensNavigationCard = ({ screenName, onClick }) => {
   const getIcon = () => {
@@ -19,6 +20,8 @@ const ScreensNavigationCard = ({ screenName, onClick }) => {
         return <ChecklistIcon fontSize="large" color="primary" />;
       case "Patient Waiting":
         return <AccessTimeIcon fontSize="large" color="primary" />;
+      case "Provider":
+        return <PersonIcon fontSize="large" color="primary" />;
       default:
         return null;
     }

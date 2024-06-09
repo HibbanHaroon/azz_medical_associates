@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ScreensNavigationCard from "../components/ScreensNavigationCard";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Container,
   CssBaseline,
@@ -10,6 +10,7 @@ import {
   Select,
   MenuItem,
   Grid,
+  Button,
 } from "@mui/material";
 import { getAllClinics } from "../services/clinicService";
 
@@ -17,6 +18,9 @@ const HomeScreen = () => {
   const [selectedClinic, setSelectedClinic] = useState("");
   const [clinics, setClinics] = useState([]);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { userId } = location.state || {};
+  const { userType } = location.state || {};
 
   useEffect(() => {
     const fetchClinics = async () => {
@@ -31,13 +35,117 @@ const HomeScreen = () => {
     fetchClinics();
   }, []);
 
+  const handleSigninClick = () => {
+    navigate("/signin");
+  };
+
   const handleCardClick = (screenName) => {
     if (selectedClinic) {
-      navigate(`/${screenName.toLowerCase()}`, {
-        state: { clinicId: selectedClinic },
-      });
+      if (screenName === "home") {
+        navigate(`/${screenName.toLowerCase()}`, {
+          state: { clinicId: selectedClinic, doctorId: userId },
+        });
+      } else {
+        navigate(`/${screenName.toLowerCase()}`, {
+          state: { clinicId: selectedClinic },
+        });
+      }
     } else {
       alert("Please select a clinic first.");
+    }
+  };
+
+  const renderCards = () => {
+    console.log(userType);
+    switch (userType) {
+      case "Super Admin":
+        return (
+          <>
+            <Grid item xs={12} sm={6} md={4}>
+              <ScreensNavigationCard
+                screenName="Admin"
+                onClick={() => handleCardClick("admin")}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <ScreensNavigationCard
+                screenName="Arrival"
+                onClick={() => handleCardClick("arrival")}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <ScreensNavigationCard
+                screenName="Moderator"
+                onClick={() => handleCardClick("moderator")}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <ScreensNavigationCard
+                screenName="Nurse Attendance"
+                onClick={() => handleCardClick("attendance")}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <ScreensNavigationCard
+                screenName="Patient Waiting"
+                onClick={() => handleCardClick("waiting")}
+              />
+            </Grid>
+          </>
+        );
+      case "Admin":
+        return (
+          <>
+            <Grid item xs={12} sm={6} md={4}>
+              <ScreensNavigationCard
+                screenName="Patient Waiting"
+                onClick={() => handleCardClick("waiting")}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <ScreensNavigationCard
+                screenName="Arrival"
+                onClick={() => handleCardClick("arrival")}
+              />
+            </Grid>
+          </>
+        );
+      case "Moderator":
+        return (
+          <Grid item xs={12} sm={12} md={12}>
+            <ScreensNavigationCard
+              screenName="Moderator"
+              onClick={() => handleCardClick("moderator")}
+            />
+          </Grid>
+        );
+      case "Provider":
+        return (
+          <Grid item xs={12} sm={12} md={12}>
+            <ScreensNavigationCard
+              screenName="Provider"
+              onClick={() => handleCardClick("home")}
+            />
+          </Grid>
+        );
+      case "Nurse":
+        return (
+          <Grid item xs={12} sm={12} md={12}>
+            <ScreensNavigationCard
+              screenName="Nurse Attendance"
+              onClick={() => handleCardClick("attendance")}
+            />
+          </Grid>
+        );
+      default:
+        return (
+          <Grid item xs={12} sm={12} md={12}>
+            <ScreensNavigationCard
+              screenName="Arrival"
+              onClick={() => handleCardClick("arrival")}
+            />
+          </Grid>
+        );
     }
   };
 
@@ -105,40 +213,42 @@ const HomeScreen = () => {
           />
           <Box>
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={6} md={4}>
-                <ScreensNavigationCard
-                  screenName="Admin"
-                  onClick={() => handleCardClick("admin")}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={4}>
-                <ScreensNavigationCard
-                  screenName="Arrival"
-                  onClick={() => handleCardClick("arrival")}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={4}>
-                <ScreensNavigationCard
-                  screenName="Moderator"
-                  onClick={() => handleCardClick("moderator")}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={4}>
-                <ScreensNavigationCard
-                  screenName="Nurse Attendance"
-                  onClick={() => handleCardClick("attendance")}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={4}>
-                <ScreensNavigationCard
-                  screenName="Patient Waiting"
-                  onClick={() => handleCardClick("waiting")}
-                />
-              </Grid>
+              {renderCards()}
             </Grid>
           </Box>
         </Box>
       </Container>
+      <Box
+        sx={{
+          position: "absolute",
+          width: "95%",
+          top: 0,
+          left: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          zIndex: 9999,
+          margin: "1rem",
+        }}
+      >
+        <img
+          src="/assets/logos/logoHAUTO.png"
+          alt="AZZ Medical Associates Logo"
+          style={{ maxWidth: "60%", height: "60%", paddingLeft: 40 }}
+        />
+        {!userType && (
+          <>
+            <Button
+              onClick={handleSigninClick}
+              variant="contained"
+              color="primary"
+              sx={{ right: "2rem" }}
+            >
+              Sign In
+            </Button>
+          </>
+        )}
+      </Box>
     </div>
   );
 };

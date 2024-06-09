@@ -20,35 +20,86 @@ import {
   updateDoctor,
   deleteDoctor,
 } from "../../services/doctorService";
+import {
+  fetchNurses,
+  addNurse,
+  updateNurse,
+  deleteNurse,
+} from "../../services/nurseService";
+import {
+  fetchModerators,
+  addModerator,
+  updateModerator,
+  deleteModerator,
+} from "../../services/moderatorService";
+import {
+  fetchAdmins,
+  addAdmin,
+  updateAdmin,
+  deleteAdmin,
+} from "../../services/adminService";
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 
 const IndividualClinicScreen = () => {
   const { state } = useLocation();
   const { name, clinicId } = state;
 
-  const [doctors, setDoctors] = useState([]);
-  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const userTypes = [
+    {
+      type: "doctor",
+      fetch: fetchDoctors,
+      add: addDoctor,
+      update: updateDoctor,
+      delete: deleteDoctor,
+    },
+    {
+      type: "nurse",
+      fetch: fetchNurses,
+      add: addNurse,
+      update: updateNurse,
+      delete: deleteNurse,
+    },
+    {
+      type: "moderator",
+      fetch: fetchModerators,
+      add: addModerator,
+      update: updateModerator,
+      delete: deleteModerator,
+    },
+    {
+      type: "admin",
+      fetch: fetchAdmins,
+      add: addAdmin,
+      update: updateAdmin,
+      delete: deleteAdmin,
+    },
+  ];
+
+  const [currentUserType, setCurrentUserType] = useState(userTypes[0]);
+  const [users, setUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [openAddModal, setOpenAddModal] = useState(false);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [modalMode, setModalMode] = useState("add");
 
   useEffect(() => {
-    const loadDoctors = async () => {
+    const loadUsers = async () => {
       try {
-        var fetchedDoctors = await fetchDoctors(clinicId);
-        console.log(fetchedDoctors);
-        console.log(clinicId);
-        setDoctors(fetchedDoctors);
+        const fetchedUsers = await currentUserType.fetch(clinicId);
+        setUsers(fetchedUsers);
       } catch (error) {
-        console.error("Error fetching doctors:", error);
+        console.error(`Error fetching ${currentUserType.type}s:`, error);
       }
     };
 
-    loadDoctors();
-  }, []);
+    loadUsers();
+  }, [currentUserType, clinicId]);
 
-  const handleOpenAddModal = (mode, doctor = null) => {
+  const handleOpenAddModal = (mode, user = null) => {
     setModalMode(mode);
-    setSelectedDoctor(doctor);
+    setSelectedUser(user);
     setOpenAddModal(true);
   };
 
@@ -56,8 +107,8 @@ const IndividualClinicScreen = () => {
     setOpenAddModal(false);
   };
 
-  const handleOpenDeleteModal = (doctor) => {
-    setSelectedDoctor(doctor);
+  const handleOpenDeleteModal = (user) => {
+    setSelectedUser(user);
     setOpenDeleteModal(true);
   };
 
@@ -67,52 +118,47 @@ const IndividualClinicScreen = () => {
 
   const handleConfirmDelete = async () => {
     try {
-      await deleteDoctor(clinicId, selectedDoctor.id);
-      setDoctors(doctors.filter((doctor) => doctor.id !== selectedDoctor.id));
+      await currentUserType.delete(clinicId, selectedUser.id);
+      setUsers(users.filter((user) => user.id !== selectedUser.id));
       handleCloseDeleteModal();
     } catch (error) {
-      console.error("Error deleting doctor:", error);
+      console.error(`Error deleting ${currentUserType.type}:`, error);
     }
   };
 
   const handleSubmit = async (formData) => {
-    var doctorData;
-    var doctorId;
+    let userData;
+    let userId;
     try {
       if (modalMode === "add") {
-        doctorData = { ...formData };
+        userData = { ...formData };
 
         const email = formData.email;
         const password = formData.password;
 
-        //Registering through Firebase Authentication
+        // Registering through Firebase Authentication
         await createUserWithEmailAndPassword(auth, email, password)
           .then((userCredential) => {
-            // Signed in
             const user = userCredential.user;
-            console.log(user);
-            doctorId = user.uid;
+            userId = user.uid;
           })
           .catch((error) => {
-            const errorCode = error.code;
-            const errorMessage = error.message;
-            console.log(errorCode, errorMessage);
+            console.log(error.code, error.message);
           });
 
-        // add doctorId to the doctorData as doctorId
-        doctorData.doctorId = doctorId;
+        userData.id = userId;
 
-        const newDoctor = await addDoctor(clinicId, doctorData);
-        setDoctors([...doctors, newDoctor]);
+        const newUser = await currentUserType.add(clinicId, userData);
+        setUsers([...users, newUser]);
       } else if (modalMode === "edit") {
-        const updatedDoctor = await updateDoctor(
+        const updatedUser = await currentUserType.update(
           clinicId,
-          selectedDoctor.id,
+          selectedUser.id,
           formData
         );
-        setDoctors(
-          doctors.map((doctor) =>
-            doctor.id === selectedDoctor.id ? updatedDoctor : doctor
+        setUsers(
+          users.map((user) =>
+            user.id === selectedUser.id ? updatedUser : user
           )
         );
       }
@@ -120,6 +166,15 @@ const IndividualClinicScreen = () => {
     } catch (error) {
       console.error("Error submitting form:", error);
     }
+  };
+
+  const settings = {
+    dots: true,
+    infinite: false,
+    speed: 500,
+    slidesToShow: 1,
+    slidesToScroll: 1,
+    afterChange: (index) => setCurrentUserType(userTypes[index]),
   };
 
   return (
@@ -150,81 +205,81 @@ const IndividualClinicScreen = () => {
         }}
       >
         <CssBaseline />
-        <Box
-          sx={{
-            marginTop: 2,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            padding: 3,
-          }}
-        >
-          <Box
-            sx={{
-              width: "100%",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "end",
-            }}
-          >
-            <Typography
-              component="h1"
-              variant="h4"
-              sx={{
-                mt: 1,
-                color: "primary.main",
-                fontWeight: "bold",
-              }}
-            >
-              {name}
-            </Typography>
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
-              style={{ height: 40 }}
-              startIcon={<AddIcon />}
-              onClick={() => handleOpenAddModal("add")}
-            >
-              New Doctor
-            </Button>
-          </Box>
-          <Divider
-            sx={{
-              width: "100%",
-              mt: 2,
-              mb: 2,
-              height: 2,
-              backgroundColor: "primary.main",
-            }}
-          />
-          {doctors.map((doctor, index) => (
-            <InfoCard
-              key={doctor.id}
-              number={index + 1}
-              primaryText={doctor.name}
-              secondaryText={doctor.domain}
-              onClick={() => handleOpenAddModal("edit", doctor)}
-              onDelete={() => handleOpenDeleteModal(doctor)}
-              onEdit={() => handleOpenAddModal("edit", doctor)}
-            />
+        <Slider {...settings}>
+          {userTypes.map((userType) => (
+            <Box key={userType.type}>
+              <Box
+                sx={{
+                  width: "100%",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "end",
+                }}
+              >
+                <Typography
+                  component="h1"
+                  variant="h4"
+                  sx={{
+                    mt: 1,
+                    color: "primary.main",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {name} -{" "}
+                  {userType.type.charAt(0).toUpperCase() +
+                    userType.type.slice(1)}
+                  s
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="large"
+                  style={{ height: 40 }}
+                  startIcon={<AddIcon />}
+                  onClick={() => handleOpenAddModal("add")}
+                >
+                  New{" "}
+                  {userType.type.charAt(0).toUpperCase() +
+                    userType.type.slice(1)}
+                </Button>
+              </Box>
+              <Divider
+                sx={{
+                  width: "100%",
+                  mt: 2,
+                  mb: 2,
+                  height: 2,
+                  backgroundColor: "primary.main",
+                }}
+              />
+              {users.map((user, index) => (
+                <InfoCard
+                  key={user.id}
+                  number={index + 1}
+                  primaryText={user.name}
+                  secondaryText={user.domain}
+                  onClick={() => handleOpenAddModal("edit", user)}
+                  onDelete={() => handleOpenDeleteModal(user)}
+                  onEdit={() => handleOpenAddModal("edit", user)}
+                />
+              ))}
+            </Box>
           ))}
-        </Box>
+        </Slider>
       </Container>
       <ModalForm
         open={openAddModal}
         handleClose={handleCloseAddModal}
         mode={modalMode}
-        type="doctor"
+        type={currentUserType.type}
         onSubmit={handleSubmit}
-        selectedClinic={selectedDoctor}
-        clinicId={clinicId}
+        selectedUser={selectedUser}
       />
       <DeleteModalForm
         open={openDeleteModal}
         handleClose={handleCloseDeleteModal}
         onConfirm={handleConfirmDelete}
-        message={`Are you sure you want to delete Dr. ${selectedDoctor?.name}?`}
+        message={`Are you sure you want to delete ${selectedUser?.name}?`}
       />
       <Box
         sx={{

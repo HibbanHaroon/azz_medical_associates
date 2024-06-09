@@ -532,7 +532,7 @@ export default function PatientArrival() {
           <Typography variant="body2">For Help</Typography>
         </Box>
       </Button>
-      <Button
+      {/* <Button
         onClick={handleLoginAsDoctor}
         variant="contained"
         color="primary"
@@ -554,9 +554,9 @@ export default function PatientArrival() {
           },
         }}
         startIcon={window.innerWidth >= 600 ? <MedicalServicesIcon /> : null}
-      >
-        Login as a Provider
-      </Button>
+        >
+          Login as a Provider
+        </Button> */}
       {/* <Box
         sx={{
           position: "absolute",

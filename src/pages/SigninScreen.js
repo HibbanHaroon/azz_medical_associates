@@ -15,6 +15,9 @@ import {
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { getAllClinics } from "../services/clinicService";
 import { UserTypes } from "../enums/userTypes"; // Adjust the import path as necessary
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebase"; // Adjust the import path as necessary
+import { useNavigate } from "react-router-dom";
 
 const SigninScreen = () => {
   const [selectedClinic, setSelectedClinic] = useState("");
@@ -24,6 +27,7 @@ const SigninScreen = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchClinics = async () => {
@@ -40,21 +44,39 @@ const SigninScreen = () => {
 
   const handleEmailChange = (e) => setEmail(e.target.value);
   const handlePasswordChange = (e) => setPassword(e.target.value);
-  const handleSubmit = (e) => {
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    // Implement sign-in logic here
-    // For Sign in code using Firebase... Refer to Login Screen
-    // For Register code using Firebase... Refer to Individual Clinic Screen
-    // The sign in and register using Firebase will be done in the Frontend without any calls to backend.
-    // But we have to actually store the data of the users as a sub collection inside the clinics collection...
-    // For this we first register the user... and then using the userId of the user we create a sub collection
-    // inside the clinics and store the user information there... and for signin we simply use the code for signin...
-    // For Adding the data of the users to Firestore... create an endpoint of users with respect to clinic such that api/users/:clinicId
-    // For this firstly create the endpoints of create, update, delete, and view users or whatever are necessary
-    //Then create a userService.js file in the services folder and then use those functions in the frontend
+    if (!email || !password || !selectedClinic || !selectedUserType) {
+      setErrorMessage("All fields are required.");
+      setLoading(false);
+      return;
+    }
 
-    setLoading(false);
+    signInWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        const user = userCredential.user;
+        const userId = user.uid;
+        navigate(`/`, {
+          state: {
+            userId: userId,
+            clinicId: selectedClinic,
+            userType: selectedUserType,
+          },
+        });
+        setEmail("");
+        setPassword("");
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        console.error(errorCode, errorMessage);
+        setErrorMessage(errorMessage);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   return (
