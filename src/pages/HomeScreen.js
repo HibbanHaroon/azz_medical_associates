@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import ScreensNavigationCard from "../components/ScreensNavigationCard";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -6,52 +6,53 @@ import {
   CssBaseline,
   Box,
   Divider,
-  FormControl,
-  Select,
-  MenuItem,
+  // FormControl,
+  // Select,
+  // MenuItem,
   Grid,
   Button,
 } from "@mui/material";
-import { getAllClinics } from "../services/clinicService";
+// import { getAllClinics } from "../services/clinicService";
 
 const HomeScreen = () => {
-  const [selectedClinic, setSelectedClinic] = useState("");
-  const [clinics, setClinics] = useState([]);
+  // const [selectedClinic, setSelectedClinic] = useState("");
+  // const [clinics, setClinics] = useState([]);
   const navigate = useNavigate();
   const location = useLocation();
   const { userId } = location.state || {};
   const { userType } = location.state || {};
+  const { clinicId } = location.state || {};
 
-  useEffect(() => {
-    const fetchClinics = async () => {
-      try {
-        const fetchedClinics = await getAllClinics();
-        setClinics(fetchedClinics);
-      } catch (error) {
-        console.error("Failed to fetch clinics", error);
-      }
-    };
+  // useEffect(() => {
+  //   const fetchClinics = async () => {
+  //     try {
+  //       const fetchedClinics = await getAllClinics();
+  //       setClinics(fetchedClinics);
+  //     } catch (error) {
+  //       console.error("Failed to fetch clinics", error);
+  //     }
+  //   };
 
-    fetchClinics();
-  }, []);
+  //   fetchClinics();
+  // }, []);
 
   const handleSigninClick = () => {
     navigate("/signin");
   };
 
   const handleCardClick = (screenName) => {
-    if (selectedClinic) {
+    if (clinicId) {
       if (screenName === "home") {
         navigate(`/${screenName.toLowerCase()}`, {
-          state: { clinicId: selectedClinic, doctorId: userId },
+          state: { clinicId: clinicId, doctorId: userId },
         });
       } else {
         navigate(`/${screenName.toLowerCase()}`, {
-          state: { clinicId: selectedClinic },
+          state: { clinicId: clinicId },
         });
       }
     } else {
-      alert("Please select a clinic first.");
+      alert("Please signin first!");
     }
   };
 
@@ -186,7 +187,7 @@ const HomeScreen = () => {
             padding: 3,
           }}
         >
-          <FormControl fullWidth sx={{ mb: 2 }}>
+          {/* <FormControl fullWidth sx={{ mb: 2 }}>
             <Select
               value={selectedClinic}
               onChange={(e) => setSelectedClinic(e.target.value)}
@@ -201,7 +202,7 @@ const HomeScreen = () => {
                 </MenuItem>
               ))}
             </Select>
-          </FormControl>
+          </FormControl> */}
           <Divider
             sx={{
               width: "100%",
