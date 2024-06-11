@@ -18,6 +18,11 @@ import { UserTypes } from "../enums/userTypes"; // Adjust the import path as nec
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase"; // Adjust the import path as necessary
 import { useNavigate } from "react-router-dom";
+import { fetchAdmins } from "../services/adminService";
+import { fetchDoctors } from "../services/doctorService";
+import { fetchNurses } from "../services/nurseService";
+import { fetchModerators } from "../services/moderatorService";
+import { fetchSuperAdmins } from "../services/superAdminService";
 
 const SigninScreen = () => {
   const [selectedClinic, setSelectedClinic] = useState("");
@@ -45,38 +50,103 @@ const SigninScreen = () => {
   const handleEmailChange = (e) => setEmail(e.target.value);
   const handlePasswordChange = (e) => setPassword(e.target.value);
 
+  const verifyUserType = async (userId, userType) => {
+    try {
+      let users;
+      switch (userType) {
+        case "Admin":
+          users = await fetchAdmins(selectedClinic);
+          break;
+        case "Provider":
+          users = await fetchDoctors(selectedClinic);
+          break;
+        case "Nurse":
+          users = await fetchNurses(selectedClinic);
+          break;
+        case "Moderator":
+          users = await fetchModerators(selectedClinic);
+          break;
+        case "Super Admin":
+          users = await fetchSuperAdmins(selectedClinic);
+          break;
+        default:
+          return false;
+      }
+      console.log(users);
+      return users.some((user) => user.id === userId);
+    } catch (error) {
+      console.error("Failed to fetch user data", error);
+      return false;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMessage("");
     if (!email || !password || !selectedClinic || !selectedUserType) {
       setErrorMessage("All fields are required.");
       setLoading(false);
       return;
     }
 
-    signInWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        const user = userCredential.user;
-        const userId = user.uid;
-        navigate(`/`, {
-          state: {
-            userId: userId,
-            clinicId: selectedClinic,
-            userType: selectedUserType,
-          },
-        });
-        setEmail("");
-        setPassword("");
-      })
-      .catch((error) => {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        console.error(errorCode, errorMessage);
-        setErrorMessage(errorMessage);
-      })
-      .finally(() => {
+    try {
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const user = userCredential.user;
+      const userId = user.uid;
+
+      const isUserTypeValid = await verifyUserType(userId, selectedUserType);
+      if (!isUserTypeValid) {
+        setErrorMessage("Invalid user type for this account.");
         setLoading(false);
-      });
+        return;
+      }
+
+      switch (selectedUserType) {
+        case "Provider":
+          navigate(`/home`, {
+            state: {
+              doctorId: userId,
+              clinicId: selectedClinic,
+            },
+          });
+          break;
+        case "Nurse":
+          navigate(`/attendance`, {
+            state: {
+              clinicId: selectedClinic,
+            },
+          });
+          break;
+        case "Moderator":
+          navigate(`/moderator`, {
+            state: {
+              clinicId: selectedClinic,
+            },
+          });
+          break;
+        default:
+          navigate(`/`, {
+            state: {
+              userId: userId,
+              clinicId: selectedClinic,
+              userType: selectedUserType,
+            },
+          });
+      }
+
+      setEmail("");
+      setPassword("");
+    } catch (error) {
+      console.error("Authentication error", error);
+      setErrorMessage(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
