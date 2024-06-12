@@ -21,44 +21,40 @@ const ModalForm = ({
   onSubmit,
   selectedUser,
 }) => {
+  const isClinic = type === "clinic";
   const isDoctor = type === "doctor";
-  const [formData, setFormData] = useState({
-    name: "",
-    domain: isDoctor ? "" : undefined,
-    email: "",
-    password: "",
-  });
 
+  const initialFormData = {
+    name: "",
+    ...(isDoctor && { domain: "" }),
+    ...(mode === "add" && !isClinic && { email: "", password: "" }),
+  };
+
+  const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (mode === "edit" && selectedUser) {
       setFormData({
         name: selectedUser.name || "",
-        domain: isDoctor ? selectedUser.domain || "" : undefined,
-        email: selectedUser.email || "",
-        password: "",
+        ...(isDoctor && { domain: selectedUser.domain || "" }),
+        ...(mode === "add" && !isClinic && { email: "", password: "" }),
       });
     } else {
-      setFormData({
-        name: "",
-        domain: isDoctor ? "" : undefined,
-        email: "",
-        password: "",
-      });
+      setFormData(initialFormData);
     }
-  }, [mode, selectedUser, isDoctor]);
+  }, [mode, selectedUser, isDoctor, isClinic]); // Corrected dependency array
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
+    setFormData((prevFormData) => ({
+      ...prevFormData,
       [name]: value,
-    });
-    setErrors({
-      ...errors,
+    }));
+    setErrors((prevErrors) => ({
+      ...prevErrors,
       [name]: "",
-    });
+    }));
   };
 
   const handleSubmit = (e) => {
@@ -71,24 +67,28 @@ const ModalForm = ({
     if (isDoctor && !formData.domain) {
       newErrors.domain = "Professional domain is required";
     }
-    if (mode === "add" && !formData.email) {
+    if (mode === "add" && !isClinic && !formData.email) {
       newErrors.email = "Email is required";
     }
-    if (mode === "add" && !formData.password) {
+    if (mode === "add" && !isClinic && !formData.password) {
       newErrors.password = "Password is required";
     }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
     } else {
-      const userData = { ...formData };
+      const userData = { name: formData.name };
+      if (isDoctor) userData.domain = formData.domain;
+      if (!isClinic) {
+        if (mode === "add") {
+          userData.email = formData.email;
+          userData.password = formData.password;
+        } else {
+          userData.email = formData.email;
+        }
+      }
       onSubmit(userData);
-      setFormData({
-        name: "",
-        domain: isDoctor ? "" : undefined,
-        email: "",
-        password: "",
-      });
+      setFormData(initialFormData);
       handleClose();
     }
   };
@@ -141,7 +141,7 @@ const ModalForm = ({
               helperText={errors.domain}
             />
           )}
-          {mode === "add" && (
+          {!isClinic && mode === "add" && (
             <>
               <TextField
                 required

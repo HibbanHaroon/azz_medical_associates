@@ -185,7 +185,7 @@ const ClinicsScreen = () => {
         handleClose={handleCloseAddModal}
         mode={modalMode}
         type="clinic"
-        selectedClinic={selectedClinic}
+        selectedUser={selectedClinic}
         onSubmit={handleSubmit}
       />
       <DeleteModalForm
