@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
 import {
   Container,
   CssBaseline,
@@ -14,26 +13,43 @@ import {
   Typography,
   Avatar,
   IconButton,
+  FormControl,
+  Select,
 } from "@mui/material";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CloseIcon from "@mui/icons-material/Close";
 import Webcam from "react-webcam";
 import { useNavigate } from "react-router-dom";
+import { getAllClinics } from "../services/clinicService";
 
 export default function NurseAttendance() {
-  const { state } = useLocation();
-  const { clinicId } = state;
+  const [text, setText] = useState("");
+  const [selectedClinic, setSelectedClinic] = useState("");
+  const [clinics, setClinics] = useState([]);
   const [selectedNurse, setSelectedNurse] = useState("");
   const [showCamera, setShowCamera] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [nurseName, setNurseName] = useState("");
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const fetchClinics = async () => {
+      try {
+        const fetchedClinics = await getAllClinics();
+        setClinics(fetchedClinics);
+      } catch (error) {
+        console.error("Failed to fetch clinics", error);
+      }
+    };
+
+    fetchClinics();
+  }, []);
+
   const nurses = [
-    { id: 1, name: "Nurse A" },
-    { id: 2, name: "Nurse B" },
-    { id: 3, name: "Nurse C" },
+    { id: 1, name: "Staff A" },
+    { id: 2, name: "Staff B" },
+    { id: 3, name: "Staff C" },
   ];
 
   useEffect(() => {
@@ -46,12 +62,28 @@ export default function NurseAttendance() {
     }
   }, [showCamera]);
 
+  useEffect(() => {
+    if (showConfirmation) {
+      generateAudio(`${nurseName}, your attendance has been marked!`);
+    }
+  }, [showConfirmation]);
+
   const handleNurseSelect = (event) => {
     const selectedNurse = event.target.value;
     const nurse = nurses.find((nurse) => nurse.id === selectedNurse);
     setNurseName(nurse.name);
     setSelectedNurse(selectedNurse);
     setShowCamera(true);
+  };
+
+  const generateAudio = (text) => {
+    console.log("nurse marked voice");
+    if ("speechSynthesis" in window) {
+      const message = new SpeechSynthesisUtterance(text);
+      window.speechSynthesis.speak(message);
+    } else {
+      console.error("Speech synthesis not supported");
+    }
   };
 
   const handleConfirmationClose = () => {
@@ -81,19 +113,19 @@ export default function NurseAttendance() {
         sx={{
           display: "flex",
           justifyContent: "center",
-          marginTop: "2rem", // Adjusted margin for logo placement
-          marginBottom: "2rem", // Added margin to separate logo and form
+          marginTop: "2rem",
+          marginBottom: "2rem",
         }}
       >
         <img
           src="/assets/logos/logoHAUTO.png"
           alt="AZZ Medical Associates Logo"
-          style={{ maxWidth: "50%", height: "auto" }} // Adjusted logo size
+          style={{ maxWidth: "50%", height: "auto" }}
         />
       </Box>
       <Container
         component="main"
-        maxWidth="md" // Adjusted max width for the form container
+        maxWidth="md"
         sx={{
           backgroundColor: "rgba(255, 255, 255, 0.8)",
           borderRadius: "10px",
@@ -115,8 +147,24 @@ export default function NurseAttendance() {
             <CameraAltIcon />
           </Avatar>
           <Typography component="h1" variant="h5">
-            Nurse Attendance
+            Staff Attendance
           </Typography>
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <Select
+              value={selectedClinic}
+              onChange={(e) => setSelectedClinic(e.target.value)}
+              displayEmpty
+            >
+              <MenuItem value="" disabled>
+                Select Clinic
+              </MenuItem>
+              {clinics.map((clinic) => (
+                <MenuItem key={clinic.id} value={clinic.id}>
+                  {clinic.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
           {!showCamera ? (
             <Box component="form" noValidate sx={{ mt: 3, width: "100%" }}>
               <TextField
@@ -126,7 +174,7 @@ export default function NurseAttendance() {
                 required
                 fullWidth
                 id="nurse"
-                label="Select Nurse"
+                label="Select Staff"
                 name="nurse"
                 autoComplete="nurse"
                 value={selectedNurse}
@@ -145,7 +193,7 @@ export default function NurseAttendance() {
               audio={false}
               style={{
                 width: "100%",
-                height: "400px", // Adjusted height for larger camera view
+                height: "400px",
                 borderRadius: "10px",
                 boxShadow: 3,
               }}
@@ -191,7 +239,7 @@ export default function NurseAttendance() {
             variant="body2"
             sx={{ textAlign: "center", mb: 2, fontWeight: "bold" }}
           >
-            This feature wil implemented soon!
+            This feature will be implemented soon!
           </Typography>
         </DialogContent>
         <DialogActions sx={{ justifyContent: "center" }}>

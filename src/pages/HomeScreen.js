@@ -62,13 +62,13 @@ const HomeScreen = () => {
       case "Super Admin":
         return (
           <>
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid item xs={12} sm={12} md={12}>
               <ScreensNavigationCard
                 screenName="Admin"
                 onClick={() => handleCardClick("admin")}
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={4}>
+            {/* <Grid item xs={12} sm={6} md={4}>
               <ScreensNavigationCard
                 screenName="Arrival"
                 onClick={() => handleCardClick("arrival")}
@@ -91,7 +91,7 @@ const HomeScreen = () => {
                 screenName="Patient Waiting"
                 onClick={() => handleCardClick("waiting")}
               />
-            </Grid>
+            </Grid> */}
           </>
         );
       case "Admin":
@@ -129,15 +129,15 @@ const HomeScreen = () => {
             />
           </Grid>
         );
-      case "Nurse":
-        return (
-          <Grid item xs={12} sm={12} md={12}>
-            <ScreensNavigationCard
-              screenName="Nurse Attendance"
-              onClick={() => handleCardClick("attendance")}
-            />
-          </Grid>
-        );
+      // case "Nurse":
+      //   return (
+      //     <Grid item xs={12} sm={12} md={12}>
+      //       <ScreensNavigationCard
+      //         screenName="Nurse Attendance"
+      //         onClick={() => handleCardClick("attendance")}
+      //       />
+      //     </Grid>
+      //   );
       default:
         return (
           <Grid item xs={12} sm={12} md={12}>

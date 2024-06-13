@@ -4,5 +4,4 @@ export const UserTypes = {
   MODERATOR: "Moderator",
   SUPER_ADMIN: "Super Admin",
   PROVIDER: "Provider",
-  NURSE: "Nurse",
 };
