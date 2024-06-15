@@ -184,10 +184,10 @@ export default function PatientArrival() {
 
         if (response.ok) {
           setOpenDialog(true);
-          setFirstName("");
-          setLastName("");
-          setDob("");
-          setSelectedDoctor("");
+          // setFirstName("");
+          // setLastName("");
+          // setDob("");
+          // setSelectedDoctor("");
 
           // Call the socket io here that a new arrival is added.
           notifyNewArrival();
@@ -239,7 +239,7 @@ export default function PatientArrival() {
   return (
     <div
       style={{
-        backgroundImage: "url(/assets/logos/backgroundImage.svg)",
+        backgroundImage: "url(/assets/images/backgroundImage.svg)",
         backgroundSize: "cover",
         backgroundPosition: "center",
         width: "100vw",

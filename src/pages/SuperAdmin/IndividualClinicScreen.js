@@ -55,7 +55,7 @@ const IndividualClinicScreen = () => {
       delete: deleteDoctor,
     },
     {
-      type: "nurse",
+      type: "staff",
       fetch: fetchNurses,
       add: addNurse,
       update: updateNurse,

@@ -13,38 +13,42 @@ import {
   Typography,
   Avatar,
   IconButton,
-  FormControl,
-  Select,
+  // FormControl,
+  // Select,
 } from "@mui/material";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CloseIcon from "@mui/icons-material/Close";
 import Webcam from "react-webcam";
-import { useNavigate } from "react-router-dom";
-import { getAllClinics } from "../services/clinicService";
+import { useNavigate, useLocation } from "react-router-dom";
+// import { getAllClinics } from "../services/clinicService";
 
 export default function NurseAttendance() {
-  const [text, setText] = useState("");
-  const [selectedClinic, setSelectedClinic] = useState("");
-  const [clinics, setClinics] = useState([]);
+  const { state } = useLocation();
+  const { clinicId } = state;
+
+  // const [selectedClinic, setSelectedClinic] = useState("");
+  // const [clinics, setClinics] = useState([]);
   const [selectedNurse, setSelectedNurse] = useState("");
   const [showCamera, setShowCamera] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [nurseName, setNurseName] = useState("");
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchClinics = async () => {
-      try {
-        const fetchedClinics = await getAllClinics();
-        setClinics(fetchedClinics);
-      } catch (error) {
-        console.error("Failed to fetch clinics", error);
-      }
-    };
 
-    fetchClinics();
-  }, []);
+
+  // useEffect(() => {
+  //   const fetchClinics = async () => {
+  //     try {
+  //       const fetchedClinics = await getAllClinics();
+  //       setClinics(fetchedClinics);
+  //     } catch (error) {
+  //       console.error("Failed to fetch clinics", error);
+  //     }
+  //   };
+
+  //   fetchClinics();
+  // }, []);
 
   const nurses = [
     { id: 1, name: "Staff A" },
@@ -149,7 +153,7 @@ export default function NurseAttendance() {
           <Typography component="h1" variant="h5">
             Staff Attendance
           </Typography>
-          <FormControl fullWidth sx={{ mb: 2 }}>
+          {/* <FormControl fullWidth sx={{ mb: 2 }}>
             <Select
               value={selectedClinic}
               onChange={(e) => setSelectedClinic(e.target.value)}
@@ -164,7 +168,7 @@ export default function NurseAttendance() {
                 </MenuItem>
               ))}
             </Select>
-          </FormControl>
+          </FormControl> */}
           {!showCamera ? (
             <Box component="form" noValidate sx={{ mt: 3, width: "100%" }}>
               <TextField
