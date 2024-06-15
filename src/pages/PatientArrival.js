@@ -31,6 +31,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { fetchDoctors } from "../services/doctorService";
 import { addArrival } from "../services/arrivalsService";
+import { addTokenForClinic } from "../services/tokenService";
 import { fetchCallRequests, updateCallRequest } from "../services/callService";
 
 export default function PatientArrival() {
@@ -118,12 +119,12 @@ export default function PatientArrival() {
       console.log(
         "voice called for " +
           callRequest.DoctorName +
-          callRequest.patientName +
+          callRequest.token +
           callRequest.patientLastName
       );
       generateVoiceMessage(
         callRequest.DoctorName,
-        callRequest.patientName,
+        callRequest.token,
         callRequest.patientLastName
       );
       handleCallAttended(callRequest.id);
@@ -141,6 +142,7 @@ export default function PatientArrival() {
   const handleArrival = async () => {
     if (firstName && lastName && dob && selectedDoctor) {
       try {
+        const {token, lastUpdated } = await addTokenForClinic(clinicId);
         const arrivalData = {
           arrivalTime: Date.now(),
           askedToWait: false,
@@ -154,6 +156,7 @@ export default function PatientArrival() {
           doctorID: selectedDoctor,
           firstName,
           lastName,
+          token,
         };
 
         const response = await addArrival(clinicId, arrivalData);
@@ -211,12 +214,12 @@ export default function PatientArrival() {
       "https://meet.jit.si/moderated/675bc45dbef4950dd78a7a71d17892dc1c9839c307b49dc1a73ec21bab5537b8";
   };
 
-  const generateAudio = (doctorName, firstName, lastName) => {
+  const generateAudio = (doctorName, token, lastName) => {
     console.log("check3");
     if ("speechSynthesis" in window) {
       console.log("check4");
       const message = new SpeechSynthesisUtterance(
-        `${firstName} ${lastName} please come inside ${doctorName} is waiting for you.`
+        `Token Number ${token} ${lastName} please come inside ${doctorName} is waiting for you.`
       );
       window.speechSynthesis.speak(message);
       window.speechSynthesis.speak(message);
@@ -225,9 +228,9 @@ export default function PatientArrival() {
     }
   };
 
-  const generateVoiceMessage = (doctorName, firstName, lastName) => {
+  const generateVoiceMessage = (doctorName, token, lastName) => {
     console.log("check2");
-    generateAudio(doctorName, firstName, lastName);
+    generateAudio(doctorName, token, lastName);
   };
 
   const handleLoginAsDoctor = () => {
