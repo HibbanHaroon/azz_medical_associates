@@ -110,17 +110,20 @@ export default function DoctorScreen(props) {
   }, []);
 
   // May change the sortedPatients logic to sort by startTime and endTime
-  const sortedPatients = [
-    ...patients.filter(
-      (patient) => patient.askedToWait && !patient.calledInside
-    ),
-    ...patients.filter(
-      (patient) => !patient.calledInside && !patient.askedToWait
-    ),
-    ...patients
-      .filter((patient) => patient.calledInside)
-      .sort((a, b) => b.calledInTime - a.calledInTime),
-  ];
+  const sortedPatients = patients.sort((a, b) => {
+    const statusOrder = (patient) => {
+      if (patient.markExit) return 5; // Exited
+      if (patient.inProgress) return 1; // In Progress
+      if (patient.calledInside) return 2; // Called Inside
+      if (patient.askedToWait) return 3; // Asked to Wait
+      return 4; // Arrived
+    };
+
+    const statusComparison = statusOrder(a) - statusOrder(b);
+    if (statusComparison !== 0) return statusComparison;
+
+    return new Date(b.arrivalTime) - new Date(a.arrivalTime);
+  });
 
   // Filter out arrivals if they are older than 24 hours
   const currentTime = new Date();
