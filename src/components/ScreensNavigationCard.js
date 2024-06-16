@@ -16,7 +16,7 @@ const ScreensNavigationCard = ({ screenName, onClick }) => {
         return <LocalHospitalIcon fontSize="large" color="primary" />;
       case "Moderator":
         return <SupervisorAccountIcon fontSize="large" color="primary" />;
-      case "Nurse Attendance":
+      case "Attendance":
         return <ChecklistIcon fontSize="large" color="primary" />;
       case "Patient Waiting":
         return <AccessTimeIcon fontSize="large" color="primary" />;

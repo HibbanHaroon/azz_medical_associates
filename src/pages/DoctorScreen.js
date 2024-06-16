@@ -93,6 +93,7 @@ export default function DoctorScreen(props) {
           markExit: arrival.markExit,
           endTime: arrival.endTime,
           askedToWait: arrival.askedToWait,
+          token: arrival.token,
         };
       });
 
@@ -160,13 +161,15 @@ export default function DoctorScreen(props) {
     }
 
     const patient = patients.find((patient) => patient.id === id);
-
+    
+    console.log(patient)
     if (patient) {
       try {
         const callRequestData = {
           DoctorName: doctorName,
           patientName: patient.firstName,
           patientLastName: patient.lastName,
+          token: patient.token,
         };
         await addCallRequest(clinicId, callRequestData);
         // await fetch(`https://az-medical.onrender.com/api/calls`, {
@@ -292,11 +295,13 @@ export default function DoctorScreen(props) {
   const handleCallAgain = async (id) => {
     const patient = patients.find((patient) => patient.id === id);
     if (patient) {
+      console.log(patient)
       try {
         const callRequestData = {
           DoctorName: doctorName,
           patientName: patient.firstName,
           patientLastName: patient.lastName,
+          token: patient.token,
         };
         await addCallRequest(clinicId, callRequestData);
         // await fetch(`https://az-medical.onrender.com/api/calls`, {

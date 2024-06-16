@@ -45,6 +45,7 @@ export default function PatientArrival() {
   const [doctorLinks, setDoctorLinks] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
   const [callStack, setCallStack] = useState([]);
+  const [token, setToken] = useState("");
 
   const navigate = useNavigate();
 
@@ -65,6 +66,7 @@ export default function PatientArrival() {
     const fetchCalls = async () => {
       try {
         const data = await fetchCallRequests(clinicId);
+        console.log("Fetching calls and updating call stack")
         setCallStack(data);
         console.log(data);
       } catch (error) {
@@ -101,6 +103,9 @@ export default function PatientArrival() {
       // );
       console.log(response);
       if (response.ok) {
+        console.log(
+          "check call being attended"
+        )
         const updatedStack = callStack.filter((item) => item.id !== id);
         setCallStack(updatedStack);
         console.log(updatedStack);
@@ -116,6 +121,7 @@ export default function PatientArrival() {
   const processCallStack = () => {
     if (callStack.length > 0) {
       const callRequest = callStack.pop();
+      console.log(callRequest)
       console.log(
         "voice called for " +
           callRequest.DoctorName +
@@ -143,6 +149,7 @@ export default function PatientArrival() {
     if (firstName && lastName && dob && selectedDoctor) {
       try {
         const {token, lastUpdated } = await addTokenForClinic(clinicId);
+        setToken(token);
         const arrivalData = {
           arrivalTime: Date.now(),
           askedToWait: false,
@@ -475,6 +482,10 @@ export default function PatientArrival() {
             <Typography variant="body1" sx={{ textAlign: "center", mb: 2 }}>
               to{" "}
               {doctorLinks.find((doctor) => doctor.id === selectedDoctor)?.name}
+            </Typography>
+            <Typography variant="body1" sx={{ textAlign: "center", mb: 2 }}>
+              for{" "}
+              {"Token Number : " + token + " " + lastName}
             </Typography>
             <IconButton
               onClick={handleDialogClose}

@@ -111,7 +111,7 @@ const HomeScreen = () => {
             </Grid>
             <Grid item xs={12} sm={6} md={4}>
               <ScreensNavigationCard
-                screenName="Nurse Attendance"
+                screenName="Attendance"
                 onClick={() => handleCardClick("attendance")}
               />
             </Grid>
