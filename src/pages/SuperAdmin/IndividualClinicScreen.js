@@ -12,7 +12,10 @@ import AddIcon from "@mui/icons-material/Add";
 import InfoCard from "../../components/InfoCard";
 import ModalForm from "../../components/ModalForm";
 import DeleteModalForm from "../../components/DeleteModalForm";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+} from "firebase/auth";
 import { auth } from "../../firebase";
 import {
   fetchDoctors,
@@ -140,6 +143,15 @@ const IndividualClinicScreen = () => {
         await createUserWithEmailAndPassword(auth, email, password)
           .then((userCredential) => {
             const user = userCredential.user;
+
+            sendEmailVerification(user).then(() => {
+              // Email verification sent!
+              let msg =
+                "An email verification link has been sent to " + user.email;
+              console.log(msg);
+              // document.querySelector(".success.email_msg").innerHTML = msg;
+            });
+
             userId = user.uid;
           })
           .catch((error) => {

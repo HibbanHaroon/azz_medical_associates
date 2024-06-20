@@ -106,6 +106,12 @@ const SigninScreen = () => {
         return;
       }
 
+      if (!user.emailVerified) {
+        setErrorMessage("User Account is not verified.");
+        setLoading(false);
+        return;
+      }
+
       switch (selectedUserType) {
         case "Provider":
           navigate(`/home`, {
