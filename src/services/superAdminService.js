@@ -1,8 +1,8 @@
 const API_URL = "https://az-medical.onrender.com/api/superAdmins";
 
-export const fetchSuperAdmins = async (clinicId) => {
+export const fetchSuperAdmins = async () => {
   try {
-    const response = await fetch(`${API_URL}/${clinicId}`);
+    const response = await fetch(`${API_URL}`);
     if (!response.ok) {
       throw new Error("Error fetching super admins");
     }
@@ -14,9 +14,9 @@ export const fetchSuperAdmins = async (clinicId) => {
   }
 };
 
-export const addSuperAdmin = async (clinicId, superAdminData) => {
+export const addSuperAdmin = async (superAdminData) => {
   try {
-    const response = await fetch(`${API_URL}/${clinicId}`, {
+    const response = await fetch(`${API_URL}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -34,9 +34,9 @@ export const addSuperAdmin = async (clinicId, superAdminData) => {
   }
 };
 
-export const updateSuperAdmin = async (clinicId, id, superAdminData) => {
+export const updateSuperAdmin = async (id, superAdminData) => {
   try {
-    const response = await fetch(`${API_URL}/${clinicId}/${id}`, {
+    const response = await fetch(`${API_URL}/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -54,9 +54,9 @@ export const updateSuperAdmin = async (clinicId, id, superAdminData) => {
   }
 };
 
-export const deleteSuperAdmin = async (clinicId, id) => {
+export const deleteSuperAdmin = async (id) => {
   try {
-    const response = await fetch(`${API_URL}/${clinicId}/${id}`, {
+    const response = await fetch(`${API_URL}/${id}`, {
       method: "DELETE",
     });
     if (!response.ok) {

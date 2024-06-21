@@ -14,9 +14,9 @@ import {
 } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { getAllClinics } from "../services/clinicService";
-import { UserTypes } from "../enums/userTypes"; // Adjust the import path as necessary
+import { UserTypes } from "../enums/userTypes";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebase"; // Adjust the import path as necessary
+import { auth } from "../firebase";
 import { useNavigate } from "react-router-dom";
 import { fetchAdmins } from "../services/adminService";
 import { fetchDoctors } from "../services/doctorService";
@@ -67,12 +67,13 @@ const SigninScreen = () => {
           users = await fetchModerators(selectedClinic);
           break;
         case "Super Admin":
-          users = await fetchSuperAdmins(selectedClinic);
+          users = await fetchSuperAdmins();
           break;
         default:
           return false;
       }
       console.log(users);
+      console.log(userId);
       return users.some((user) => user.id === userId);
     } catch (error) {
       console.error("Failed to fetch user data", error);
@@ -84,10 +85,18 @@ const SigninScreen = () => {
     e.preventDefault();
     setLoading(true);
     setErrorMessage("");
-    if (!email || !password || !selectedClinic || !selectedUserType) {
-      setErrorMessage("All fields are required.");
-      setLoading(false);
-      return;
+    if (selectedUserType === "Super Admin") {
+      if (!email || !password || !selectedUserType) {
+        setErrorMessage("All fields are required.");
+        setLoading(false);
+        return;
+      }
+    } else {
+      if (!email || !password || !selectedClinic || !selectedUserType) {
+        setErrorMessage("All fields are required.");
+        setLoading(false);
+        return;
+      }
     }
 
     try {
@@ -134,6 +143,9 @@ const SigninScreen = () => {
               clinicId: selectedClinic,
             },
           });
+          break;
+        case "Super Admin":
+          navigate(`/clinics`);
           break;
         default:
           navigate(`/`, {
@@ -253,22 +265,6 @@ const SigninScreen = () => {
             />
             <FormControl fullWidth sx={{ mb: 2 }}>
               <Select
-                value={selectedClinic}
-                onChange={(e) => setSelectedClinic(e.target.value)}
-                displayEmpty
-              >
-                <MenuItem value="" disabled>
-                  Select Clinic
-                </MenuItem>
-                {clinics.map((clinic) => (
-                  <MenuItem key={clinic.id} value={clinic.id}>
-                    {clinic.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <Select
                 value={selectedUserType}
                 onChange={(e) => setSelectedUserType(e.target.value)}
                 displayEmpty
@@ -283,6 +279,26 @@ const SigninScreen = () => {
                 ))}
               </Select>
             </FormControl>
+
+            {selectedUserType !== "Super Admin" && (
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <Select
+                  value={selectedClinic}
+                  onChange={(e) => setSelectedClinic(e.target.value)}
+                  displayEmpty
+                >
+                  <MenuItem value="" disabled>
+                    Select Clinic
+                  </MenuItem>
+                  {clinics.map((clinic) => (
+                    <MenuItem key={clinic.id} value={clinic.id}>
+                      {clinic.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+
             {errorMessage && (
               <Typography color="error">{errorMessage}</Typography>
             )}
