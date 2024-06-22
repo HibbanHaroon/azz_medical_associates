@@ -16,7 +16,7 @@ export default function PatientWaitingScreen(props) {
   const [patientsByDoctor, setPatientsByDoctor] = useState({});
 
   useEffect(() => {
-    const socket = io("https://az-medical.onrender.com");
+    const socket = io("https://az-medical-p9w9.onrender.com");
     // const socket = io("http://localhost:3001");
 
     // Fetch all data from the server if the broadcast is received

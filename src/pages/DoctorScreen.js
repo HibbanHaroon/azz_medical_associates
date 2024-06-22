@@ -32,7 +32,7 @@ export default function DoctorScreen(props) {
 
   // const [socket, setSocket] = useState(io("https://az-medical.onrender.com"));
 
-  const socket = io("https://az-medical.onrender.com");
+  const socket = io("https://az-medical-p9w9.onrender.com");
 
   useEffect(() => {
     // const socket = io("http://localhost:3001");

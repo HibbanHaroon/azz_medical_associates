@@ -216,6 +216,8 @@ const IndividualClinicScreen = () => {
           maxHeight: "80vh",
         }}
       >
+
+        
         <CssBaseline />
         <Slider {...settings}>
           {userTypes.map((userType) => (

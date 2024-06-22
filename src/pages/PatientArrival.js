@@ -51,7 +51,7 @@ export default function PatientArrival() {
 
   // const [socket, setSocket] = useState(io("https://az-medical.onrender.com"));
 
-  const socket = io("https://az-medical.onrender.com");
+  const socket = io("https://az-medical-p9w9.onrender.com");
 
   const notifyNewArrival = () => {
     socket.emit("newArrival", { arrivalTime: Date.now() });
