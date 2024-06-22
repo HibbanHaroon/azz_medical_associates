@@ -66,7 +66,7 @@ export default function PatientArrival() {
     const fetchCalls = async () => {
       try {
         const data = await fetchCallRequests(clinicId);
-        console.log("Fetching calls and updating call stack")
+        console.log("Fetching calls and updating call stack");
         setCallStack(data);
         console.log(data);
       } catch (error) {
@@ -103,9 +103,7 @@ export default function PatientArrival() {
       // );
       console.log(response);
       if (response.ok) {
-        console.log(
-          "check call being attended"
-        )
+        console.log("check call being attended");
         const updatedStack = callStack.filter((item) => item.id !== id);
         setCallStack(updatedStack);
         console.log(updatedStack);
@@ -121,15 +119,15 @@ export default function PatientArrival() {
   const processCallStack = () => {
     if (callStack.length > 0) {
       const callRequest = callStack.pop();
-      console.log(callRequest)
+      console.log(callRequest);
       console.log(
         "voice called for " +
-          callRequest.DoctorName +
+          callRequest.roomNumber +
           callRequest.token +
           callRequest.patientLastName
       );
       generateVoiceMessage(
-        callRequest.DoctorName,
+        callRequest.roomNumber,
         callRequest.token,
         callRequest.patientLastName
       );
@@ -148,7 +146,7 @@ export default function PatientArrival() {
   const handleArrival = async () => {
     if (firstName && lastName && dob && selectedDoctor) {
       try {
-        const {token, lastUpdated } = await addTokenForClinic(clinicId);
+        const { token, lastUpdated } = await addTokenForClinic(clinicId);
         setToken(token);
         const arrivalData = {
           arrivalTime: Date.now(),
@@ -221,12 +219,12 @@ export default function PatientArrival() {
       "https://meet.jit.si/moderated/675bc45dbef4950dd78a7a71d17892dc1c9839c307b49dc1a73ec21bab5537b8";
   };
 
-  const generateAudio = (doctorName, token, lastName) => {
+  const generateAudio = (roomNumber, token, lastName) => {
     console.log("check3");
     if ("speechSynthesis" in window) {
       console.log("check4");
       const message = new SpeechSynthesisUtterance(
-        `Token Number ${token} ${lastName} please come inside ${doctorName} is waiting for you.`
+        `Token Number : ${token} ${lastName} . Proceed to room number : ${roomNumber}. The doctor is waiting for you in room number: ${roomNumber} .`
       );
       window.speechSynthesis.speak(message);
       window.speechSynthesis.speak(message);
@@ -235,15 +233,9 @@ export default function PatientArrival() {
     }
   };
 
-  const generateVoiceMessage = (doctorName, token, lastName) => {
+  const generateVoiceMessage = (roomNumber, token, lastName) => {
     console.log("check2");
-    generateAudio(doctorName, token, lastName);
-  };
-
-  const handleLoginAsDoctor = () => {
-    navigate("/login", {
-      state: { clinicId: clinicId },
-    });
+    generateAudio(roomNumber, token, lastName);
   };
 
   return (
@@ -480,12 +472,14 @@ export default function PatientArrival() {
               Notification Sent
             </Typography>
             <Typography variant="body1" sx={{ textAlign: "center", mb: 2 }}>
-              to{" "}
-              {doctorLinks.find((doctor) => doctor.id === selectedDoctor)?.name}
+              to Room Number :{" "}
+              {
+                doctorLinks.find((doctor) => doctor.id === selectedDoctor)
+                  ?.roomNumber
+              }
             </Typography>
             <Typography variant="body1" sx={{ textAlign: "center", mb: 2 }}>
-              for{" "}
-              {"Token Number : " + token + " " + lastName}
+              for {"Token Number : " + token + " " + lastName}
             </Typography>
             <IconButton
               onClick={handleDialogClose}

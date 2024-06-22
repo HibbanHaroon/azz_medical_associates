@@ -28,7 +28,7 @@ export default function DoctorScreen(props) {
   console.log(doctorId);
   const [searchQuery, setSearchQuery] = useState("");
   const [patients, setPatients] = useState([]);
-  const [doctorName, setDoctorName] = useState("");
+  const [roomNumber, setRoomNumber] = useState("");
 
   // const [socket, setSocket] = useState(io("https://az-medical.onrender.com"));
 
@@ -54,7 +54,7 @@ export default function DoctorScreen(props) {
       const doctors = await fetchDoctors(clinicId);
       const doctor = doctors.find((doc) => doc.id === doctorId);
       if (doctor) {
-        setDoctorName(doctor.name);
+        setRoomNumber(doctor.roomNumber);
       }
     } catch (error) {
       console.error("Error fetching doctor details:", error);
@@ -164,12 +164,12 @@ export default function DoctorScreen(props) {
     }
 
     const patient = patients.find((patient) => patient.id === id);
-    
-    console.log(patient)
+
+    console.log(patient);
     if (patient) {
       try {
         const callRequestData = {
-          DoctorName: doctorName,
+          roomNumber: roomNumber,
           patientName: patient.firstName,
           patientLastName: patient.lastName,
           token: patient.token,
@@ -298,10 +298,10 @@ export default function DoctorScreen(props) {
   const handleCallAgain = async (id) => {
     const patient = patients.find((patient) => patient.id === id);
     if (patient) {
-      console.log(patient)
+      console.log(patient);
       try {
         const callRequestData = {
-          DoctorName: doctorName,
+          roomNumber: roomNumber,
           patientName: patient.firstName,
           patientLastName: patient.lastName,
           token: patient.token,

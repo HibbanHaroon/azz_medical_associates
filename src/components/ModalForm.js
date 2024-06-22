@@ -26,7 +26,7 @@ const ModalForm = ({
 
   const initialFormData = {
     name: "",
-    ...(isDoctor && { domain: "" }),
+    ...(isDoctor && { domain: "", roomNumber: "" }),
     ...(mode === "add" && !isClinic && { email: "", password: "" }),
   };
 
@@ -37,13 +37,16 @@ const ModalForm = ({
     if (mode === "edit" && selectedUser) {
       setFormData({
         name: selectedUser.name || "",
-        ...(isDoctor && { domain: selectedUser.domain || "" }),
+        ...(isDoctor && {
+          domain: selectedUser.domain || "",
+          roomNumber: selectedUser.roomNumber || "",
+        }),
         ...(mode === "add" && !isClinic && { email: "", password: "" }),
       });
     } else {
       setFormData(initialFormData);
     }
-  }, [mode, selectedUser, isDoctor, isClinic]); // Corrected dependency array
+  }, [mode, selectedUser, isDoctor, isClinic]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -67,6 +70,9 @@ const ModalForm = ({
     if (isDoctor && !formData.domain) {
       newErrors.domain = "Professional domain is required";
     }
+    if (isDoctor && !formData.roomNumber) {
+      newErrors.roomNumber = "Room Number is required";
+    }
     if (mode === "add" && !isClinic && !formData.email) {
       newErrors.email = "Email is required";
     }
@@ -78,7 +84,11 @@ const ModalForm = ({
       setErrors(newErrors);
     } else {
       const userData = { name: formData.name };
-      if (isDoctor) userData.domain = formData.domain;
+      if (isDoctor) {
+        userData.domain = formData.domain;
+        userData.roomNumber = formData.roomNumber;
+      }
+
       if (!isClinic) {
         if (mode === "add") {
           userData.email = formData.email;
@@ -129,17 +139,30 @@ const ModalForm = ({
             helperText={errors.name}
           />
           {isDoctor && (
-            <TextField
-              required
-              fullWidth
-              id="domain"
-              label="Professional Domain"
-              name="domain"
-              value={formData.domain}
-              onChange={handleChange}
-              error={!!errors.domain}
-              helperText={errors.domain}
-            />
+            <>
+              <TextField
+                required
+                fullWidth
+                id="domain"
+                label="Professional Domain"
+                name="domain"
+                value={formData.domain}
+                onChange={handleChange}
+                error={!!errors.domain}
+                helperText={errors.domain}
+              />
+              <TextField
+                required
+                fullWidth
+                id="roomNumber"
+                label="Room Number"
+                name="roomNumber"
+                value={formData.roomNumber}
+                onChange={handleChange}
+                error={!!errors.roomNumber}
+                helperText={errors.roomNumber}
+              />
+            </>
           )}
           {!isClinic && mode === "add" && (
             <>

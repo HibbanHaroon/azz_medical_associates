@@ -58,6 +58,7 @@ export default function PatientWaitingScreen(props) {
           startTime: arrival.startTime,
           markExit: arrival.markExit,
           endTime: arrival.endTime,
+          token: arrival.token,
           doctorId: id,
         };
       });
@@ -215,7 +216,7 @@ export default function PatientWaitingScreen(props) {
                           variant="subtitle1"
                           sx={{ fontWeight: "bold" }}
                         >
-                          {patient.firstName + " " + patient.lastName}
+                          {patient.token + " " + patient.lastName}
                         </Typography>
                       </Box>
                       <Box
