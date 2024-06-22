@@ -416,7 +416,7 @@ export default function PatientArrival() {
               required
               fullWidth
               id="doctor"
-              label="Provider"
+              label="Provider room-number"
               name="doctor"
               autoComplete="doctor"
               value={selectedDoctor}
@@ -425,7 +425,7 @@ export default function PatientArrival() {
             >
               {doctorLinks.map((doctor) => (
                 <MenuItem key={doctor.id} value={doctor.id}>
-                  {doctor.name}
+                  {doctor.roomNumber}
                 </MenuItem>
               ))}
             </TextField>

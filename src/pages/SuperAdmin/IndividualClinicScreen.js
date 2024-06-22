@@ -238,8 +238,7 @@ const IndividualClinicScreen = () => {
                   }}
                 >
                   {name} -{" "}
-                  {userType.type.charAt(0).toUpperCase() +
-                    userType.type.slice(1)}
+                  {userType.type.toLowerCase() === 'doctor' ? 'Provider' : userType.type.charAt(0).toUpperCase() + userType.type.slice(1)}
                   s
                 </Typography>
                 <Button
@@ -251,8 +250,7 @@ const IndividualClinicScreen = () => {
                   onClick={() => handleOpenAddModal("add")}
                 >
                   New{" "}
-                  {userType.type.charAt(0).toUpperCase() +
-                    userType.type.slice(1)}
+                  {userType.type.toLowerCase() === 'doctor' ? 'Provider' : userType.type.charAt(0).toUpperCase() + userType.type.slice(1)}
                 </Button>
               </Box>
               <Divider
