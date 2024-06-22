@@ -1,6 +1,6 @@
 // services/moderatorService.js
 
-const API_URL = "https://az-medical.onrender.com/api/moderators";
+const API_URL = "https://az-medical-p9w9.onrender.com/api/moderators";
 
 export const fetchModerators = async (clinicId) => {
   try {

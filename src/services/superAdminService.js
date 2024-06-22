@@ -1,4 +1,4 @@
-const API_URL = "https://az-medical.onrender.com/api/superAdmins";
+const API_URL = "https://az-medical-p9w9.onrender.com/api/superAdmins";
 
 export const fetchSuperAdmins = async () => {
   try {

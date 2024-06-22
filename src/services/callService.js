@@ -1,7 +1,7 @@
 // services/callService.js
 
 // const API_URL = "http://localhost:3001/api/calls";
-const API_URL = "https://az-medical.onrender.com/api/calls";
+const API_URL = "https://az-medical-p9w9.onrender.com/api/calls";
 
 export const fetchCallRequests = async (clinicId) => {
   try {

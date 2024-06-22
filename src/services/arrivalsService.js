@@ -1,8 +1,8 @@
 // services/arrivalsService.js
 
 // const API_URL = "http://localhost:3001/api/arrivals";
-const BASE_API_URL = "https://az-medical.onrender.com/api";
-const API_URL = "https://az-medical.onrender.com/api/arrivals";
+const BASE_API_URL = "https://az-medical-p9w9.onrender.com/api";
+const API_URL = "https://az-medical-p9w9.onrender.com/api/arrivals";
 
 export const fetchArrivals = async (clinicId, doctorId) => {
   try {

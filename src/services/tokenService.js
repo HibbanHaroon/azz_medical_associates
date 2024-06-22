@@ -1,4 +1,4 @@
-const BASE_API_URL = "https://az-medical.onrender.com/api";
+const BASE_API_URL = "https://az-medical-p9w9.onrender.com/api";
 const TOKEN_API_URL = `${BASE_API_URL}/tokens`;
 
 export const getTokenForClinic = async (clinicId) => {

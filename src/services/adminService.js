@@ -1,6 +1,6 @@
 // services/adminService.js
 
-const API_URL = "https://az-medical.onrender.com/api/admins";
+const API_URL = "https://az-medical-p9w9.onrender.com/api/admins";
 
 export const fetchAdmins = async (clinicId) => {
   try {

@@ -1,6 +1,6 @@
 // services/nurseService.js
 
-const API_URL = "https://az-medical.onrender.com/api/nurses";
+const API_URL = "https://az-medical-p9w9.onrender.com/api/nurses";
 
 export const fetchNurses = async (clinicId) => {
   try {

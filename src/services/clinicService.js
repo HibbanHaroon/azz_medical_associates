@@ -1,6 +1,6 @@
 // services/clinicService.js
 
-const API_URL = "https://az-medical.onrender.com/api/clinics";
+const API_URL = "https://az-medical-p9w9.onrender.com/api/clinics";
 
 // Fetch all clinics
 export const getAllClinics = async () => {
