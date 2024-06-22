@@ -58,32 +58,42 @@ export default function PatientArrival() {
   };
 
   useEffect(() => {
+    // const socket = io("http://localhost:3001");
+
+    // Fetch calls again if the broadcast is received
+    socket.on("fetchCallRequests", () => {
+      console.log("Arrival Called! Fetch Call Requests");
+      fetchCalls();
+    });
+  }, []);
+
+  const fetchCalls = async () => {
+    try {
+      const data = await fetchCallRequests(clinicId);
+      console.log("Fetching calls and updating call stack");
+      setCallStack(data);
+      console.log(data);
+    } catch (error) {
+      console.error("Error fetching call requests:", error);
+    }
+  };
+
+  // When the callStack gets updated... Then, it will call the processCallStack function.
+  useEffect(() => {
+    console.log("Updated callStack:", callStack);
+
+    processCallStack();
+  }, [callStack]);
+
+  useEffect(() => {
     const fetchDoctorsOnce = async () => {
       const doctors = await fetchDoctors(clinicId);
       setDoctorLinks(doctors);
     };
 
-    const fetchCalls = async () => {
-      try {
-        const data = await fetchCallRequests(clinicId);
-        console.log("Fetching calls and updating call stack");
-        setCallStack(data);
-        console.log(data);
-      } catch (error) {
-        console.error("Error fetching call requests:", error);
-      }
-    };
     fetchDoctorsOnce();
     fetchCalls();
-
-    const interval = setInterval(fetchCalls, 3000);
-    return () => clearInterval(interval);
   }, []);
-
-  useEffect(() => {
-    const interval = setInterval(processCallStack, 2500); // Adjust interval as needed
-    return () => clearInterval(interval);
-  }, [callStack]);
 
   const handleCallAttended = async (id) => {
     try {
@@ -226,7 +236,6 @@ export default function PatientArrival() {
       const message = new SpeechSynthesisUtterance(
         `Token Number : ${token} ${lastName} . Proceed to room number : ${roomNumber}. The doctor is waiting for you in room number: ${roomNumber} .`
       );
-      window.speechSynthesis.speak(message);
       window.speechSynthesis.speak(message);
     } else {
       console.error("Speech synthesis not supported");

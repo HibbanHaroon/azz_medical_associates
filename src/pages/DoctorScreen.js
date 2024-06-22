@@ -49,6 +49,10 @@ export default function DoctorScreen(props) {
     socket.emit("arrivalStatusChanged", { status: status });
   };
 
+  const notifyArrivalCalled = () => {
+    socket.emit("arrivalCalled", { arrivalTime: Date.now() });
+  };
+
   const fetchDoctorDetails = async () => {
     try {
       const doctors = await fetchDoctors(clinicId);
@@ -189,6 +193,7 @@ export default function DoctorScreen(props) {
 
         // Notify the arrival status change to the socket server
         notifyArrivalStatusChange("calledInside");
+        notifyArrivalCalled();
       } catch (error) {
         console.error("Error updating calledInside status:", error);
       }
@@ -307,6 +312,8 @@ export default function DoctorScreen(props) {
           token: patient.token,
         };
         await addCallRequest(clinicId, callRequestData);
+
+        notifyArrivalCalled();
         // await fetch(`https://az-medical.onrender.com/api/calls`, {
         //   method: "POST",
         //   headers: {
