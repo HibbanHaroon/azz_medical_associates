@@ -234,7 +234,7 @@ export default function PatientArrival() {
     if ("speechSynthesis" in window) {
       console.log("check4");
       const message = new SpeechSynthesisUtterance(
-        `Token Number : ${token} ${lastName} . Proceed to room number : ${roomNumber}. The doctor is waiting for you in room number: ${roomNumber} .`
+        `Token Number : ${token} . Proceed to room number : ${roomNumber}. The Provider is waiting for you in room number: ${roomNumber} .`
       );
       window.speechSynthesis.speak(message);
     } else {
@@ -416,7 +416,7 @@ export default function PatientArrival() {
               required
               fullWidth
               id="doctor"
-              label="Provider room-number"
+              label="Provider Name"
               name="doctor"
               autoComplete="doctor"
               value={selectedDoctor}
@@ -425,7 +425,7 @@ export default function PatientArrival() {
             >
               {doctorLinks.map((doctor) => (
                 <MenuItem key={doctor.id} value={doctor.id}>
-                  {doctor.roomNumber}
+                  {doctor.name}
                 </MenuItem>
               ))}
             </TextField>
@@ -481,14 +481,13 @@ export default function PatientArrival() {
               Notification Sent
             </Typography>
             <Typography variant="body1" sx={{ textAlign: "center", mb: 2 }}>
-              to Room Number :{" "}
-              {
-                doctorLinks.find((doctor) => doctor.id === selectedDoctor)
-                  ?.roomNumber
-              }
+               {"Token Number"}
             </Typography>
-            <Typography variant="body1" sx={{ textAlign: "center", mb: 2 }}>
-              for {"Token Number : " + token + " " + lastName}
+            <Typography variant="h1" sx={{ textAlign: "center", mb: 2 }}>
+               {token}
+            </Typography>
+            <Typography variant="subtitle1" sx={{ textAlign: "center", mb: 2 }}>
+               Remember your token number !
             </Typography>
             <IconButton
               onClick={handleDialogClose}

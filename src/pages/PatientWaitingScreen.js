@@ -169,7 +169,7 @@ export default function PatientWaitingScreen(props) {
                   }}
                 >
                   <Avatar
-                    src="/assets/images/doctorAvatar.png"
+                    src="/assets/images/door.png"
                     sx={{ m: 1, p: 1, bgcolor: "primary.main" }}
                   ></Avatar>
                   <Typography
@@ -182,7 +182,7 @@ export default function PatientWaitingScreen(props) {
                       fontWeight: "bold",
                     }}
                   >
-                    {doctor.name}
+                    {"Room Number "+doctor.roomNumber}
                   </Typography>
                 </Box>
                 {patientsByDoctor[doctor.id] &&
@@ -216,7 +216,7 @@ export default function PatientWaitingScreen(props) {
                           variant="subtitle1"
                           sx={{ fontWeight: "bold" }}
                         >
-                          {patient.token + " " + patient.lastName}
+                          {"Token Number "+patient.token}
                         </Typography>
                       </Box>
                       <Box
