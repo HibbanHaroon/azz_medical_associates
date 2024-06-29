@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import dayjs from 'dayjs';
 import {
   Container,
   CssBaseline,
@@ -41,7 +42,7 @@ export default function PatientArrival() {
   const [selectedDoctor, setSelectedDoctor] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [dob, setDob] = useState("");
+  const [dob, setDob] = useState(null);
   const [doctorLinks, setDoctorLinks] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
   const [callStack, setCallStack] = useState([]);
@@ -150,7 +151,8 @@ export default function PatientArrival() {
     setSelectedDoctor("");
     setFirstName("");
     setLastName("");
-    setDob("");
+    setDob(null);
+    
   };
 
   const handleArrival = async () => {
@@ -209,6 +211,10 @@ export default function PatientArrival() {
 
           // Call the socket io here that a new arrival is added.
           notifyNewArrival();
+          setTimeout(() => {
+            setOpenDialog(false);
+            handleDialogClose();
+          }, 7000); 
         } else {
           console.error("Error submitting arrival data:", response.statusText);
         }
@@ -371,26 +377,31 @@ export default function PatientArrival() {
               />
             </Box>
 
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <DemoContainer components={["DatePicker"]}>
-                <DemoItem>
-                  <DatePicker
-                    label="Date of Birth"
-                    onChange={(newValue) => setDob(newValue)}
-                    format="MM-DD-YYYY"
-                    slotProps={{
-                      textField: {
-                        required: true,
-                        fullWidth: true,
-                        sx: {
-                          mb: 1,
-                        },
-                      },
-                    }}
-                  />
-                </DemoItem>
-              </DemoContainer>
-            </LocalizationProvider>
+
+
+<LocalizationProvider dateAdapter={AdapterDayjs}>
+  <DemoContainer components={["DatePicker"]}>
+    <DemoItem>
+      <DatePicker
+        label="Date of Birth"
+        value={dob}
+        onChange={(newValue) => setDob(newValue)}
+        format="MM-DD-YYYY"
+        maxDate={dayjs()}  // Prevent dates after today
+        slotProps={{
+          textField: {
+            required: true,
+            fullWidth: true,
+            sx: {
+              mb: 1,
+            },
+          },
+        }}
+      />
+    </DemoItem>
+  </DemoContainer>
+</LocalizationProvider>
+
 
             {/* <TextField
               variant="outlined"
@@ -484,7 +495,7 @@ export default function PatientArrival() {
                {"Token Number"}
             </Typography>
             <Typography variant="h1" sx={{ textAlign: "center", mb: 2 }}>
-               {token}
+               {token < 10 ? `0${token}` : token}
             </Typography>
             <Typography variant="subtitle1" sx={{ textAlign: "center", mb: 2 }}>
                Remember your token number !

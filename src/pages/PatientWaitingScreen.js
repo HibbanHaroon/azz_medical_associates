@@ -172,18 +172,29 @@ export default function PatientWaitingScreen(props) {
                     src="/assets/images/door.png"
                     sx={{ m: 1, p: 1, bgcolor: "primary.main" }}
                   ></Avatar>
-                  <Typography
-                    component="h1"
-                    variant="h5"
-                    sx={{
-                      marginLeft: 1,
-                      color: "primary.main",
-                      textAlign: "center",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    {"Room Number "+doctor.roomNumber}
-                  </Typography>
+                 <Typography
+  component="h1"
+  variant="h5"
+  sx={{
+    marginLeft: 1,
+    color: "primary.main",
+    textAlign: "center",
+    fontWeight: "bold",
+  }}
+>
+  {"Room Number "}
+  <Typography
+    component="span"
+    variant="h1"  // or any other desired size
+    sx={{
+      fontSize: "2.5rem",
+      fontWeight:"bold",  // adjust the size as needed
+    }}
+  >
+    {doctor.roomNumber}
+  </Typography>
+</Typography>
+
                 </Box>
                 {patientsByDoctor[doctor.id] &&
                   patientsByDoctor[doctor.id].map((patient) => (
@@ -216,7 +227,7 @@ export default function PatientWaitingScreen(props) {
                           variant="subtitle1"
                           sx={{ fontWeight: "bold" }}
                         >
-                          {"Token Number "+patient.token}
+                          {"Token No: " + (patient.token < 10 ? `0${patient.token}` : patient.token)}
                         </Typography>
                       </Box>
                       <Box

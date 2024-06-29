@@ -16,6 +16,7 @@ import {
   // FormControl,
   // Select,
 } from "@mui/material";
+import {fetchNurses} from "../services/nurseService";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CloseIcon from "@mui/icons-material/Close";
@@ -26,16 +27,33 @@ import { useNavigate, useLocation } from "react-router-dom";
 export default function NurseAttendance() {
   const { state } = useLocation();
   const { clinicId } = state;
-
+  
   // const [selectedClinic, setSelectedClinic] = useState("");
   // const [clinics, setClinics] = useState([]);
+  const [nurses, setNurses] = useState([]);
   const [selectedNurse, setSelectedNurse] = useState("");
   const [showCamera, setShowCamera] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [nurseName, setNurseName] = useState("");
   const navigate = useNavigate();
 
-
+  async function ff(clinicId) {
+    try {
+      const staff = await fetchNurses(clinicId); // Wait for fetchNurses to complete
+  
+      // Check if staff is an array (assuming fetchNurses returns an array of staff)
+      if (Array.isArray(staff)) {
+        staff.forEach(person => {
+          console.log(person.name); // Log the name of each staff member
+        });
+      } else {
+        console.log('Invalid staff data format:', staff);
+      }
+    } catch (error) {
+      console.error('Error in ff function:', error.message);
+    }
+  }
+  ff(clinicId);
 
   // useEffect(() => {
   //   const fetchClinics = async () => {
@@ -50,11 +68,18 @@ export default function NurseAttendance() {
   //   fetchClinics();
   // }, []);
 
-  const nurses = [
-    { id: 1, name: "Staff A" },
-    { id: 2, name: "Staff B" },
-    { id: 3, name: "Staff C" },
-  ];
+  useEffect(() => {
+    const fetchNursesData = async () => {
+      try {
+        const fetchedNurses = await fetchNurses(clinicId);
+        setNurses(fetchedNurses);
+      } catch (error) {
+        console.error('Error fetching nurses:', error.message);
+      }
+    };
+
+    fetchNursesData();
+  }, [clinicId]);
 
   useEffect(() => {
     if (showCamera) {
