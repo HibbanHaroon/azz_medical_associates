@@ -15,6 +15,7 @@ import {
   DialogActions,
   IconButton,
 } from "@mui/material";
+import FaceIcon from '@mui/icons-material/Face';
 import ArrivalIcon from "@mui/icons-material/EmojiPeople";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CloseIcon from "@mui/icons-material/Close";
@@ -96,6 +97,13 @@ export default function PatientArrival() {
     fetchCalls();
   }, []);
 
+  const handleAttendance = () => {
+    navigate("/attendance", {
+      state: { clinicId: clinicId },
+    });
+  };
+
+  
   const handleCallAttended = async (id) => {
     try {
       console.log("audio done + updating now");
@@ -533,6 +541,31 @@ export default function PatientArrival() {
         onClose={() => setShowPopup(false)}
         visible={showPopup}
       />
+<Button
+  onClick={handleAttendance}
+  variant="contained"
+  color="primary"
+  sx={{
+    position: "fixed",
+    bottom: "2rem",
+    left: "2rem",
+    zIndex: 999,
+    padding: 1,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    "@media (max-width: 600px)": {
+      padding: "4px 8px",
+      fontSize: "large",
+      marginTop: 90,
+    },
+  }}
+>
+  <Box display="flex" flexDirection="column" alignItems="center">
+    <FaceIcon fontSize="large" />
+    <Typography variant="body2">Attendance</Typography>
+  </Box>
+</Button>
 
       <Button
         onClick={handleLiveCall}
@@ -600,3 +633,11 @@ export default function PatientArrival() {
     </div>
   );
 }
+
+
+
+// {
+//   navigate(`/${screenName.toLowerCase()}`, {
+//     state: { clinicId: clinicId },
+//   });
+// }

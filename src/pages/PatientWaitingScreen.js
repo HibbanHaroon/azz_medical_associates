@@ -138,7 +138,7 @@ export default function PatientWaitingScreen(props) {
         }}
       >
         <Slider {...settings}>
-          {doctors.map((doctor) => (
+          {doctors    .sort((a, b) => a.roomNumber - b.roomNumber).map((doctor) => (
             <Container
               component="main"
               maxWidth="xs"
@@ -182,7 +182,7 @@ export default function PatientWaitingScreen(props) {
     fontWeight: "bold",
   }}
 >
-  {"Room Number "}
+  {"Room "}
   <Typography
     component="span"
     variant="h1"  // or any other desired size
@@ -227,7 +227,7 @@ export default function PatientWaitingScreen(props) {
                           variant="subtitle1"
                           sx={{ fontWeight: "bold" }}
                         >
-                          {"Token No: " + (patient.token < 10 ? `0${patient.token}` : patient.token)}
+                          {"Token " + (patient.token < 10 ? `0${patient.token}` : patient.token)}
                         </Typography>
                       </Box>
                       <Box

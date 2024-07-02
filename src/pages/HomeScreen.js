@@ -97,24 +97,24 @@ const HomeScreen = () => {
       case "Admin":
         return (
           <>
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid item xs={24} sm={12} md={6}>
               <ScreensNavigationCard
                 screenName="Patient Waiting"
                 onClick={() => handleCardClick("waiting")}
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid item xs={24} sm={12} md={6}>
               <ScreensNavigationCard
                 screenName="Arrival"
                 onClick={() => handleCardClick("arrival")}
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={4}>
+            {/* <Grid item xs={12} sm={6} md={4}>
               <ScreensNavigationCard
                 screenName="Attendance"
                 onClick={() => handleCardClick("attendance")}
               />
-            </Grid>
+            </Grid> */}
           </>
         );
       case "Moderator":

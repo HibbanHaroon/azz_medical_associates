@@ -93,9 +93,16 @@ export default function NurseAttendance() {
 
   useEffect(() => {
     if (showConfirmation) {
+      const timer = setTimeout(() => {
+        handleConfirmationClose();
+      }, 5000);
       generateAudio(`${nurseName}, your attendance has been marked!`);
+      return () => clearTimeout(timer);
     }
   }, [showConfirmation]);
+  
+
+  
 
   const handleNurseSelect = (event) => {
     const selectedNurse = event.target.value;
@@ -119,6 +126,9 @@ export default function NurseAttendance() {
     setShowConfirmation(false);
     setSelectedNurse("");
     setNurseName("");
+    navigate("/arrival", {
+      state: { clinicId: clinicId },
+    });
   };
 
   return (
