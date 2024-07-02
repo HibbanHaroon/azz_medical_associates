@@ -1,16 +1,37 @@
-// ClinicsScreen.js
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { styled, useTheme } from "@mui/material/styles";
+import MuiDrawer from "@mui/material/Drawer";
+import MuiAppBar from "@mui/material/AppBar";
+import Toolbar from "@mui/material/Toolbar";
+import List from "@mui/material/List";
+import CssBaseline from "@mui/material/CssBaseline";
+import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
+import MenuIcon from "@mui/icons-material/Menu";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
+import BarChartIcon from "@mui/icons-material/BarChart";
+import DescriptionIcon from "@mui/icons-material/Description";
 import {
-  Container,
-  CssBaseline,
+  Box,
+  Card,
+  CardContent,
+  Grid,
   Typography,
   Button,
-  Box,
-  Divider,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import InfoCard from "../../components/InfoCard";
+import GroupsIcon from "@mui/icons-material/Groups";
+import PersonIcon from "@mui/icons-material/Person";
+import SupervisorAccountIcon from "@mui/icons-material/SupervisorAccount";
+import TableComponent from "../../components/TableComponent";
 import ModalForm from "../../components/ModalForm";
 import DeleteModalForm from "../../components/DeleteModalForm";
 import {
@@ -19,8 +40,81 @@ import {
   updateClinic,
   deleteClinic,
 } from "../../services/clinicService";
+import { fetchDoctors } from "../../services/doctorService";
+import { fetchAdmins } from "../../services/adminService";
+import { fetchModerators } from "../../services/moderatorService";
+import { fetchNurses } from "../../services/nurseService";
 
-const ClinicsScreen = () => {
+const drawerWidth = 240;
+
+const openedMixin = (theme) => ({
+  width: drawerWidth,
+  transition: theme.transitions.create("width", {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.enteringScreen,
+  }),
+  overflowX: "hidden",
+});
+
+const closedMixin = (theme) => ({
+  transition: theme.transitions.create("width", {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.leavingScreen,
+  }),
+  overflowX: "hidden",
+  width: `calc(${theme.spacing(7)} + 1px)`,
+  [theme.breakpoints.up("sm")]: {
+    width: `calc(${theme.spacing(8)} + 1px)`,
+  },
+});
+
+const DrawerHeader = styled("div")(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  padding: theme.spacing(0, 1),
+  // necessary for content to be below app bar
+  ...theme.mixins.toolbar,
+}));
+
+const AppBar = styled(MuiAppBar, {
+  shouldForwardProp: (prop) => prop !== "open",
+})(({ theme, open }) => ({
+  zIndex: theme.zIndex.drawer + 1,
+  transition: theme.transitions.create(["width", "margin"], {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.leavingScreen,
+  }),
+  ...(open && {
+    marginLeft: drawerWidth,
+    width: `calc(100% - ${drawerWidth}px)`,
+    transition: theme.transitions.create(["width", "margin"], {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+  }),
+}));
+
+const Drawer = styled(MuiDrawer, {
+  shouldForwardProp: (prop) => prop !== "open",
+})(({ theme, open }) => ({
+  width: drawerWidth,
+  flexShrink: 0,
+  whiteSpace: "nowrap",
+  boxSizing: "border-box",
+  ...(open && {
+    ...openedMixin(theme),
+    "& .MuiDrawer-paper": openedMixin(theme),
+  }),
+  ...(!open && {
+    ...closedMixin(theme),
+    "& .MuiDrawer-paper": closedMixin(theme),
+  }),
+}));
+
+export default function ClinicsScreen() {
+  const theme = useTheme();
+  const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const [clinics, setClinics] = useState([]);
   const [selectedClinic, setSelectedClinic] = useState(null);
@@ -28,14 +122,48 @@ const ClinicsScreen = () => {
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [modalMode, setModalMode] = useState("add");
 
+  const [totalClinics, setTotalClinics] = useState(0);
+  const [totalDoctors, setTotalDoctors] = useState(0);
+  const [totalNurses, setTotalNurses] = useState(0);
+  const [totalAdmins, setTotalAdmins] = useState(0);
+  const [totalModerators, setTotalModerators] = useState(0);
+
   useEffect(() => {
     fetchClinics();
   }, []);
 
   const fetchClinics = async () => {
     try {
-      const data = await getAllClinics();
-      setClinics(data);
+      const clinicData = await getAllClinics();
+      const clinicDetails = await Promise.all(
+        clinicData.map(async (clinic) => {
+          const doctors = await fetchDoctors(clinic.id);
+          const nurses = await fetchNurses(clinic.id);
+          const admins = await fetchAdmins(clinic.id);
+          const moderators = await fetchModerators(clinic.id);
+          return {
+            ...clinic,
+            totalDoctors: doctors.length,
+            totalNurses: nurses.length,
+            totalAdmins: admins.length,
+            totalModerators: moderators.length,
+          };
+        })
+      );
+      setClinics(clinicDetails);
+      setTotalClinics(clinicDetails.length);
+      setTotalDoctors(
+        clinicDetails.reduce((acc, clinic) => acc + clinic.totalDoctors, 0)
+      );
+      setTotalNurses(
+        clinicDetails.reduce((acc, clinic) => acc + clinic.totalNurses, 0)
+      );
+      setTotalAdmins(
+        clinicDetails.reduce((acc, clinic) => acc + clinic.totalAdmins, 0)
+      );
+      setTotalModerators(
+        clinicDetails.reduce((acc, clinic) => acc + clinic.totalModerators, 0)
+      );
     } catch (error) {
       console.error("Failed to fetch clinics", error);
     }
@@ -70,9 +198,9 @@ const ClinicsScreen = () => {
     }
   };
 
-  const handleCardClick = (clinicName, clinicId) => {
+  const handleRowClick = (clinic) => {
     navigate(`/individual-clinic`, {
-      state: { name: clinicName, clinicId: clinicId },
+      state: { clinic: clinic },
     });
   };
 
@@ -92,62 +220,219 @@ const ClinicsScreen = () => {
     }
   };
 
+  const handleDrawerOpen = () => {
+    setOpen(true);
+  };
+
+  const handleDrawerClose = () => {
+    setOpen(false);
+  };
+
+  const handleEditClinic = (clinic) => {
+    handleOpenAddModal("edit", clinic);
+  };
+
+  const handleDeleteClinic = (clinic) => {
+    handleOpenDeleteModal(clinic);
+  };
+
+  const cardsData = [
+    {
+      title: "Total Clinics",
+      value: totalClinics,
+      icon: <LocalHospitalIcon fontSize="large" color="primary" />,
+    },
+    {
+      title: "Total Providers",
+      value: totalDoctors,
+      icon: <PersonIcon fontSize="large" color="primary" />,
+    },
+    {
+      title: "Total Staff",
+      value: totalNurses,
+      icon: <GroupsIcon fontSize="large" color="primary" />,
+    },
+    {
+      title: "Total Moderators",
+      value: totalModerators,
+      icon: <SupervisorAccountIcon fontSize="large" color="primary" />,
+    },
+  ];
+
+  function createData(id, name, providers, staff, admins, moderators, action) {
+    return { id, name, providers, staff, admins, moderators, action };
+  }
+
+  const rows = clinics.map((clinic) =>
+    createData(
+      clinic.id,
+      clinic.name,
+      clinic.totalDoctors,
+      clinic.totalNurses,
+      clinic.totalAdmins,
+      clinic.totalModerators,
+      null
+    )
+  );
+
+  const columns = [
+    { id: "name", label: "Clinic Name" },
+    { id: "providers", label: "Providers", align: "right" },
+    { id: "staff", label: "Staff", align: "right" },
+    { id: "admins", label: "Admins", align: "right" },
+    { id: "moderators", label: "Moderators", align: "right" },
+    { id: "action", label: "Action", align: "center" },
+  ];
+
   return (
-    <div
-      style={{
-        backgroundImage: "url(/assets/images/background.jpg)",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        width: "100vw",
-        height: "100vh",
-        position: "absolute",
-        top: 0,
-        left: 0,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <Container
-        component="main"
-        maxWidth="md"
+    <Box sx={{ display: "flex" }}>
+      <CssBaseline />
+      <AppBar
+        position="fixed"
+        open={open}
         sx={{
-          backgroundColor: "rgba(255, 255, 255, 0.8)",
-          borderRadius: "10px",
-          boxShadow: 3,
-          overflowY: "auto",
-          maxHeight: "80vh",
+          backgroundColor: "white",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
         }}
       >
-        <CssBaseline />
-        <Box
-          sx={{
-            marginTop: 2,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            padding: 3,
-          }}
-        >
+        <Toolbar>
           <Box
             sx={{
-              width: "100%",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "end",
+              width: "95%",
+              margin: "1rem",
             }}
           >
-            <Typography
-              component="h1"
-              variant="h4"
-              sx={{
-                mt: 1,
-                color: "primary.main",
-                fontWeight: "bold",
-              }}
-            >
-              Clinics
-            </Typography>
+            <img
+              src="/assets/logos/logoHAUTO.png"
+              alt="AZZ Medical Associates Logo"
+              style={{ maxWidth: "60%", height: "60%", paddingLeft: 40 }}
+            />
+          </Box>
+        </Toolbar>
+      </AppBar>
+      <Drawer
+        variant="permanent"
+        open={open}
+        sx={{ backgroundColor: "primary" }}
+      >
+        <DrawerHeader sx={{ display: "flex", justifyContent: "space-between" }}>
+          <Typography
+            component="h1"
+            variant="h5"
+            noWrap
+            sx={{ marginLeft: 2, color: "white", fontWeight: "bold" }}
+          >
+            Super Admin
+          </Typography>
+          <IconButton onClick={handleDrawerClose} sx={{ color: "white" }}>
+            {theme.direction === "rtl" ? (
+              <ChevronRightIcon />
+            ) : (
+              <ChevronLeftIcon />
+            )}
+          </IconButton>
+        </DrawerHeader>
+        <Divider />
+        <List>
+          {[
+            {
+              text: "Dashboard",
+              icon: <DashboardIcon />,
+              path: "/clinics",
+            },
+            {
+              text: "Clinics",
+              icon: <LocalHospitalIcon />,
+              path: "/clinics",
+            },
+            {
+              text: "Analytics",
+              icon: <BarChartIcon />,
+              path: "/clinics",
+            },
+            {
+              text: "Logs",
+              icon: <DescriptionIcon />,
+              path: "/clinics",
+            },
+          ].map((item, index) => (
+            <ListItem key={item.text} disablePadding sx={{ display: "block" }}>
+              <ListItemButton
+                component={Link}
+                to={item.path}
+                sx={{
+                  minHeight: 48,
+                  justifyContent: open ? "initial" : "center",
+                  px: 2.5,
+                }}
+              >
+                <ListItemIcon
+                  sx={{
+                    minWidth: 0,
+                    mr: open ? 3 : "auto",
+                    justifyContent: "cente  r",
+                    color: "white",
+                  }}
+                >
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText
+                  primary={item.text}
+                  sx={{ opacity: open ? 1 : 0, color: "white" }}
+                />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+      </Drawer>
+      <Box component="main" sx={{ flexGrow: 1 }}>
+        <DrawerHeader />
+        <Box
+          sx={{
+            width: "100%",
+            backgroundColor: "primary.main",
+            height: 160,
+            position: "relative",
+          }}
+        >
+          <Grid
+            container
+            spacing={2}
+            sx={{ position: "absolute", top: 20, padding: "1.5rem" }}
+          >
+            {cardsData.map((card, index) => (
+              <Grid item xs={12} sm={6} md={3} key={index}>
+                <Card
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "1rem",
+                    borderRadius: 3,
+                  }}
+                >
+                  <CardContent sx={{ flexGrow: 1 }}>
+                    <Typography variant="h6">{card.title}</Typography>
+                    <Typography variant="h4">{card.value}</Typography>
+                  </CardContent>
+                  <Box sx={{ marginLeft: "auto" }}>{card.icon}</Box>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+        <Box sx={{ height: "1rem" }}></Box>
+        <Box sx={{ p: 3, m: 3, borderRadius: 3, boxShadow: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "1rem",
+            }}
+          >
+            <Typography variant="h6">Total Clinics</Typography>
             <Button
               variant="contained"
               color="primary"
@@ -159,27 +444,18 @@ const ClinicsScreen = () => {
               New Clinic
             </Button>
           </Box>
-          <Divider
-            sx={{
-              width: "100%",
-              mt: 2,
-              mb: 2,
-              height: 2,
-              backgroundColor: "primary.main",
-            }}
+          {/* Clinics Table */}
+          <TableComponent
+            ariaLabel="clinic table"
+            columns={columns}
+            rows={rows}
+            onClick={handleRowClick}
+            onDelete={handleDeleteClinic}
+            onEdit={handleEditClinic}
           />
-          {clinics.map((clinic, index) => (
-            <InfoCard
-              key={clinic.id}
-              number={index + 1}
-              primaryText={clinic.name}
-              onClick={() => handleCardClick(clinic.name, clinic.id)}
-              onDelete={() => handleOpenDeleteModal(clinic)}
-              onEdit={() => handleOpenAddModal("edit", clinic)}
-            />
-          ))}
         </Box>
-      </Container>
+        <Box sx={{ height: "1rem" }}></Box>
+      </Box>
       <ModalForm
         open={openAddModal}
         handleClose={handleCloseAddModal}
@@ -196,25 +472,26 @@ const ClinicsScreen = () => {
       />
       <Box
         sx={{
-          position: "absolute",
-          width: "95%",
+          position: "fixed",
           top: 0,
-          left: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
+          left: 7,
           zIndex: 9999,
           margin: "1rem",
         }}
       >
-        <img
-          src="/assets/logos/logoHAUTO.png"
-          alt="AZZ Medical Associates Logo"
-          style={{ maxWidth: "60%", height: "60%", paddingLeft: 40 }}
-        />
+        <IconButton
+          color="inherit"
+          aria-label="open drawer"
+          onClick={handleDrawerOpen}
+          edge="start"
+          sx={{
+            marginRight: 5,
+            ...(open && { display: "none" }),
+          }}
+        >
+          <MenuIcon sx={{ color: "primary.main" }} />
+        </IconButton>
       </Box>
-    </div>
+    </Box>
   );
-};
-
-export default ClinicsScreen;
+}

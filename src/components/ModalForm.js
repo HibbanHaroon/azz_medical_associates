@@ -34,7 +34,7 @@ const ModalForm = ({
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    if (mode === "edit" && selectedUser) {
+    if ((mode === "edit" || mode === "read") && selectedUser) {
       setFormData({
         name: selectedUser.name || "",
         ...(isDoctor && {
@@ -114,7 +114,9 @@ const ModalForm = ({
         <Typography id="modal-modal-title" variant="h6" component="h2">
           {mode === "add"
             ? `Add ${type.charAt(0).toUpperCase() + type.slice(1)}`
-            : `Edit ${type.charAt(0).toUpperCase() + type.slice(1)}`}
+            : mode === "edit"
+            ? `Edit ${type.charAt(0).toUpperCase() + type.slice(1)}`
+            : `View ${type.charAt(0).toUpperCase() + type.slice(1)}`}
         </Typography>
         <Box
           component="form"
@@ -137,6 +139,7 @@ const ModalForm = ({
             onChange={handleChange}
             error={!!errors.name}
             helperText={errors.name}
+            disabled={mode === "read"}
           />
           {isDoctor && (
             <>
@@ -150,6 +153,7 @@ const ModalForm = ({
                 onChange={handleChange}
                 error={!!errors.domain}
                 helperText={errors.domain}
+                disabled={mode === "read"}
               />
               <TextField
                 required
@@ -161,6 +165,7 @@ const ModalForm = ({
                 onChange={handleChange}
                 error={!!errors.roomNumber}
                 helperText={errors.roomNumber}
+                disabled={mode === "read"}
               />
             </>
           )}
@@ -195,9 +200,11 @@ const ModalForm = ({
             <Button onClick={handleClose} variant="outlined" color="error">
               Cancel
             </Button>
-            <Button type="submit" variant="contained" color="primary">
-              {mode === "add" ? "Add" : "Save"}
-            </Button>
+            {mode !== "read" && (
+              <Button type="submit" variant="contained" color="primary">
+                {mode === "add" ? "Add" : "Save"}
+              </Button>
+            )}
           </Box>
         </Box>
       </Box>

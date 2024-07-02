@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useLocation, Link } from "react-router-dom";
 import { styled, useTheme } from "@mui/material/styles";
 import MuiDrawer from "@mui/material/Drawer";
 import MuiAppBar from "@mui/material/AppBar";
@@ -19,28 +19,40 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import DescriptionIcon from "@mui/icons-material/Description";
-import {
-  Box,
-  Card,
-  CardContent,
-  Grid,
-  Typography,
-  Button,
-} from "@mui/material";
-import GroupsIcon from "@mui/icons-material/Groups";
-import PersonIcon from "@mui/icons-material/Person";
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
-import SupervisorAccountIcon from "@mui/icons-material/SupervisorAccount";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
+import { Box, Typography, Button } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
 import TableComponent from "../../components/TableComponent";
 import ModalForm from "../../components/ModalForm";
 import DeleteModalForm from "../../components/DeleteModalForm";
-import { updateClinic, deleteClinic } from "../../services/clinicService";
-import { fetchDoctors } from "../../services/doctorService";
-import { fetchAdmins } from "../../services/adminService";
-import { fetchModerators } from "../../services/moderatorService";
-import { fetchNurses } from "../../services/nurseService";
+import {
+  fetchDoctors,
+  addDoctor,
+  updateDoctor,
+  deleteDoctor,
+} from "../../services/doctorService";
+import {
+  fetchNurses,
+  addNurse,
+  updateNurse,
+  deleteNurse,
+} from "../../services/nurseService";
+import {
+  fetchModerators,
+  addModerator,
+  updateModerator,
+  deleteModerator,
+} from "../../services/moderatorService";
+import {
+  fetchAdmins,
+  addAdmin,
+  updateAdmin,
+  deleteAdmin,
+} from "../../services/adminService";
+import {
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+} from "firebase/auth";
+import { auth } from "../../firebase";
 
 const drawerWidth = 240;
 
@@ -109,20 +121,71 @@ const Drawer = styled(MuiDrawer, {
   }),
 }));
 
-export default function IndividualClinicScreen() {
-  const { state } = useLocation();
-  const { clinic } = state;
+const userRoles = [
+  {
+    role: "Provider",
+    type: "doctor",
+    fetch: fetchDoctors,
+    add: addDoctor,
+    update: updateDoctor,
+    delete: deleteDoctor,
+  },
+  {
+    role: "Staff",
+    type: "staff",
+    fetch: fetchNurses,
+    add: addNurse,
+    update: updateNurse,
+    delete: deleteNurse,
+  },
+  {
+    role: "Moderator",
+    type: "moderator",
+    fetch: fetchModerators,
+    add: addModerator,
+    update: updateModerator,
+    delete: deleteModerator,
+  },
+  {
+    role: "Admin",
+    type: "admin",
+    fetch: fetchAdmins,
+    add: addAdmin,
+    update: updateAdmin,
+    delete: deleteAdmin,
+  },
+];
 
-  const [clinicName, setClinicName] = useState(clinic.name);
+export default function UserTypeScreen() {
   const theme = useTheme();
   const [open, setOpen] = useState(false);
-  const navigate = useNavigate();
+
+  const { state } = useLocation();
+  const { clinicId, label, role, data } = state;
+
+  const [currentUserRole, setCurrentUserRole] = useState(userRoles[0]);
+  const [users, setUsers] = useState(data);
+
+  const [selectedUser, setSelectedUser] = useState(null);
   const [openAddModal, setOpenAddModal] = useState(false);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [modalMode, setModalMode] = useState("add");
 
-  const handleOpenAddModal = (mode, clinic = null) => {
+  useEffect(() => {
+    updateCurrentUserRole(role);
+  }, [role]);
+
+  const updateCurrentUserRole = (roleType) => {
+    userRoles.forEach((user) => {
+      if (user.role === roleType) {
+        setCurrentUserRole(user);
+      }
+    });
+  };
+
+  const handleOpenAddModal = (mode, user = null) => {
     setModalMode(mode);
+    setSelectedUser(user);
     setOpenAddModal(true);
   };
 
@@ -130,7 +193,8 @@ export default function IndividualClinicScreen() {
     setOpenAddModal(false);
   };
 
-  const handleOpenDeleteModal = (clinic) => {
+  const handleOpenDeleteModal = (user) => {
+    setSelectedUser(user);
     setOpenDeleteModal(true);
   };
 
@@ -140,83 +204,73 @@ export default function IndividualClinicScreen() {
 
   const handleConfirmDelete = async () => {
     try {
-      await deleteClinic(clinic.id);
+      await currentUserRole.delete(clinicId, selectedUser.id);
+      setUsers(users.filter((user) => user.id !== selectedUser.id));
       handleCloseDeleteModal();
-      // Navigate back to the previous page
-      navigate(-1);
-
-      // go back to the clinic page
     } catch (error) {
       console.error("Failed to delete clinic", error);
     }
   };
 
-  const handleRowClick = async (clinicRoles) => {
-    // check which role was clicked on... then fetch according to that role... and go to the user type screen
-    switch (clinicRoles.roles) {
-      case "Providers":
-        // Fetch data for providers
-        const providersData = await fetchDoctors(clinicRoles.id);
-        navigate(`/user-type-clinic`, {
-          state: {
-            clinicId: clinicRoles.id,
-            label: "Providers",
-            role: "Provider",
-            data: providersData,
-          },
-        });
-        break;
-      case "Staff":
-        // Fetch data for staff
-        const staffData = await fetchNurses(clinicRoles.id);
-        navigate(`/user-type-clinic`, {
-          state: {
-            clinicId: clinicRoles.id,
-            label: "Staff",
-            role: "Staff",
-            data: staffData,
-          },
-        });
-        break;
-      case "Moderators":
-        // Fetch data for moderators
-        const moderatorsData = await fetchModerators(clinicRoles.id);
-        navigate(`/user-type-clinic`, {
-          state: {
-            clinicId: clinicRoles.id,
-            label: "Moderators",
-            role: "Moderator",
-            data: moderatorsData,
-          },
-        });
-        break;
-      case "Admins":
-        // Fetch data for admins
-        const adminsData = await fetchAdmins(clinicRoles.id);
-        navigate(`/user-type-clinic`, {
-          state: {
-            clinicId: clinicRoles.id,
-            label: "Admin",
-            role: "Admin",
-            data: adminsData,
-          },
-        });
-        break;
-      default:
-        break;
-    }
-  };
-
   const handleSubmit = async (formData) => {
+    let userData;
+    let userId;
     try {
-      await updateClinic(clinic.id, { name: formData.name });
-      setClinicName(formData.name);
-      //   Somehow referesh the clinic name
+      if (modalMode === "add") {
+        userData = { ...formData };
+
+        const email = formData.email;
+        const password = formData.password;
+
+        // Registering through Firebase Authentication
+        await createUserWithEmailAndPassword(auth, email, password)
+          .then((userCredential) => {
+            const user = userCredential.user;
+
+            sendEmailVerification(user).then(() => {
+              // Email verification sent!
+              let msg =
+                "An email verification link has been sent to " + user.email;
+              console.log(msg);
+              // document.querySelector(".success.email_msg").innerHTML = msg;
+            });
+
+            userId = user.uid;
+          })
+          .catch((error) => {
+            console.log(error.code, error.message);
+          });
+
+        userData.id = userId;
+
+        const newUser = await currentUserRole.add(clinicId, userData);
+        newUser.id = userId;
+        console.log(newUser);
+        setUsers([...users, newUser]);
+      } else if (modalMode === "edit") {
+        const updatedUser = await currentUserRole.update(
+          clinicId,
+          selectedUser.id,
+          formData
+        );
+
+        console.log(updatedUser);
+        setUsers(
+          users.map((user) => {
+            if (user.id === selectedUser.id) {
+              return {
+                ...user,
+                ...updatedUser,
+              };
+            } else {
+              return user;
+            }
+          })
+        );
+      }
+      handleCloseAddModal();
     } catch (error) {
-      console.error(
-        `Failed to ${modalMode === "add" ? "add" : "edit"} clinic`,
-        error
-      );
+      console.error("Error submitting form:", error);
     }
   };
 
@@ -228,49 +282,57 @@ export default function IndividualClinicScreen() {
     setOpen(false);
   };
 
-  const handleEditClinic = (clinic) => {
-    handleOpenAddModal("edit", clinic);
+  const handleEditUser = (user) => {
+    handleOpenAddModal("edit", user);
   };
 
-  const handleDeleteClinic = (clinic) => {
-    handleOpenDeleteModal(clinic);
+  const handleClickUser = (user) => {
+    handleOpenAddModal("read", user);
   };
 
-  const cardsData = [
-    {
-      title: "Total Admins",
-      value: clinic.admins,
-      icon: <AdminPanelSettingsIcon fontSize="large" color="primary" />,
-    },
-    {
-      title: "Active Providers",
-      value: clinic.providers,
-      icon: <PersonIcon fontSize="large" color="primary" />,
-    },
-    {
-      title: "Total Staff",
-      value: clinic.staff,
-      icon: <GroupsIcon fontSize="large" color="primary" />,
-    },
-    {
-      title: "Active Moderators",
-      value: clinic.moderators,
-      icon: <SupervisorAccountIcon fontSize="large" color="primary" />,
-    },
-  ];
+  const handleDeleteUser = (user) => {
+    handleOpenDeleteModal(user);
+  };
 
-  const rows = [
-    { id: clinic.id, roles: "Providers", members: clinic.providers },
-    { id: clinic.id, roles: "Staff", members: clinic.staff },
-    { id: clinic.id, roles: "Moderators", members: clinic.moderators },
-    { id: clinic.id, roles: "Admins", members: clinic.admins },
-  ];
+  function createData(id, name, email, domain, roomNumber, action) {
+    return { id, name, email, domain, roomNumber, action };
+  }
+
+  // Determine which columns to include based on data availability
+  const includeDomain = users.every((user) => user.domain !== undefined);
+  const includeRoomNumber = users.every(
+    (user) => user.roomNumber !== undefined
+  );
 
   const columns = [
-    { id: "roles", label: "Roles" },
-    { id: "members", label: "Members", align: "right" },
-    { id: "action", label: "Action", align: "center" },
+    { id: "name", label: "Name" },
+    { id: "email", label: "Email", align: "right" },
   ];
+
+  if (includeDomain) {
+    columns.push({
+      id: "domain",
+      label: "Professional Domain",
+      align: "right",
+    });
+  }
+
+  if (includeRoomNumber) {
+    columns.push({ id: "roomNumber", label: "Room Number", align: "right" });
+  }
+
+  columns.push({ id: "action", label: "Action", align: "right" });
+
+  const rows = users.map((item) =>
+    createData(
+      item.id,
+      item.name,
+      item.email,
+      item.domain,
+      item.roomNumber,
+      null
+    )
+  );
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -365,99 +427,63 @@ export default function IndividualClinicScreen() {
             position: "relative",
           }}
         >
-          <Grid
-            container
-            spacing={2}
-            sx={{ position: "absolute", top: 20, padding: "1.5rem" }}
-          >
-            {cardsData.map((card, index) => (
-              <Grid item xs={12} sm={6} md={3} key={index}>
-                <Card
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    padding: "1rem",
-                    borderRadius: 3,
-                  }}
-                >
-                  <CardContent sx={{ flexGrow: 1 }}>
-                    <Typography variant="h6">{card.title}</Typography>
-                    <Typography variant="h4">{card.value}</Typography>
-                  </CardContent>
-                  <Box sx={{ marginLeft: "auto" }}>{card.icon}</Box>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </Box>
-        <Box sx={{ height: "1rem" }}></Box>
-        <Box sx={{ p: 3, m: 3, borderRadius: 3, boxShadow: 2 }}>
+          <Box sx={{ height: "1rem" }}></Box>
           <Box
             sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "1rem",
+              p: 3,
+              m: 3,
+              borderRadius: 3,
+              boxShadow: 2,
+              backgroundColor: "white",
             }}
           >
-            <Typography variant="h6">{clinicName}</Typography>
             <Box
               sx={{
                 display: "flex",
-                justifyContent: "end",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "1rem",
               }}
             >
+              <Typography variant="h6">{label}</Typography>
               <Button
                 variant="contained"
                 color="primary"
-                size="small"
-                style={{ height: 30 }}
-                startIcon={<EditIcon />}
-                onClick={(e) => {
-                  handleEditClinic(clinic);
-                  e.stopPropagation();
-                }}
+                size="large"
+                style={{ height: 40 }}
+                startIcon={<AddIcon />}
+                onClick={() => handleOpenAddModal("add")}
               >
-                Edit
-              </Button>
-              <Button
-                variant="contained"
-                color="error"
-                size="small"
-                style={{ height: 30, marginLeft: 10 }}
-                startIcon={<DeleteIcon />}
-                onClick={(e) => {
-                  handleDeleteClinic(clinic);
-                  e.stopPropagation();
-                }}
-              >
-                Delete
+                New {role}
               </Button>
             </Box>
+            {/* Clinics Table */}
+            <TableComponent
+              ariaLabel="clinic table"
+              columns={columns}
+              rows={rows}
+              onClick={handleClickUser}
+              onDelete={handleDeleteUser}
+              onEdit={handleEditUser}
+            />
           </Box>
-          {/* Individual Clinic Table */}
-          <TableComponent
-            ariaLabel="individual clinic table"
-            columns={columns}
-            rows={rows}
-            onClick={handleRowClick}
-          />
         </Box>
+
         <Box sx={{ height: "1rem" }}></Box>
       </Box>
       <ModalForm
         open={openAddModal}
         handleClose={handleCloseAddModal}
         mode={modalMode}
-        type="clinic"
-        selectedUser={clinic}
+        type={currentUserRole.type}
+        selectedUser={selectedUser}
         onSubmit={handleSubmit}
       />
       <DeleteModalForm
         open={openDeleteModal}
         handleClose={handleCloseDeleteModal}
         onConfirm={handleConfirmDelete}
-        message="Are you sure you want to delete this clinic?"
+        message={`Are you sure you want to delete ${selectedUser?.name}?`}
       />
       <Box
         sx={{

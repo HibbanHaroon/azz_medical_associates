@@ -13,6 +13,7 @@ import theme from "./constants/theme";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ClinicsScreen from "./pages/SuperAdmin/ClinicsScreen";
 import IndividualClinicScreen from "./pages/SuperAdmin/IndividualClinicScreen";
+import UserTypeScreen from "./pages/SuperAdmin/UserTypeScreen";
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
             path="/individual-clinic"
             element={<IndividualClinicScreen />}
           />
+          <Route path="/user-type-clinic" element={<UserTypeScreen />} />
         </Routes>
       </Router>
     </ThemeProvider>
