@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, Link } from "react-router-dom";
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 import { styled, useTheme } from "@mui/material/styles";
 import MuiDrawer from "@mui/material/Drawer";
 import MuiAppBar from "@mui/material/AppBar";
@@ -175,14 +177,17 @@ export default function UserTypeScreen() {
     updateCurrentUserRole(role);
   }, [role]);
 
-  const updateCurrentUserRole = (roleType) => {
-    userRoles.forEach((user) => {
-      if (user.role === roleType) {
-        setCurrentUserRole(user);
-      }
-    });
+  const updateCurrentUserRole = async (roleType) => {
+    const selectedUserRole = userRoles.find(user => user.role === roleType);
+    setCurrentUserRole(selectedUserRole);
+    try {
+      const usersData = await selectedUserRole.fetch(clinicId);
+      setUsers(usersData);
+    } catch (error) {
+      console.error("Failed to fetch users", error);
+    }
   };
-
+  
   const handleOpenAddModal = (mode, user = null) => {
     setModalMode(mode);
     setSelectedUser(user);
@@ -437,26 +442,39 @@ export default function UserTypeScreen() {
               backgroundColor: "white",
             }}
           >
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "1rem",
-              }}
-            >
-              <Typography variant="h6">{label}</Typography>
-              <Button
-                variant="contained"
-                color="primary"
-                size="large"
-                style={{ height: 40 }}
-                startIcon={<AddIcon />}
-                onClick={() => handleOpenAddModal("add")}
-              >
-                New {role}
-              </Button>
-            </Box>
+ <Box
+  sx={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "1rem",
+  }}
+>
+  <Select
+    value={currentUserRole.role}
+    onChange={(e) => {
+      const selectedRole = e.target.value;
+      updateCurrentUserRole(selectedRole);
+    }}
+  >
+    {userRoles.map((userRole) => (
+      <MenuItem key={userRole.role} value={userRole.role}>
+        {userRole.role}
+      </MenuItem>
+    ))}
+  </Select>
+  <Button
+    variant="contained"
+    color="primary"
+    size="large"
+    style={{ height: 40 }}
+    startIcon={<AddIcon />}
+    onClick={() => handleOpenAddModal("add")}
+  >
+    New {role}
+  </Button>
+</Box>
+
             {/* Clinics Table */}
             <TableComponent
               ariaLabel="clinic table"
