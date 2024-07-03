@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, Link } from "react-router-dom";
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
 import { styled, useTheme } from "@mui/material/styles";
 import MuiDrawer from "@mui/material/Drawer";
 import MuiAppBar from "@mui/material/AppBar";
@@ -178,7 +178,7 @@ export default function UserTypeScreen() {
   }, [role]);
 
   const updateCurrentUserRole = async (roleType) => {
-    const selectedUserRole = userRoles.find(user => user.role === roleType);
+    const selectedUserRole = userRoles.find((user) => user.role === roleType);
     setCurrentUserRole(selectedUserRole);
     try {
       const usersData = await selectedUserRole.fetch(clinicId);
@@ -187,7 +187,7 @@ export default function UserTypeScreen() {
       console.error("Failed to fetch users", error);
     }
   };
-  
+
   const handleOpenAddModal = (mode, user = null) => {
     setModalMode(mode);
     setSelectedUser(user);
@@ -428,11 +428,11 @@ export default function UserTypeScreen() {
           sx={{
             width: "100%",
             backgroundColor: "primary.main",
-            height: 160,
+            height: 180,
             position: "relative",
           }}
         >
-          <Box sx={{ height: "1rem" }}></Box>
+          <Box sx={{ height: "1rem", marginTop: 2 }}></Box>
           <Box
             sx={{
               p: 3,
@@ -442,38 +442,38 @@ export default function UserTypeScreen() {
               backgroundColor: "white",
             }}
           >
- <Box
-  sx={{
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "1rem",
-  }}
->
-  <Select
-    value={currentUserRole.role}
-    onChange={(e) => {
-      const selectedRole = e.target.value;
-      updateCurrentUserRole(selectedRole);
-    }}
-  >
-    {userRoles.map((userRole) => (
-      <MenuItem key={userRole.role} value={userRole.role}>
-        {userRole.role}
-      </MenuItem>
-    ))}
-  </Select>
-  <Button
-    variant="contained"
-    color="primary"
-    size="large"
-    style={{ height: 40 }}
-    startIcon={<AddIcon />}
-    onClick={() => handleOpenAddModal("add")}
-  >
-    New {role}
-  </Button>
-</Box>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "1rem",
+              }}
+            >
+              <Select
+                value={currentUserRole.role}
+                onChange={(e) => {
+                  const selectedRole = e.target.value;
+                  updateCurrentUserRole(selectedRole);
+                }}
+              >
+                {userRoles.map((userRole) => (
+                  <MenuItem key={userRole.role} value={userRole.role}>
+                    {userRole.role}
+                  </MenuItem>
+                ))}
+              </Select>
+              <Button
+                variant="contained"
+                color="primary"
+                size="large"
+                style={{ height: 40 }}
+                startIcon={<AddIcon />}
+                onClick={() => handleOpenAddModal("add")}
+              >
+                New {role}
+              </Button>
+            </Box>
 
             {/* Clinics Table */}
             <TableComponent

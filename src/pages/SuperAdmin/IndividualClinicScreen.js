@@ -361,14 +361,15 @@ export default function IndividualClinicScreen() {
           sx={{
             width: "100%",
             backgroundColor: "primary.main",
-            height: 160,
+            height: 180,
             position: "relative",
           }}
         >
+          <Box sx={{ height: "1rem" }}></Box>
           <Grid
             container
             spacing={2}
-            sx={{ position: "absolute", top: 20, padding: "1.5rem" }}
+            sx={{ position: "absolute", top: 45, padding: "1.5rem" }}
           >
             {cardsData.map((card, index) => (
               <Grid item xs={12} sm={6} md={3} key={index}>
@@ -390,7 +391,7 @@ export default function IndividualClinicScreen() {
             ))}
           </Grid>
         </Box>
-        <Box sx={{ height: "1rem" }}></Box>
+        <Box sx={{ height: "1rem", marginTop: 2 }}></Box>
         <Box sx={{ p: 3, m: 3, borderRadius: 3, boxShadow: 2 }}>
           <Box
             sx={{
