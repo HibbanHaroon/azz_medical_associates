@@ -55,6 +55,8 @@ import {
   sendEmailVerification,
 } from "firebase/auth";
 import { auth } from "../../firebase";
+import showErrorToast from "../../utils/showErrorToast";
+import showSuccessToast from "../../utils/showSuccessToast";
 
 const drawerWidth = 240;
 
@@ -237,12 +239,18 @@ export default function UserTypeScreen() {
               let msg =
                 "An email verification link has been sent to " + user.email;
               console.log(msg);
+              showSuccessToast(msg);
               // document.querySelector(".success.email_msg").innerHTML = msg;
             });
 
             userId = user.uid;
           })
           .catch((error) => {
+            if (error.code === "auth/email-already-in-use") {
+              showErrorToast(
+                "The email is already in use. Please use a different email."
+              );
+            }
             console.log(error.code, error.message);
           });
 
