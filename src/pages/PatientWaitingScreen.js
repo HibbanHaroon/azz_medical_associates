@@ -8,12 +8,15 @@ import "slick-carousel/slick/slick-theme.css";
 import io from "socket.io-client";
 import { fetchDoctors } from "../services/doctorService";
 import { fetchArrivals } from "../services/arrivalsService";
+import { fetchCallRequests, updateCallRequest } from "../services/callService";
 
 export default function PatientWaitingScreen(props) {
   const { state } = useLocation();
   const { clinicId } = state;
   const [doctors, setDoctors] = useState([]);
   const [patientsByDoctor, setPatientsByDoctor] = useState({});
+
+  const [callStack, setCallStack] = useState([]);
 
   useEffect(() => {
     const socket = io("https://az-medical-p9w9.onrender.com");
@@ -24,7 +27,91 @@ export default function PatientWaitingScreen(props) {
       console.log("New arrival added");
       fetchAllData();
     });
+    socket.on("fetchCallRequests", () => {
+      console.log("Arrival Called! Fetch Call Requests");
+      fetchCalls();
+    });
   }, []);
+
+  const fetchCalls = async () => {
+    try {
+      const data = await fetchCallRequests(clinicId);
+      console.log("Fetching calls and updating call stack");
+      setCallStack(data);
+      console.log(data);
+    } catch (error) {
+      console.error("Error fetching call requests:", error);
+    }
+  };
+
+  // When the callStack gets updated... Then, it will call the processCallStack function.
+  useEffect(() => {
+    console.log("Updated callStack:", callStack);
+
+    processCallStack();
+  }, [callStack]);
+
+  useEffect(() => {
+    fetchCalls();
+  }, []);
+
+  const handleCallAttended = async (id) => {
+    try {
+      console.log("audio done + updating now");
+
+      const response = await updateCallRequest(clinicId, id, true);
+
+      console.log(response);
+      if (response.ok) {
+        console.log("check call being attended");
+        const updatedStack = callStack.filter((item) => item.id !== id);
+        setCallStack(updatedStack);
+        console.log(updatedStack);
+        console.log("operation successfull");
+      } else {
+        console.error("Error updating call request:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error updating call request:", error);
+    }
+  };
+
+  const processCallStack = () => {
+    if (callStack.length > 0) {
+      const callRequest = callStack.pop();
+      console.log(callRequest);
+      console.log(
+        "voice called for " +
+          callRequest.roomNumber +
+          callRequest.token +
+          callRequest.patientLastName
+      );
+      generateVoiceMessage(
+        callRequest.roomNumber,
+        callRequest.token,
+        callRequest.patientLastName
+      );
+      handleCallAttended(callRequest.id);
+    }
+  };
+
+  const generateAudio = (roomNumber, token, lastName) => {
+    console.log("check3");
+    if ("speechSynthesis" in window) {
+      console.log("check4");
+      const message = new SpeechSynthesisUtterance(
+        `Token Number : ${token} . Proceed to room number : ${roomNumber}. The Provider is waiting for you in room number: ${roomNumber} .`
+      );
+      window.speechSynthesis.speak(message);
+    } else {
+      console.error("Speech synthesis not supported");
+    }
+  };
+
+  const generateVoiceMessage = (roomNumber, token, lastName) => {
+    console.log("check2");
+    generateAudio(roomNumber, token, lastName);
+  };
 
   const fetchArrivalsById = async (id) => {
     try {
@@ -138,134 +225,138 @@ export default function PatientWaitingScreen(props) {
         }}
       >
         <Slider {...settings}>
-          {doctors    .sort((a, b) => a.roomNumber - b.roomNumber).map((doctor) => (
-            <Container
-              component="main"
-              maxWidth="xs"
-              key={doctor.id}
-              sx={{ height: "500px", marginBottom: 3 }}
-            >
-              <CssBaseline />
-              <Box
-                sx={{
-                  marginTop: 2,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  bgcolor: "background.paper",
-                  padding: 3,
-                  borderRadius: 1,
-                  boxShadow: 3,
-                  height: "100%",
-                }}
+          {doctors
+            .sort((a, b) => a.roomNumber - b.roomNumber)
+            .map((doctor) => (
+              <Container
+                component="main"
+                maxWidth="xs"
+                key={doctor.id}
+                sx={{ height: "500px", marginBottom: 3 }}
               >
+                <CssBaseline />
                 <Box
                   sx={{
-                    width: "100%",
+                    marginTop: 2,
                     display: "flex",
+                    flexDirection: "column",
                     alignItems: "center",
-                    justifyContent: "center",
-                    borderBottom: 1,
+                    bgcolor: "background.paper",
+                    padding: 3,
+                    borderRadius: 1,
+                    boxShadow: 3,
+                    height: "100%",
                   }}
                 >
-                  <Avatar
-                    src="/assets/images/door.png"
-                    sx={{ m: 1, p: 1, bgcolor: "primary.main" }}
-                  ></Avatar>
-                 <Typography
-  component="h1"
-  variant="h5"
-  sx={{
-    marginLeft: 1,
-    color: "primary.main",
-    textAlign: "center",
-    fontWeight: "bold",
-  }}
->
-  {"Room "}
-  <Typography
-    component="span"
-    variant="h1"  // or any other desired size
-    sx={{
-      fontSize: "2.5rem",
-      fontWeight:"bold",  // adjust the size as needed
-    }}
-  >
-    {doctor.roomNumber}
-  </Typography>
-</Typography>
-
-                </Box>
-                {patientsByDoctor[doctor.id] &&
-                  patientsByDoctor[doctor.id].map((patient) => (
-                    <Box
-                      key={patient.id}
+                  <Box
+                    sx={{
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderBottom: 1,
+                    }}
+                  >
+                    <Avatar
+                      src="/assets/images/door.png"
+                      sx={{ m: 1, p: 1, bgcolor: "primary.main" }}
+                    ></Avatar>
+                    <Typography
+                      component="h1"
+                      variant="h5"
                       sx={{
-                        border: 1,
-                        borderColor: "grey.400",
-                        borderRadius: "5px",
-                        backgroundColor: patient.inProgress
-                          ? indigo[50]
-                          : "white",
-                        p: 2,
-                        mt: 2,
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        width: "100%",
+                        marginLeft: 1,
+                        color: "primary.main",
+                        textAlign: "center",
+                        fontWeight: "bold",
                       }}
                     >
-                      <Box
+                      {"Room "}
+                      <Typography
+                        component="span"
+                        variant="h1" // or any other desired size
                         sx={{
-                          width: "100%",
-                          display: "flex",
-                          justifyContent: "start",
-                          alignItems: "center",
+                          fontSize: "2.5rem",
+                          fontWeight: "bold", // adjust the size as needed
                         }}
                       >
-                        <Typography
-                          variant="subtitle1"
-                          sx={{ fontWeight: "bold" }}
+                        {doctor.roomNumber}
+                      </Typography>
+                    </Typography>
+                  </Box>
+                  {patientsByDoctor[doctor.id] &&
+                    patientsByDoctor[doctor.id].map((patient) => (
+                      <Box
+                        key={patient.id}
+                        sx={{
+                          border: 1,
+                          borderColor: "grey.400",
+                          borderRadius: "5px",
+                          backgroundColor: patient.inProgress
+                            ? indigo[50]
+                            : "white",
+                          p: 2,
+                          mt: 2,
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          width: "100%",
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: "100%",
+                            display: "flex",
+                            justifyContent: "start",
+                            alignItems: "center",
+                          }}
                         >
-                          {"Token " + (patient.token < 10 ? `0${patient.token}` : patient.token)}
-                        </Typography>
-                      </Box>
-                      <Box
-                        sx={{
-                          width: "100%",
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                        }}
-                      >
-                        <Typography variant="body2">
-                          Status:{" "}
-                          {patient.inProgress
-                            ? "In Progress"
-                            : patient.calledInside
-                            ? "Called Inside"
-                            : patient.askedToWait
-                            ? "Asked to Wait"
-                            : "Arrived"}
-                        </Typography>
+                          <Typography
+                            variant="subtitle1"
+                            sx={{ fontWeight: "bold" }}
+                          >
+                            {"Token " +
+                              (patient.token < 10
+                                ? `0${patient.token}`
+                                : patient.token)}
+                          </Typography>
+                        </Box>
+                        <Box
+                          sx={{
+                            width: "100%",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Typography variant="body2">
+                            Status:{" "}
+                            {patient.inProgress
+                              ? "In Progress"
+                              : patient.calledInside
+                              ? "Called Inside"
+                              : patient.askedToWait
+                              ? "Asked to Wait"
+                              : "Arrived"}
+                          </Typography>
 
-                        <Typography variant="body2">
-                          Checked In at :{" "}
-                          {new Date(patient.arrivalTime).toLocaleString(
-                            "en-US",
-                            {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              hour12: true,
-                            }
-                          )}
-                        </Typography>
+                          <Typography variant="body2">
+                            Checked In at :{" "}
+                            {new Date(patient.arrivalTime).toLocaleString(
+                              "en-US",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hour12: true,
+                              }
+                            )}
+                          </Typography>
+                        </Box>
                       </Box>
-                    </Box>
-                  ))}
-              </Box>
-            </Container>
-          ))}
+                    ))}
+                </Box>
+              </Container>
+            ))}
         </Slider>
       </Box>
       <Box

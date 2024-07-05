@@ -8,6 +8,7 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  //   Instead of simply using isAuthenticated which is a boolean statement... Check the authenticated state using firebase.
   const login = () => setIsAuthenticated(true);
   const logout = () => setIsAuthenticated(false);
 
