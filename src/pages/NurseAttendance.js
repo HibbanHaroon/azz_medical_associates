@@ -16,18 +16,19 @@ import {
   // FormControl,
   // Select,
 } from "@mui/material";
-import {fetchNurses} from "../services/nurseService";
+import { fetchNurses } from "../services/nurseService";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CloseIcon from "@mui/icons-material/Close";
 import Webcam from "react-webcam";
 import { useNavigate, useLocation } from "react-router-dom";
+import { addAttendance } from "../services/attendanceService";
 // import { getAllClinics } from "../services/clinicService";
 
 export default function NurseAttendance() {
   const { state } = useLocation();
   const { clinicId } = state;
-  
+
   // const [selectedClinic, setSelectedClinic] = useState("");
   // const [clinics, setClinics] = useState([]);
   const [nurses, setNurses] = useState([]);
@@ -40,17 +41,17 @@ export default function NurseAttendance() {
   async function ff(clinicId) {
     try {
       const staff = await fetchNurses(clinicId); // Wait for fetchNurses to complete
-  
+
       // Check if staff is an array (assuming fetchNurses returns an array of staff)
       if (Array.isArray(staff)) {
-        staff.forEach(person => {
+        staff.forEach((person) => {
           console.log(person.name); // Log the name of each staff member
         });
       } else {
-        console.log('Invalid staff data format:', staff);
+        console.log("Invalid staff data format:", staff);
       }
     } catch (error) {
-      console.error('Error in ff function:', error.message);
+      console.error("Error in ff function:", error.message);
     }
   }
   ff(clinicId);
@@ -74,19 +75,41 @@ export default function NurseAttendance() {
         const fetchedNurses = await fetchNurses(clinicId);
         setNurses(fetchedNurses);
       } catch (error) {
-        console.error('Error fetching nurses:', error.message);
+        console.error("Error fetching nurses:", error.message);
       }
     };
 
     fetchNursesData();
   }, [clinicId]);
 
+  const markAttendance = async () => {
+    try {
+      const attendanceData = {
+        id: selectedNurse.id,
+        datetime: new Date().toISOString(),
+        status: "present",
+        nurseName: selectedNurse.name,
+      };
+
+      // console.log(clinicId, attendanceData);
+
+      const response = await addAttendance(clinicId, attendanceData);
+
+      // console.log(response);
+    } catch (error) {
+      console.error("Error adding attendance record:", error);
+    }
+  };
+
   useEffect(() => {
     if (showCamera) {
       const timer = setTimeout(() => {
         setShowCamera(false);
+        // Marking attendance here
+        markAttendance();
         setShowConfirmation(true);
       }, 5000);
+
       return () => clearTimeout(timer);
     }
   }, [showCamera]);
@@ -100,15 +123,12 @@ export default function NurseAttendance() {
       return () => clearTimeout(timer);
     }
   }, [showConfirmation]);
-  
-
-  
 
   const handleNurseSelect = (event) => {
     const selectedNurse = event.target.value;
     const nurse = nurses.find((nurse) => nurse.id === selectedNurse);
     setNurseName(nurse.name);
-    setSelectedNurse(selectedNurse);
+    setSelectedNurse(nurse);
     setShowCamera(true);
   };
 
