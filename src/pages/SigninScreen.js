@@ -24,8 +24,10 @@ import { fetchDoctors } from "../services/doctorService";
 import { fetchModerators } from "../services/moderatorService";
 import { fetchSuperAdmins } from "../services/superAdminService";
 import ForgotPasswordModal from "../components/ForgotPasswordModal";
+import { useAuth } from "../context/AuthContext";
 
 const SigninScreen = () => {
+  const { login } = useAuth();
   const [selectedClinic, setSelectedClinic] = useState("");
   const [selectedUserType, setSelectedUserType] = useState("");
   const [clinics, setClinics] = useState([]);
@@ -122,6 +124,8 @@ const SigninScreen = () => {
         setLoading(false);
         return;
       }
+
+      login();
 
       switch (selectedUserType) {
         case "Provider":

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import SigninScreen from "./pages/SigninScreen";
 import HomeScreen from "./pages/HomeScreen";
 import PatientArrival from "./pages/PatientArrival";
@@ -9,35 +9,113 @@ import NurseAttendance from "./pages/NurseAttendance";
 import PatientWaitingScreen from "./pages/PatientWaitingScreen";
 import { ThemeProvider } from "@mui/material/styles";
 import theme from "./constants/theme";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import SigninScreenWithLogout from "./components/SigninScreenWithLogout";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 import ClinicsScreen from "./pages/SuperAdmin/ClinicsScreen";
 import IndividualClinicScreen from "./pages/SuperAdmin/IndividualClinicScreen";
 import UserTypeScreen from "./pages/SuperAdmin/UserTypeScreen";
 import { Toaster } from "react-hot-toast";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import ProtectedRoute from "./utils/ProtectedRoute";
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <Router>
-        <Routes>
-          <Route path="/" element={<HomeScreen />} />
-          <Route path="/signin" element={<SigninScreen />} />
-          <Route path="/arrival" element={<PatientArrival />} />
-          <Route path="/home" element={<DoctorScreen />} />
-          <Route path="/moderator" element={<ModeratorScreen />} />
-          <Route path="/waiting" element={<PatientWaitingScreen />} />
-          <Route path="/admin" element={<AdminScreen />} />
-          <Route path="/attendance" element={<NurseAttendance />} />
-          <Route path="/clinics" element={<ClinicsScreen />} />
-          <Route
-            path="/individual-clinic"
-            element={<IndividualClinicScreen />}
-          />
-          <Route path="/user-type-clinic" element={<UserTypeScreen />} />
-        </Routes>
-      </Router>
-      <Toaster position="top-right" />
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider theme={theme}>
+        <Router>
+          <Routes>
+            <Route path="/signin" element={<SigninScreenWithLogout />} />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <HomeScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/arrival"
+              element={
+                <ProtectedRoute>
+                  <PatientArrival />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/home"
+              element={
+                <ProtectedRoute>
+                  <DoctorScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/moderator"
+              element={
+                <ProtectedRoute>
+                  <ModeratorScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/waiting"
+              element={
+                <ProtectedRoute>
+                  <PatientWaitingScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/attendance"
+              element={
+                <ProtectedRoute>
+                  <NurseAttendance />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/clinics"
+              element={
+                <ProtectedRoute>
+                  <ClinicsScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/individual-clinic"
+              element={
+                <ProtectedRoute>
+                  <IndividualClinicScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/user-type-clinic"
+              element={
+                <ProtectedRoute>
+                  <UserTypeScreen />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </Router>
+        <Toaster position="top-right" />
+      </ThemeProvider>
+    </AuthProvider>
   );
 }
 
