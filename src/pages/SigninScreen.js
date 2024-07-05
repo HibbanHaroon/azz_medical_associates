@@ -23,6 +23,7 @@ import { fetchDoctors } from "../services/doctorService";
 // import { fetchNurses } from "../services/nurseService";
 import { fetchModerators } from "../services/moderatorService";
 import { fetchSuperAdmins } from "../services/superAdminService";
+import ForgotPasswordModal from "../components/ForgotPasswordModal";
 
 const SigninScreen = () => {
   const [selectedClinic, setSelectedClinic] = useState("");
@@ -32,6 +33,7 @@ const SigninScreen = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [forgotPasswordModalOpen, setForgotPasswordModalOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -165,6 +167,14 @@ const SigninScreen = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleForgotPasswordClick = () => {
+    setForgotPasswordModalOpen(true);
+  };
+
+  const handleForgotPasswordModalClose = () => {
+    setForgotPasswordModalOpen(false);
   };
 
   return (
@@ -302,6 +312,28 @@ const SigninScreen = () => {
             {errorMessage && (
               <Typography color="error">{errorMessage}</Typography>
             )}
+
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "flex-end",
+                alignItems: "center",
+              }}
+            >
+              <Typography
+                sx={{
+                  cursor: "pointer",
+                  textDecoration: "none",
+                  "&:hover": {
+                    textDecoration: "underline",
+                  },
+                }}
+                onClick={handleForgotPasswordClick}
+              >
+                Forgot Password?
+              </Typography>
+            </Box>
+
             <Button
               type="submit"
               fullWidth
@@ -317,6 +349,10 @@ const SigninScreen = () => {
             </Button>
           </Box>
         </Box>
+        <ForgotPasswordModal
+          open={forgotPasswordModalOpen}
+          handleClose={handleForgotPasswordModalClose}
+        />
       </Container>
     </div>
   );

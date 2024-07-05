@@ -6,7 +6,6 @@ import DoctorScreen from "./pages/DoctorScreen";
 import ModeratorScreen from "./pages/ModeratorScreen";
 import AdminScreen from "./pages/AdminScreen";
 import NurseAttendance from "./pages/NurseAttendance";
-import LoginScreen from "./pages/LoginScreen";
 import PatientWaitingScreen from "./pages/PatientWaitingScreen";
 import { ThemeProvider } from "@mui/material/styles";
 import theme from "./constants/theme";
@@ -22,7 +21,6 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<HomeScreen />} />
-          <Route path="/login" element={<LoginScreen />} />
           <Route path="/signin" element={<SigninScreen />} />
           <Route path="/arrival" element={<PatientArrival />} />
           <Route path="/home" element={<DoctorScreen />} />
