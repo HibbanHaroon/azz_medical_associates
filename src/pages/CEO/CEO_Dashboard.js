@@ -19,7 +19,7 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import DescriptionIcon from "@mui/icons-material/Description";
-import { Box, Card, CardContent, Grid, Typography } from "@mui/material";
+import { Box, Card, CardContent, Grid, Typography, Skeleton } from "@mui/material";
 import GroupsIcon from "@mui/icons-material/Groups";
 import PersonIcon from "@mui/icons-material/Person";
 import SupervisorAccountIcon from "@mui/icons-material/SupervisorAccount";
@@ -32,6 +32,9 @@ import {fetchArrivals} from "../../services/arrivalsService"
 import BarcharttotalProvidersPerClinic from "../../components/BarcharttotalProvidersPerClinic"
 import HorizontalBarOneMonthArrivals from "../../components/HorizontalBarOneMonthArrivals "
 import MonthlyArrivalsChart from "../../components/MonthlyArrivalsChart";
+import ShimmerLoader from "../../components/ShimmerLoader"; // Import the ShimmerLoader component
+import { CircularProgress } from "@mui/material";
+
 
 const drawerWidth = 300;
 
@@ -122,6 +125,7 @@ export default function CEODashboard() {
   const [totalDoctors, setTotalDoctors] = useState(0);
   const [totalNurses, setTotalNurses] = useState(0);
   const [totalAdmins, setTotalAdmins] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [totalModerators, setTotalModerators] = useState(0);
   const [dataForOneMonthArrivals, setDataForOneMonthArrivals] = useState(null);
   const [DataForMonthlyArrivals, setDataForMonthlyArrivals] = useState(null);
@@ -234,29 +238,26 @@ const fetchMonthlyArrivals = async () => {
   }
 };
 
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      await fetchClinics();
+      await fetchClinicsBC();
+      const arrivalsData = await fetchAllDataForClinicArrivals();
+      setDataForOneMonthArrivals(arrivalsData);
+      const monthlyArrivalsData = await fetchMonthlyArrivals();
+      setDataForMonthlyArrivals(monthlyArrivalsData);
+      setLoading(false); // Set loading to false when all data is fetched
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setLoading(false); // Set loading to false in case of error
+    }
+  };
 
-  useEffect(() => {
-    fetchClinics();
-    fetchClinicsBC();
-    const fetchData = async () => {
-      try {
-        const result = await fetchAllDataForClinicArrivals();
-        setDataForOneMonthArrivals(result);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
-    const fetchDataMonthly = async () => {
-      try {
-        const data = await fetchMonthlyArrivals();
-        setDataForMonthlyArrivals(data);
-      } catch (error) {
-        console.error("Failed to fetch arrivals data", error);
-      }
-    };
-    fetchDataMonthly();
-    fetchData();
-  }, []);
+  fetchData();
+}, []);
+
+
 
   const fetchClinics = async () => {
     try {
@@ -456,34 +457,42 @@ const fetchMonthlyArrivals = async () => {
           </Grid>
         </Box>
         <Box sx={{ height: "1.5rem", marginTop: 0 }}></Box>
-        <Grid container spacing={2}>
-        <Grid item xs={12} md={6}>
-        <Box sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}>
-          <Typography variant="h6" fontWeight="bold" sx={{ marginBottom: 0,marginTop:0 }}>No Of Providers</Typography>
-          <BarcharttotalProvidersPerClinic data={clinicDataBC} />
-        </Box>
-      </Grid>
-      <Grid item xs={12} md={6}>
-        <Box sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}>
-          <Typography variant="h6" fontWeight="bold" sx={{ marginBottom: 0,marginTop:0 }}>Past One Month Arrivals by Clinic</Typography>
-          {dataForOneMonthArrivals ? (
+        {loading ? (
+  <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "300px", width: "100%" }}>
+    <Box sx={{ position: "absolute", top: "65%", left: "50%", transform: "translate(-50%, -50%)" }}>
+      <CircularProgress size={80} />
+    </Box>
+    <Box sx={{ display: "flex", flexDirection: "column", width: "100%", mt: 30 }}>
+      <Skeleton variant="rectangular" width="100%" height={100} sx={{ mb: 2 }} />
+      <Skeleton variant="rectangular" width="100%" height={100} sx={{ mb: 2 }} />
+      <Skeleton variant="rectangular" width="100%" height={100} sx={{ mb: 2 }} />
+      <Skeleton variant="rectangular" width="100%" height={100} sx={{ mb: 2 }} />
+      <Skeleton variant="rectangular" width="100%" height={100} />
+    </Box>
+  </Box>
+) : (
+  <Grid container spacing={2}>
+    <Grid item xs={12} md={6}>
+      <Box sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}>
+        <Typography variant="h6" fontWeight="bold" sx={{ marginBottom: 0, marginTop: 0 }}>No Of Providers</Typography>
+        <BarcharttotalProvidersPerClinic data={clinicDataBC} />
+      </Box>
+    </Grid>
+    <Grid item xs={12} md={6}>
+      <Box sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}>
+        <Typography variant="h6" fontWeight="bold" sx={{ marginBottom: 0, marginTop: 0 }}>Past One Month Arrivals by Clinic</Typography>
         <HorizontalBarOneMonthArrivals data={dataForOneMonthArrivals} />
-      ) : (
-        <Typography>{placeholder}</Typography>
-      )}
-        </Box>
-        </Grid>
-        <Grid item xs={12}>
-          <Box sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}>
-          <Typography variant="h6" fontWeight="bold" sx={{ marginBottom: 0,marginTop:0 }}>Monthly Arrivals</Typography>
-            {DataForMonthlyArrivals ? (
-            <MonthlyArrivalsChart data={DataForMonthlyArrivals} />
-          ) : (
-            <Typography>{placeholder}</Typography>
-          )}
-          </Box>
-        </Grid>
-      </Grid>
+      </Box>
+    </Grid>
+    <Grid item xs={12}>
+      <Box sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}>
+        <Typography variant="h6" fontWeight="bold" sx={{ marginBottom: 0, marginTop: 0 }}>Monthly Arrivals</Typography>
+        <MonthlyArrivalsChart data={DataForMonthlyArrivals} />
+      </Box>
+    </Grid>
+  </Grid>
+)}
+
       <Box
         sx={{
           position: "fixed",
