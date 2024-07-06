@@ -23,6 +23,8 @@ import UserTypeScreen from "./pages/SuperAdmin/UserTypeScreen";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./utils/ProtectedRoute";
+import CEODashboard from "./pages/CEO/CEO_Dashboard";
+import CEOClinics from "./pages/CEO/CEO_Clinics";
 
 function App() {
   return (
@@ -31,6 +33,8 @@ function App() {
         <Router>
           <Routes>
             <Route path="/signin" element={<SigninScreenWithLogout />} />
+            <Route path="/ceo" element={<CEODashboard />} />
+            <Route path="/ceo-clinics" element={<CEOClinics />} />
             <Route
               path="/"
               element={
