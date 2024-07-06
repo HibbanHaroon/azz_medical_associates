@@ -28,6 +28,10 @@ import { fetchDoctors } from "../../services/doctorService";
 import { fetchAdmins } from "../../services/adminService";
 import { fetchModerators } from "../../services/moderatorService";
 import { fetchNurses } from "../../services/nurseService";
+import {fetchArrivals} from "../../services/arrivalsService"
+import BarcharttotalProvidersPerClinic from "../../components/BarcharttotalProvidersPerClinic"
+import HorizontalBarOneMonthArrivals from "../../components/HorizontalBarOneMonthArrivals "
+import MonthlyArrivalsChart from "../../components/MonthlyArrivalsChart";
 
 const drawerWidth = 300;
 
@@ -95,7 +99,20 @@ const Drawer = styled(MuiDrawer, {
     "& .MuiDrawer-paper": closedMixin(theme),
   }),
 }));
-
+const placeholderData = [
+  { month: 'Jan', count: 0 },
+  { month: 'Feb', count: 0 },
+  { month: 'Mar', count: 0 },
+  { month: 'Apr', count: 0 },
+  { month: 'May', count: 0 },
+  { month: 'Jun', count: 0 },
+  { month: 'Jul', count: 0 },
+  { month: 'Aug', count: 0 },
+  { month: 'Sep', count: 0 },
+  { month: 'Oct', count: 0 },
+  { month: 'Nov', count: 0 },
+  { month: 'Dec', count: 0 },
+];
 export default function CEODashboard() {
   const theme = useTheme();
   const [open, setOpen] = useState(false);
@@ -106,14 +123,145 @@ export default function CEODashboard() {
   const [totalNurses, setTotalNurses] = useState(0);
   const [totalAdmins, setTotalAdmins] = useState(0);
   const [totalModerators, setTotalModerators] = useState(0);
+  const [dataForOneMonthArrivals, setDataForOneMonthArrivals] = useState(null);
+  const [DataForMonthlyArrivals, setDataForMonthlyArrivals] = useState(null);
+  const placeholder = "Loading data...";
+  const placeholderDataBC = [
+    { name: 'Loading...', providers: 0 },
+  ];
+  const [clinicDataBC, setClinicDataBC] = useState(placeholderDataBC);
+  const fetchAllDataForClinicArrivals = async () => {
+    try {
+        const clinics = await getAllClinics();
+
+        // Fetch all doctors and arrivals for all clinics in parallel
+        const clinicDataPromises = clinics.map(async (clinic) => {
+            const doctors = await fetchDoctors(clinic.id);
+
+            // Prepare to fetch arrivals in parallel
+            const doctorPromises = doctors.map(async (doctor) => {
+                const arrivals = await fetchArrivals(clinic.id, doctor.id);
+
+                // Filter arrivals within the last month
+                const oneMonthAgo = new Date();
+                oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+                const oneMonthArrivals = arrivals.filter(arrival => {
+                    const arrivalDate = new Date(arrival.arrivalTime);
+                    return arrivalDate >= oneMonthAgo;
+                });
+
+                return oneMonthArrivals.length;
+            });
+
+            // Sum up arrivals counts for the clinic
+            const oneMonthArrivalsCount = (await Promise.all(doctorPromises)).reduce((acc, count) => acc + count, 0);
+
+            return {
+                clinicName: clinic.name,
+                oneMonthArrivalsCount
+            };
+        });
+
+        // Wait for all clinic data to be processed
+        const oneMonthArrivalsPerClinic = await Promise.all(clinicDataPromises);
+
+        // Sort by oneMonthArrivalsCount in descending order
+        oneMonthArrivalsPerClinic.sort((a, b) => b.oneMonthArrivalsCount - a.oneMonthArrivalsCount);
+
+        return oneMonthArrivalsPerClinic;
+    } catch (error) {
+        console.error("Error in fetching data:", error);
+        throw error;
+    }
+};
+const fetchClinicsBC = async () => {
+  try {
+      const clinics = await getAllClinics();
+
+      // Fetch doctors count for all clinics in parallel
+      const clinicDetails = await Promise.all(clinics.map(async (clinic) => {
+          const doctors = await fetchDoctors(clinic.id);
+          return {
+              name: clinic.name,
+              providers: doctors.length,
+          };
+      }));
+
+      // Update state or perform further operations with clinicDetails
+      setClinicDataBC(clinicDetails);
+  } catch (error) {
+      console.error("Failed to fetch clinics", error);
+  }
+};
+// Fetch arrivals for the past 12 months
+const fetchMonthlyArrivals = async () => {
+  try {
+    const clinics = await getAllClinics();
+    const currentDate = new Date();
+    const monthlyArrivals = Array.from({ length: 12 }, (_, i) => ({
+      month: new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1).toLocaleString('default', { month: 'short' }),
+      count: 0,
+    })).reverse();
+
+    const clinicDataPromises = clinics.map(async (clinic) => {
+      const doctors = await fetchDoctors(clinic.id);
+      const doctorPromises = doctors.map(async (doctor) => {
+        const arrivals = await fetchArrivals(clinic.id, doctor.id);
+
+        arrivals.forEach(arrival => {
+          const arrivalDate = new Date(arrival.arrivalTime);
+          const monthYear = arrivalDate.toLocaleString('default', { month: 'short', year: 'numeric' });
+
+          const monthIndex = monthlyArrivals.findIndex(
+            (ma) => ma.month === arrivalDate.toLocaleString('default', { month: 'short' })
+          );
+
+          if (monthIndex >= 0) {
+            monthlyArrivals[monthIndex].count += 1;
+          }
+        });
+      });
+
+      await Promise.all(doctorPromises);
+      return monthlyArrivals;
+    });
+
+    await Promise.all(clinicDataPromises);
+    return monthlyArrivals;
+  } catch (error) {
+    console.error("Error in fetching data:", error);
+    throw error;
+  }
+};
+
 
   useEffect(() => {
     fetchClinics();
+    fetchClinicsBC();
+    const fetchData = async () => {
+      try {
+        const result = await fetchAllDataForClinicArrivals();
+        setDataForOneMonthArrivals(result);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+    const fetchDataMonthly = async () => {
+      try {
+        const data = await fetchMonthlyArrivals();
+        setDataForMonthlyArrivals(data);
+      } catch (error) {
+        console.error("Failed to fetch arrivals data", error);
+      }
+    };
+    fetchDataMonthly();
+    fetchData();
   }, []);
 
   const fetchClinics = async () => {
     try {
       const clinicData = await getAllClinics();
+      console.log(clinicData)
       const clinicDetails = await Promise.all(
         clinicData.map(async (clinic) => {
           const doctors = await fetchDoctors(clinic.id);
@@ -278,14 +426,14 @@ export default function CEODashboard() {
           sx={{
             width: "100%",
             backgroundColor: "primary.main",
-            height: 180,
+            height: 140,
             position: "relative",
           }}
         >
           <Grid
             container
             spacing={2}
-            sx={{ position: "absolute", top: 45, padding: "1.5rem" }}
+            sx={{ position: "absolute", top: 15, padding: "1.5rem" }}
           >
             {cardsData.map((card, index) => (
               <Grid item xs={12} sm={6} md={3} key={index}>
@@ -293,13 +441,13 @@ export default function CEODashboard() {
                   sx={{
                     display: "flex",
                     alignItems: "center",
-                    padding: "1rem",
+                    padding: "0.5rem",
                     borderRadius: 3,
                   }}
                 >
                   <CardContent sx={{ flexGrow: 1 }}>
-                    <Typography variant="h6">{card.title}</Typography>
-                    <Typography variant="h4">{card.value}</Typography>
+                    <Typography variant="subtitle1">{card.title}</Typography>
+                    <Typography variant="h5">{card.value}</Typography>
                   </CardContent>
                   <Box sx={{ marginLeft: "auto" }}>{card.icon}</Box>
                 </Card>
@@ -307,12 +455,35 @@ export default function CEODashboard() {
             ))}
           </Grid>
         </Box>
-        <Box sx={{ height: "1rem", marginTop: 2 }}></Box>
-        <Box sx={{ p: 3, m: 3, borderRadius: 3, boxShadow: 2 }}>
-          {/* All the graphs will be inside this */}
+        <Box sx={{ height: "1.5rem", marginTop: 0 }}></Box>
+        <Grid container spacing={2}>
+        <Grid item xs={12} md={6}>
+        <Box sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}>
+          <Typography variant="h6" fontWeight="bold" sx={{ marginBottom: 0,marginTop:0 }}>No Of Providers</Typography>
+          <BarcharttotalProvidersPerClinic data={clinicDataBC} />
         </Box>
-        <Box sx={{ height: "1rem" }}></Box>
-      </Box>
+      </Grid>
+      <Grid item xs={12} md={6}>
+        <Box sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}>
+          <Typography variant="h6" fontWeight="bold" sx={{ marginBottom: 0,marginTop:0 }}>Past One Month Arrivals by Clinic</Typography>
+          {dataForOneMonthArrivals ? (
+        <HorizontalBarOneMonthArrivals data={dataForOneMonthArrivals} />
+      ) : (
+        <Typography>{placeholder}</Typography>
+      )}
+        </Box>
+        </Grid>
+        <Grid item xs={12}>
+          <Box sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}>
+          <Typography variant="h6" fontWeight="bold" sx={{ marginBottom: 0,marginTop:0 }}>Monthly Arrivals</Typography>
+            {DataForMonthlyArrivals ? (
+            <MonthlyArrivalsChart data={DataForMonthlyArrivals} />
+          ) : (
+            <Typography>{placeholder}</Typography>
+          )}
+          </Box>
+        </Grid>
+      </Grid>
       <Box
         sx={{
           position: "fixed",
@@ -335,6 +506,7 @@ export default function CEODashboard() {
           <MenuIcon sx={{ color: "primary.main" }} />
         </IconButton>
       </Box>
+    </Box>
     </Box>
   );
 }
