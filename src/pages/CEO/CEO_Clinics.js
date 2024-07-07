@@ -18,6 +18,8 @@ import ListItemText from "@mui/material/ListItemText";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import BarChartIcon from "@mui/icons-material/BarChart";
+import RushHoursChart from "../../components/RushHourChart";
+import ValuableProvidersPieChart from "../../components/ValuableProvidersPieChart";
 import DescriptionIcon from "@mui/icons-material/Description";
 import {
   Box,
@@ -29,6 +31,8 @@ import {
   Tab,
   Select,
   MenuItem,
+  FormControl,
+  InputLabel
 } from "@mui/material";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
 import AddIcon from "@mui/icons-material/Add";
@@ -142,6 +146,48 @@ const fetchClinics = async () => {
     console.error("Failed to fetch clinics", error);
   }
 };
+const calculateRushHours = (allArrivals, clinicId = null) => {
+  const currentHour = new Date().getHours();
+  const rushHoursData = Array.from({ length: 12 }, (_, i) => {
+    const hour = (currentHour - i + 24) % 24;
+    return {
+      hour: `${hour % 12 || 12} ${hour < 12 ? 'am' : 'pm'}`,
+      count: 0,
+    };
+  }).reverse();
+
+  const filteredArrivals = clinicId
+    ? allArrivals.filter(arrival => arrival.clinicId === clinicId)
+    : allArrivals;
+
+  filteredArrivals.forEach((arrival) => {
+    const arrivalHour = new Date(arrival.arrivalTime).getHours();
+    const hourIndex = rushHoursData.findIndex(data => data.hour === `${arrivalHour % 12 || 12} ${arrivalHour < 12 ? 'am' : 'pm'}`);
+    if (hourIndex !== -1) {
+      rushHoursData[hourIndex].count += 1;
+    }
+  });
+
+  return rushHoursData;
+};
+const calculateValuableProviders = (allArrivals, allDoctors, clinicId = null) => {
+  const filteredArrivals = clinicId
+    ? allArrivals.filter(arrival => arrival.clinicId === clinicId)
+    : allArrivals;
+
+  const providerCount = filteredArrivals.reduce((acc, arrival) => {
+    const doctor = allDoctors.find(doc => doc.id === arrival.doctorID);
+    if (doctor) {
+      acc[doctor.id] = acc[doctor.id] || { name: doctor.name, count: 0 };
+      acc[doctor.id].count += 1;
+    }
+    return acc;
+  }, {});
+
+  const sortedProviders = Object.values(providerCount).sort((a, b) => b.count - a.count);
+  return sortedProviders.slice(0, 5);
+};
+
 
 const getAllArrivals = async () => {
   try {
@@ -226,8 +272,15 @@ export default function CEOClinics() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const [data, setData] = useState([]);
+  const [selectedClinic, setSelectedClinic] = useState("All Clinics");
   const [clinics, setClinics] = useState([]);
+  const [doctors, setDoctors] = useState([]);
   const [value, setValue] = React.useState("1");
+  const [rushHoursData, setRushHoursData] = useState([]);
+  const [allArrivals, setAllArrivals] = useState([]);
+  const [valuableProvidersData, setValuableProvidersData] = useState([]); // New state
+  const [loading, setLoading] = useState(true);
+
   const [currentDropdownItem, setCurrentDropdownItem] = useState(
     dropdownItemsCEOClinic[0].item
   );
@@ -237,11 +290,68 @@ export default function CEOClinics() {
   const handleChange = (event, newValue) => {
     setValue(newValue);
   };
+  const handleClinicChange = (event) => {
+    const selectedClinicName = event.target.value;
+    const clinicId = selectedClinicName === "All Clinics" ? null : clinics.find(clinic => clinic.name === selectedClinicName)?.id;
+    setSelectedClinic(selectedClinicName);
+    const rushHours = calculateRushHours(allArrivals, clinicId);
+    setRushHoursData(rushHours);
+    const valuableProviders = calculateValuableProviders(allArrivals, doctors, clinicId); // New calculation
+    setValuableProvidersData(valuableProviders); // Set new data
+  };
+  
 
   useEffect(() => {
     updateCurrentDropdownItem(currentDropdownItem);
   }, []);
+  useEffect(() => {
+    const fetchClinicsAndArrivals = async () => {
+      try {
+        setLoading(true);
+        const clinicData = await getAllClinics();
+        setClinics(clinicData);
 
+        const arrivalsData = await Promise.all(
+          clinicData.map(async (clinic) => {
+            const arrivals = await fetchAllArrivals(clinic.id);
+            return arrivals.map((arrival) => ({
+              ...arrival,
+              clinicId: clinic.id,
+              arrivalTime: new Date(arrival.arrivalTime),
+            }));
+          })
+        );
+
+        const allArrivals = arrivalsData.flat();
+        setAllArrivals(allArrivals);
+
+        const doctorsData = await Promise.all(
+          clinicData.map(async (clinic) => {
+            const doctors = await fetchDoctors(clinic.id);
+            return doctors.map((doctor) => ({
+              ...doctor,
+              clinicId: clinic.id,
+            }));
+          })
+        );
+
+        const allDoctors = doctorsData.flat();
+        setDoctors(allDoctors);
+
+        const rushHours = calculateRushHours(allArrivals);
+        setRushHoursData(rushHours);
+
+        const valuableProviders = calculateValuableProviders(allArrivals, allDoctors);
+        setValuableProvidersData(valuableProviders); // Set new data
+      } catch (error) {
+        console.error("Failed to fetch clinics and arrivals", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchClinicsAndArrivals();
+  }, []);
   const updateCurrentDropdownItem = async (item) => {
     const selectedItem = dropdownItemsCEOClinic.find((i) => i.item === item);
     setCurrentDropdownItem(selectedItem.item);
@@ -447,7 +557,74 @@ export default function CEOClinics() {
               <Tab label="Report" value="2" sx={{ width: "100%" }} />
             </TabList>
           </Box>
-          <TabPanel value="1">Statistics Content goes here</TabPanel>
+          <TabPanel value="1">
+      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+        <FormControl sx={{ minWidth: 200, ml: 2, height: "2.5rem" }}>
+          <InputLabel id="clinic-select-label">Clinic</InputLabel>
+          <Select
+            labelId="clinic-select-label"
+            id="clinic-select"
+            value={selectedClinic}
+            label="Clinic"
+            onChange={handleClinicChange}
+            sx={{ height: "2.5rem" }}
+          >
+            <MenuItem value="All Clinics">All Clinics</MenuItem>
+            {clinics.map((clinic) => (
+              <MenuItem key={clinic.id} value={clinic.name}>
+                {clinic.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+      <Grid container spacing={2}>
+        <Grid item xs={12} md={6}>
+        <Card sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}>
+  <CardContent sx={{ p: 2 }}>
+    <Typography variant="h6" fontWeight="bold" sx={{ ml: -2, mt: -3, textAlign: "left" }}>
+      Chart Title 1
+    </Typography>
+  </CardContent>
+</Card>
+        </Grid>
+        <Grid item xs={12} md={6}>
+  <Card sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}>
+    <CardContent sx={{ p: 2, height: '100%' }}>
+      <Typography
+        variant="h6"
+        fontWeight="bold"
+        sx={{ mb: 2, mt: -3, textAlign: "left" }}
+      >
+        Valuable Providers 
+      </Typography>
+      <Box sx={{ height: '90%', width: '90%' }}>
+        <ValuableProvidersPieChart data={valuableProvidersData} />
+      </Box>
+    </CardContent>
+  </Card>
+</Grid>
+
+        <Grid item xs={12}>
+  <Card sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}>
+    <CardContent sx={{ p: 2, height: '100%' }}>
+      <Typography
+        variant="h6"
+        fontWeight="bold"
+        sx={{ mb: 2, mt: 0, textAlign: "left" }}
+      >
+        Rush Hours 
+      </Typography>
+      <Box sx={{ height: '100%', width: '100%' }}>
+        <RushHoursChart data={rushHoursData} />
+      </Box>
+    </CardContent>
+  </Card>
+</Grid>
+
+
+      </Grid>
+    </TabPanel>
           <TabPanel value="2">
             <Box sx={{ p: 3, m: 3, borderRadius: 3, boxShadow: 2 }}>
               <Box
