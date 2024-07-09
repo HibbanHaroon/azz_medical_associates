@@ -56,7 +56,12 @@ const AttendanceDataChart = () => {
 
   return (
     <>
-      <BarChart width={400} height={220} series={series} />
+      <BarChart
+        margin={{ top: 100 }}
+        width={400}
+        height={250}
+        series={series}
+      />
     </>
   );
 };
