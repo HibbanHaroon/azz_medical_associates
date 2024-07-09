@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { styled, useTheme } from "@mui/material/styles";
 import Drawer from "@mui/material/Drawer";
@@ -156,10 +156,12 @@ const calculateValuableProviders = (
 const getAllArrivals = async () => {
   try {
     const clinics = await getAllClinics();
-    const allArrivals = await Promise.all(
+    const arrivalsByClinic = {};
+
+    await Promise.all(
       clinics.map(async (clinic) => {
         const arrivals = await fetchAllArrivals(clinic.id);
-        return arrivals.map((arrival) => {
+        const formattedArrivals = arrivals.map((arrival) => {
           const arrivalTime = new Date(arrival.arrivalTime);
           const calledInTime = arrival.calledInTime
             ? new Date(arrival.calledInTime)
@@ -218,10 +220,15 @@ const getAllArrivals = async () => {
             dob: dob,
           };
         });
+        arrivalsByClinic[clinic.id] = formattedArrivals;
       })
     );
-    console.log(allArrivals);
-    return allArrivals.flat();
+
+    const allArrivalsFlat = Object.values(arrivalsByClinic).flat();
+    arrivalsByClinic.all = allArrivalsFlat;
+
+    console.log(arrivalsByClinic);
+    return arrivalsByClinic;
   } catch (error) {
     console.error("Failed to fetch arrivals", error);
   }
@@ -251,6 +258,8 @@ export default function CEOClinics() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [openAddModal, setOpenAddModal] = useState(false);
   const [modalMode, setModalMode] = useState("add");
+
+  const [selectedClinicId, setSelectedClinicId] = useState("all");
 
   const dropdownItems = [
     [
@@ -507,7 +516,11 @@ export default function CEOClinics() {
           setColumns(columns);
         } else if (selectedItem.item === "Arrivals") {
           // Fetching arrivals data
-          const data = await selectedItem.fetch();
+          const allArrivals = await getAllArrivals();
+          const clinicId =
+            selectedClinic === "All Clinics" ? "all" : selectedClinicId;
+          const data = allArrivals[clinicId];
+
           const rows = data.map((arrival) => ({
             name: `${arrival.firstName} ${arrival.lastName}`,
             arrivalTime: arrival.arrivalTime,
@@ -523,6 +536,7 @@ export default function CEOClinics() {
             { id: "meetingTime", label: "Meeting Time", align: "right" },
             { id: "dob", label: "Date of Birth", align: "right" },
           ];
+
           setRows(rows);
           setColumns(columns);
         }
@@ -639,6 +653,33 @@ export default function CEOClinics() {
 
   const handleClickUser = (user) => {
     handleOpenAddModal("read", user);
+  };
+
+  // Fetching arrivals data
+  const fetchArrivalsData = async (selectedClinicID) => {
+    const allArrivals = await getAllArrivals();
+    const clinicId =
+      selectedClinic === "All Clinics" ? "all" : selectedClinicID;
+    const data = allArrivals[clinicId];
+
+    const rows = data.map((arrival) => ({
+      name: `${arrival.firstName} ${arrival.lastName}`,
+      arrivalTime: arrival.arrivalTime,
+      waitingTime: arrival.waitingTime,
+      meetingTime: arrival.meetingTime,
+      dob: arrival.dob,
+    }));
+
+    const columns = [
+      { id: "name", label: "Patient Name" },
+      { id: "arrivalTime", label: "Arrival Time", align: "right" },
+      { id: "waitingTime", label: "Waiting Time", align: "right" },
+      { id: "meetingTime", label: "Meeting Time", align: "right" },
+      { id: "dob", label: "Date of Birth", align: "right" },
+    ];
+
+    setRows(rows);
+    setColumns(columns);
   };
 
   return (
@@ -840,7 +881,7 @@ export default function CEOClinics() {
               >
                 <Select
                   value={currentDropdownItem}
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const selectedItem = e.target.value;
                     if (currentTable === 2) {
                       updateCurrentDropdownItem(
@@ -848,6 +889,9 @@ export default function CEOClinics() {
                         currentTable
                       );
                     } else {
+                      updateCurrentDropdownItem(selectedItem, currentTable);
+                    }
+                    if (currentTable === 0 && selectedItem === "Arrivals") {
                       updateCurrentDropdownItem(selectedItem, currentTable);
                     }
                   }}
@@ -858,9 +902,39 @@ export default function CEOClinics() {
                     </MenuItem>
                   ))}
                 </Select>
+                {currentTable === 0 && currentDropdownItem === "Arrivals" && (
+                  <FormControl sx={{ minWidth: 200, ml: 2, height: "2.5rem" }}>
+                    <InputLabel id="clinic-select-label">Clinic</InputLabel>
+                    <Select
+                      labelId="clinic-select-label"
+                      id="clinic-select"
+                      value={selectedClinic}
+                      label="Clinic"
+                      onChange={async (e) => {
+                        const selectedClinicName = e.target.value;
+                        const selectedClinicId =
+                          clinics.find(
+                            (clinic) => clinic.name === selectedClinicName
+                          )?.id || "all";
+                        setSelectedClinic(selectedClinicName);
+                        setSelectedClinicId(selectedClinicId);
+                        await fetchArrivalsData(selectedClinicId);
+                      }}
+                      sx={{ height: "2.5rem" }}
+                    >
+                      <MenuItem value="All Clinics">All Clinics</MenuItem>
+                      {clinics.map((clinic) => (
+                        <MenuItem key={clinic.id} value={clinic.name}>
+                          {clinic.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )}
                 <Typography variant="h6">Total Clinics</Typography>
                 {/* Search field */}
               </Box>
+
               {/* Clinics Table */}
               <TableComponent
                 ariaLabel="clinic table"
