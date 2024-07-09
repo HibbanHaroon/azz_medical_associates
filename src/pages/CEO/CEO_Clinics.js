@@ -73,6 +73,7 @@ import {
   deleteAdmin,
 } from "../../services/adminService";
 import { fetchAllArrivals } from "../../services/arrivalsService";
+import AttendanceDataChart from "../../components/AttendanceDataChart";
 
 const drawerWidth = 300;
 
@@ -813,8 +814,11 @@ export default function CEOClinics() {
                       fontWeight="bold"
                       sx={{ ml: -2, mt: -3, textAlign: "left" }}
                     >
-                      Chart Title 1
+                      Attendance Data
                     </Typography>
+                    <Box sx={{ height: "90%", width: "90%" }}>
+                      <AttendanceDataChart data1={valuableProvidersData} />
+                    </Box>
                   </CardContent>
                 </Card>
               </Grid>
