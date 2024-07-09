@@ -192,6 +192,7 @@ const TableComponent = ({
                           }}
                           onClick={(e) => {
                             onClick(row);
+
                             e.stopPropagation();
                           }}
                         >

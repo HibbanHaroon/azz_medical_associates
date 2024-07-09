@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { styled, useTheme } from "@mui/material/styles";
-import MuiDrawer from "@mui/material/Drawer";
-import MuiAppBar from "@mui/material/AppBar";
+import Drawer from "@mui/material/Drawer";
+import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import List from "@mui/material/List";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -19,7 +19,14 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import DescriptionIcon from "@mui/icons-material/Description";
-import { Box, Card, CardContent, Grid, Typography, Skeleton } from "@mui/material";
+import {
+  Box,
+  Card,
+  CardContent,
+  Grid,
+  Typography,
+  Skeleton,
+} from "@mui/material";
 import GroupsIcon from "@mui/icons-material/Groups";
 import PersonIcon from "@mui/icons-material/Person";
 import SupervisorAccountIcon from "@mui/icons-material/SupervisorAccount";
@@ -28,93 +35,28 @@ import { fetchDoctors } from "../../services/doctorService";
 import { fetchAdmins } from "../../services/adminService";
 import { fetchModerators } from "../../services/moderatorService";
 import { fetchNurses } from "../../services/nurseService";
-import {fetchArrivals} from "../../services/arrivalsService"
-import BarcharttotalProvidersPerClinic from "../../components/BarcharttotalProvidersPerClinic"
-import HorizontalBarOneMonthArrivals from "../../components/HorizontalBarOneMonthArrivals "
+import { fetchArrivals } from "../../services/arrivalsService";
+import BarcharttotalProvidersPerClinic from "../../components/BarcharttotalProvidersPerClinic";
+import HorizontalBarOneMonthArrivals from "../../components/HorizontalBarOneMonthArrivals ";
 import MonthlyArrivalsChart from "../../components/MonthlyArrivalsChart";
 import ShimmerLoader from "../../components/ShimmerLoader"; // Import the ShimmerLoader component
 import { CircularProgress } from "@mui/material";
 
-
 const drawerWidth = 300;
 
-const openedMixin = (theme) => ({
-  width: drawerWidth,
-  transition: theme.transitions.create("width", {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.enteringScreen,
-  }),
-  overflowX: "hidden",
-});
-
-const closedMixin = (theme) => ({
-  transition: theme.transitions.create("width", {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.leavingScreen,
-  }),
-  overflowX: "hidden",
-  width: `calc(${theme.spacing(7)} + 1px)`,
-  [theme.breakpoints.up("sm")]: {
-    width: `calc(${theme.spacing(8)} + 1px)`,
-  },
-});
-
-const DrawerHeader = styled("div")(({ theme }) => ({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-  padding: theme.spacing(0, 1),
-  // necessary for content to be below app bar
-  ...theme.mixins.toolbar,
-}));
-
-const AppBar = styled(MuiAppBar, {
-  shouldForwardProp: (prop) => prop !== "open",
-})(({ theme, open }) => ({
-  zIndex: theme.zIndex.drawer + 1,
-  transition: theme.transitions.create(["width", "margin"], {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.leavingScreen,
-  }),
-  ...(open && {
-    marginLeft: drawerWidth,
-    width: `calc(100% - ${drawerWidth}px)`,
-    transition: theme.transitions.create(["width", "margin"], {
-      easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.enteringScreen,
-    }),
-  }),
-}));
-
-const Drawer = styled(MuiDrawer, {
-  shouldForwardProp: (prop) => prop !== "open",
-})(({ theme, open }) => ({
-  width: drawerWidth,
-  flexShrink: 0,
-  whiteSpace: "nowrap",
-  boxSizing: "border-box",
-  ...(open && {
-    ...openedMixin(theme),
-    "& .MuiDrawer-paper": openedMixin(theme),
-  }),
-  ...(!open && {
-    ...closedMixin(theme),
-    "& .MuiDrawer-paper": closedMixin(theme),
-  }),
-}));
 const placeholderData = [
-  { month: 'Jan', count: 0 },
-  { month: 'Feb', count: 0 },
-  { month: 'Mar', count: 0 },
-  { month: 'Apr', count: 0 },
-  { month: 'May', count: 0 },
-  { month: 'Jun', count: 0 },
-  { month: 'Jul', count: 0 },
-  { month: 'Aug', count: 0 },
-  { month: 'Sep', count: 0 },
-  { month: 'Oct', count: 0 },
-  { month: 'Nov', count: 0 },
-  { month: 'Dec', count: 0 },
+  { month: "Jan", count: 0 },
+  { month: "Feb", count: 0 },
+  { month: "Mar", count: 0 },
+  { month: "Apr", count: 0 },
+  { month: "May", count: 0 },
+  { month: "Jun", count: 0 },
+  { month: "Jul", count: 0 },
+  { month: "Aug", count: 0 },
+  { month: "Sep", count: 0 },
+  { month: "Oct", count: 0 },
+  { month: "Nov", count: 0 },
+  { month: "Dec", count: 0 },
 ];
 export default function CEODashboard() {
   const theme = useTheme();
@@ -130,139 +72,225 @@ export default function CEODashboard() {
   const [dataForOneMonthArrivals, setDataForOneMonthArrivals] = useState(null);
   const [DataForMonthlyArrivals, setDataForMonthlyArrivals] = useState(null);
   const placeholder = "Loading data...";
-  const placeholderDataBC = [
-    { name: 'Loading...', providers: 0 },
-  ];
+  const placeholderDataBC = [{ name: "Loading...", providers: 0 }];
   const [clinicDataBC, setClinicDataBC] = useState(placeholderDataBC);
-  const fetchAllDataForClinicArrivals = async () => {
-    try {
-        const clinics = await getAllClinics();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
 
-        // Fetch all doctors and arrivals for all clinics in parallel
-        const clinicDataPromises = clinics.map(async (clinic) => {
-            const doctors = await fetchDoctors(clinic.id);
+  const handleDrawerClose = () => {
+    setIsClosing(true);
+    setMobileOpen(false);
+  };
 
-            // Prepare to fetch arrivals in parallel
-            const doctorPromises = doctors.map(async (doctor) => {
-                const arrivals = await fetchArrivals(clinic.id, doctor.id);
+  const handleDrawerTransitionEnd = () => {
+    setIsClosing(false);
+  };
 
-                // Filter arrivals within the last month
-                const oneMonthAgo = new Date();
-                oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-                const oneMonthArrivals = arrivals.filter(arrival => {
-                    const arrivalDate = new Date(arrival.arrivalTime);
-                    return arrivalDate >= oneMonthAgo;
-                });
-
-                return oneMonthArrivals.length;
-            });
-
-            // Sum up arrivals counts for the clinic
-            const oneMonthArrivalsCount = (await Promise.all(doctorPromises)).reduce((acc, count) => acc + count, 0);
-
-            return {
-                clinicName: clinic.name,
-                oneMonthArrivalsCount
-            };
-        });
-
-        // Wait for all clinic data to be processed
-        const oneMonthArrivalsPerClinic = await Promise.all(clinicDataPromises);
-
-        // Sort by oneMonthArrivalsCount in descending order
-        oneMonthArrivalsPerClinic.sort((a, b) => b.oneMonthArrivalsCount - a.oneMonthArrivalsCount);
-
-        return oneMonthArrivalsPerClinic;
-    } catch (error) {
-        console.error("Error in fetching data:", error);
-        throw error;
-    }
-};
-const fetchClinicsBC = async () => {
-  try {
-      const clinics = await getAllClinics();
-
-      // Fetch doctors count for all clinics in parallel
-      const clinicDetails = await Promise.all(clinics.map(async (clinic) => {
-          const doctors = await fetchDoctors(clinic.id);
-          return {
-              name: clinic.name,
-              providers: doctors.length,
-          };
-      }));
-
-      // Update state or perform further operations with clinicDetails
-      setClinicDataBC(clinicDetails);
-  } catch (error) {
-      console.error("Failed to fetch clinics", error);
-  }
-};
-// Fetch arrivals for the past 12 months
-const fetchMonthlyArrivals = async () => {
-  try {
-    const clinics = await getAllClinics();
-    const currentDate = new Date();
-    const monthlyArrivals = Array.from({ length: 12 }, (_, i) => ({
-      month: new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1).toLocaleString('default', { month: 'short' }),
-      count: 0,
-    })).reverse();
-
-    const clinicDataPromises = clinics.map(async (clinic) => {
-      const doctors = await fetchDoctors(clinic.id);
-      const doctorPromises = doctors.map(async (doctor) => {
-        const arrivals = await fetchArrivals(clinic.id, doctor.id);
-
-        arrivals.forEach(arrival => {
-          const arrivalDate = new Date(arrival.arrivalTime);
-          const monthYear = arrivalDate.toLocaleString('default', { month: 'short', year: 'numeric' });
-
-          const monthIndex = monthlyArrivals.findIndex(
-            (ma) => ma.month === arrivalDate.toLocaleString('default', { month: 'short' })
-          );
-
-          if (monthIndex >= 0) {
-            monthlyArrivals[monthIndex].count += 1;
-          }
-        });
-      });
-
-      await Promise.all(doctorPromises);
-      return monthlyArrivals;
-    });
-
-    await Promise.all(clinicDataPromises);
-    return monthlyArrivals;
-  } catch (error) {
-    console.error("Error in fetching data:", error);
-    throw error;
-  }
-};
-
-useEffect(() => {
-  const fetchData = async () => {
-    try {
-      await fetchClinics();
-      await fetchClinicsBC();
-      const arrivalsData = await fetchAllDataForClinicArrivals();
-      setDataForOneMonthArrivals(arrivalsData);
-      const monthlyArrivalsData = await fetchMonthlyArrivals();
-      setDataForMonthlyArrivals(monthlyArrivalsData);
-      setLoading(false); // Set loading to false when all data is fetched
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      setLoading(false); // Set loading to false in case of error
+  const handleDrawerToggle = () => {
+    if (!isClosing) {
+      setMobileOpen(!mobileOpen);
     }
   };
 
-  fetchData();
-}, []);
+  const drawer = (
+    <div>
+      <Toolbar>
+        <Typography
+          component="h1"
+          variant="h5"
+          noWrap
+          sx={{ marginLeft: 2, color: "white", fontWeight: "bold" }}
+        >
+          CEO Dashboard
+        </Typography>
+      </Toolbar>
+      <Divider />
+      <List>
+        {[
+          {
+            text: "Home",
+            icon: <DashboardIcon />,
+            path: "/ceo",
+          },
+          {
+            text: "Clinics",
+            icon: <LocalHospitalIcon />,
+            path: "/ceo-clinics",
+          },
+        ].map((item, index) => (
+          <ListItem key={item.text} disablePadding sx={{ display: "block" }}>
+            <ListItemButton
+              component={Link}
+              to={item.path}
+              sx={{
+                minHeight: 48,
+                justifyContent: open ? "initial" : "center",
+                px: 2.5,
+              }}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  mr: open ? 3 : "auto",
+                  justifyContent: "cente  r",
+                  color: "white",
+                }}
+              >
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText
+                primary={item.text}
+                sx={{ ml: 2, color: "white" }}
+              />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+    </div>
+  );
 
+  const fetchAllDataForClinicArrivals = async () => {
+    try {
+      const clinics = await getAllClinics();
 
+      // Fetch all doctors and arrivals for all clinics in parallel
+      const clinicDataPromises = clinics.map(async (clinic) => {
+        const doctors = await fetchDoctors(clinic.id);
+
+        // Prepare to fetch arrivals in parallel
+        const doctorPromises = doctors.map(async (doctor) => {
+          const arrivals = await fetchArrivals(clinic.id, doctor.id);
+
+          // Filter arrivals within the last month
+          const oneMonthAgo = new Date();
+          oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+          const oneMonthArrivals = arrivals.filter((arrival) => {
+            const arrivalDate = new Date(arrival.arrivalTime);
+            return arrivalDate >= oneMonthAgo;
+          });
+
+          return oneMonthArrivals.length;
+        });
+
+        // Sum up arrivals counts for the clinic
+        const oneMonthArrivalsCount = (
+          await Promise.all(doctorPromises)
+        ).reduce((acc, count) => acc + count, 0);
+
+        return {
+          clinicName: clinic.name,
+          oneMonthArrivalsCount,
+        };
+      });
+
+      // Wait for all clinic data to be processed
+      const oneMonthArrivalsPerClinic = await Promise.all(clinicDataPromises);
+
+      // Sort by oneMonthArrivalsCount in descending order
+      oneMonthArrivalsPerClinic.sort(
+        (a, b) => b.oneMonthArrivalsCount - a.oneMonthArrivalsCount
+      );
+
+      return oneMonthArrivalsPerClinic;
+    } catch (error) {
+      console.error("Error in fetching data:", error);
+      throw error;
+    }
+  };
+  const fetchClinicsBC = async () => {
+    try {
+      const clinics = await getAllClinics();
+
+      // Fetch doctors count for all clinics in parallel
+      const clinicDetails = await Promise.all(
+        clinics.map(async (clinic) => {
+          const doctors = await fetchDoctors(clinic.id);
+          return {
+            name: clinic.name,
+            providers: doctors.length,
+          };
+        })
+      );
+
+      // Update state or perform further operations with clinicDetails
+      setClinicDataBC(clinicDetails);
+    } catch (error) {
+      console.error("Failed to fetch clinics", error);
+    }
+  };
+  // Fetch arrivals for the past 12 months
+  const fetchMonthlyArrivals = async () => {
+    try {
+      const clinics = await getAllClinics();
+      const currentDate = new Date();
+      const monthlyArrivals = Array.from({ length: 12 }, (_, i) => ({
+        month: new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth() - i,
+          1
+        ).toLocaleString("default", { month: "short" }),
+        count: 0,
+      })).reverse();
+
+      const clinicDataPromises = clinics.map(async (clinic) => {
+        const doctors = await fetchDoctors(clinic.id);
+        const doctorPromises = doctors.map(async (doctor) => {
+          const arrivals = await fetchArrivals(clinic.id, doctor.id);
+
+          arrivals.forEach((arrival) => {
+            const arrivalDate = new Date(arrival.arrivalTime);
+            const monthYear = arrivalDate.toLocaleString("default", {
+              month: "short",
+              year: "numeric",
+            });
+
+            const monthIndex = monthlyArrivals.findIndex(
+              (ma) =>
+                ma.month ===
+                arrivalDate.toLocaleString("default", { month: "short" })
+            );
+
+            if (monthIndex >= 0) {
+              monthlyArrivals[monthIndex].count += 1;
+            }
+          });
+        });
+
+        await Promise.all(doctorPromises);
+        return monthlyArrivals;
+      });
+
+      await Promise.all(clinicDataPromises);
+      return monthlyArrivals;
+    } catch (error) {
+      console.error("Error in fetching data:", error);
+      throw error;
+    }
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        await fetchClinics();
+        await fetchClinicsBC();
+        const arrivalsData = await fetchAllDataForClinicArrivals();
+        setDataForOneMonthArrivals(arrivalsData);
+        const monthlyArrivalsData = await fetchMonthlyArrivals();
+        setDataForMonthlyArrivals(monthlyArrivalsData);
+        setLoading(false); // Set loading to false when all data is fetched
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setLoading(false); // Set loading to false in case of error
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const fetchClinics = async () => {
     try {
       const clinicData = await getAllClinics();
-      console.log(clinicData)
+      console.log(clinicData);
       const clinicDetails = await Promise.all(
         clinicData.map(async (clinic) => {
           const doctors = await fetchDoctors(clinic.id);
@@ -297,14 +325,6 @@ useEffect(() => {
     }
   };
 
-  const handleDrawerOpen = () => {
-    setOpen(true);
-  };
-
-  const handleDrawerClose = () => {
-    setOpen(false);
-  };
-
   const cardsData = [
     {
       title: "Total Clinics",
@@ -333,12 +353,13 @@ useEffect(() => {
       <CssBaseline />
       <AppBar
         position="fixed"
-        open={open}
         sx={{
           backgroundColor: "white",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
+          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          ml: { sm: `${drawerWidth}px` },
         }}
       >
         <Toolbar>
@@ -356,73 +377,52 @@ useEffect(() => {
           </Box>
         </Toolbar>
       </AppBar>
-      <Drawer
-        variant="permanent"
-        open={open}
-        sx={{ backgroundColor: "primary" }}
+      <Box
+        component="nav"
+        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+        aria-label="mailbox folders"
       >
-        <DrawerHeader sx={{ display: "flex", justifyContent: "space-between" }}>
-          <Typography
-            component="h1"
-            variant="h5"
-            noWrap
-            sx={{ marginLeft: 2, color: "white", fontWeight: "bold" }}
-          >
-            CEO Dashboard
-          </Typography>
-          <IconButton onClick={handleDrawerClose} sx={{ color: "white" }}>
-            {theme.direction === "rtl" ? (
-              <ChevronRightIcon />
-            ) : (
-              <ChevronLeftIcon />
-            )}
-          </IconButton>
-        </DrawerHeader>
-        <Divider />
-        <List>
-          {[
-            {
-              text: "Home",
-              icon: <DashboardIcon />,
-              path: "/ceo",
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onTransitionEnd={handleDrawerTransitionEnd}
+          onClose={handleDrawerClose}
+          ModalProps={{
+            keepMounted: true,
+          }}
+          sx={{
+            display: { xs: "block", sm: "none" },
+            "& .MuiDrawer-paper": {
+              boxSizing: "border-box",
+              width: drawerWidth,
             },
-            {
-              text: "Clinics",
-              icon: <LocalHospitalIcon />,
-              path: "/ceo-clinics",
+          }}
+        >
+          {drawer}
+        </Drawer>
+        <Drawer
+          variant="permanent"
+          sx={{
+            display: { xs: "none", sm: "block" },
+            "& .MuiDrawer-paper": {
+              boxSizing: "border-box",
+              width: drawerWidth,
             },
-          ].map((item, index) => (
-            <ListItem key={item.text} disablePadding sx={{ display: "block" }}>
-              <ListItemButton
-                component={Link}
-                to={item.path}
-                sx={{
-                  minHeight: 48,
-                  justifyContent: open ? "initial" : "center",
-                  px: 2.5,
-                }}
-              >
-                <ListItemIcon
-                  sx={{
-                    minWidth: 0,
-                    mr: open ? 3 : "auto",
-                    justifyContent: "cente  r",
-                    color: "white",
-                  }}
-                >
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.text}
-                  sx={{ opacity: open ? 1 : 0, color: "white" }}
-                />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-      </Drawer>
-      <Box component="main" sx={{ flexGrow: 1 }}>
-        <DrawerHeader />
+          }}
+          open
+        >
+          {drawer}
+        </Drawer>
+      </Box>
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          mt: 8,
+          p: 3,
+          width: { sm: `calc(100% - ${drawerWidth}px)` },
+        }}
+      >
         <Box
           sx={{
             width: "100%",
@@ -458,64 +458,107 @@ useEffect(() => {
         </Box>
         <Box sx={{ height: "1.5rem", marginTop: 0 }}></Box>
         {loading ? (
-  <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "300px", width: "100%" }}>
-    <Box sx={{ position: "absolute", top: "65%", left: "50%", transform: "translate(-50%, -50%)" }}>
-      <CircularProgress size={80} />
-    </Box>
-    <Box sx={{ display: "flex", flexDirection: "column", width: "100%", mt: 30 }}>
-      <Skeleton variant="rectangular" width="100%" height={100} sx={{ mb: 2 }} />
-      <Skeleton variant="rectangular" width="100%" height={100} sx={{ mb: 2 }} />
-      <Skeleton variant="rectangular" width="100%" height={100} sx={{ mb: 2 }} />
-      <Skeleton variant="rectangular" width="100%" height={100} sx={{ mb: 2 }} />
-      <Skeleton variant="rectangular" width="100%" height={100} />
-    </Box>
-  </Box>
-) : (
-  <Grid container spacing={2}>
-    <Grid item xs={12} md={6}>
-      <Box sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}>
-        <Typography variant="h6" fontWeight="bold" sx={{ marginBottom: 0, marginTop: 0 }}>No Of Providers</Typography>
-        <BarcharttotalProvidersPerClinic data={clinicDataBC} />
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              height: "300px",
+              width: "100%",
+            }}
+          >
+            <Box
+              sx={{
+                position: "absolute",
+                top: "65%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+              }}
+            >
+              <CircularProgress size={80} />
+            </Box>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                width: "100%",
+                mt: 30,
+              }}
+            >
+              <Skeleton
+                variant="rectangular"
+                width="100%"
+                height={100}
+                sx={{ mb: 2 }}
+              />
+              <Skeleton
+                variant="rectangular"
+                width="100%"
+                height={100}
+                sx={{ mb: 2 }}
+              />
+              <Skeleton
+                variant="rectangular"
+                width="100%"
+                height={100}
+                sx={{ mb: 2 }}
+              />
+              <Skeleton
+                variant="rectangular"
+                width="100%"
+                height={100}
+                sx={{ mb: 2 }}
+              />
+              <Skeleton variant="rectangular" width="100%" height={100} />
+            </Box>
+          </Box>
+        ) : (
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
+              <Box
+                sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}
+              >
+                <Typography
+                  variant="h6"
+                  fontWeight="bold"
+                  sx={{ marginBottom: 0, marginTop: 0 }}
+                >
+                  No Of Providers
+                </Typography>
+                <BarcharttotalProvidersPerClinic data={clinicDataBC} />
+              </Box>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Box
+                sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}
+              >
+                <Typography
+                  variant="h6"
+                  fontWeight="bold"
+                  sx={{ marginBottom: 0, marginTop: 0 }}
+                >
+                  Past One Month Arrivals by Clinic
+                </Typography>
+                <HorizontalBarOneMonthArrivals data={dataForOneMonthArrivals} />
+              </Box>
+            </Grid>
+            <Grid item xs={12}>
+              <Box
+                sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}
+              >
+                <Typography
+                  variant="h6"
+                  fontWeight="bold"
+                  sx={{ marginBottom: 0, marginTop: 0 }}
+                >
+                  Monthly Arrivals
+                </Typography>
+                <MonthlyArrivalsChart data={DataForMonthlyArrivals} />
+              </Box>
+            </Grid>
+          </Grid>
+        )}
       </Box>
-    </Grid>
-    <Grid item xs={12} md={6}>
-      <Box sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}>
-        <Typography variant="h6" fontWeight="bold" sx={{ marginBottom: 0, marginTop: 0 }}>Past One Month Arrivals by Clinic</Typography>
-        <HorizontalBarOneMonthArrivals data={dataForOneMonthArrivals} />
-      </Box>
-    </Grid>
-    <Grid item xs={12}>
-      <Box sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}>
-        <Typography variant="h6" fontWeight="bold" sx={{ marginBottom: 0, marginTop: 0 }}>Monthly Arrivals</Typography>
-        <MonthlyArrivalsChart data={DataForMonthlyArrivals} />
-      </Box>
-    </Grid>
-  </Grid>
-)}
-
-      <Box
-        sx={{
-          position: "fixed",
-          top: 0,
-          left: 7,
-          zIndex: 9999,
-          margin: "1rem",
-        }}
-      >
-        <IconButton
-          color="inherit"
-          aria-label="open drawer"
-          onClick={handleDrawerOpen}
-          edge="start"
-          sx={{
-            marginRight: 5,
-            ...(open && { display: "none" }),
-          }}
-        >
-          <MenuIcon sx={{ color: "primary.main" }} />
-        </IconButton>
-      </Box>
-    </Box>
     </Box>
   );
 }

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { styled, useTheme } from "@mui/material/styles";
-import MuiDrawer from "@mui/material/Drawer";
-import MuiAppBar from "@mui/material/AppBar";
+import Drawer from "@mui/material/Drawer";
+import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import List from "@mui/material/List";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -32,7 +32,7 @@ import {
   Select,
   MenuItem,
   FormControl,
-  InputLabel
+  InputLabel,
 } from "@mui/material";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
 import AddIcon from "@mui/icons-material/Add";
@@ -48,78 +48,33 @@ import {
   updateClinic,
   deleteClinic,
 } from "../../services/clinicService";
-import { fetchDoctors } from "../../services/doctorService";
-import { fetchAdmins } from "../../services/adminService";
-import { fetchModerators } from "../../services/moderatorService";
-import { fetchNurses } from "../../services/nurseService";
+import {
+  fetchDoctors,
+  addDoctor,
+  updateDoctor,
+  deleteDoctor,
+} from "../../services/doctorService";
+import {
+  fetchNurses,
+  addNurse,
+  updateNurse,
+  deleteNurse,
+} from "../../services/nurseService";
+import {
+  fetchModerators,
+  addModerator,
+  updateModerator,
+  deleteModerator,
+} from "../../services/moderatorService";
+import {
+  fetchAdmins,
+  addAdmin,
+  updateAdmin,
+  deleteAdmin,
+} from "../../services/adminService";
 import { fetchAllArrivals } from "../../services/arrivalsService";
 
 const drawerWidth = 300;
-
-const openedMixin = (theme) => ({
-  width: drawerWidth,
-  transition: theme.transitions.create("width", {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.enteringScreen,
-  }),
-  overflowX: "hidden",
-});
-
-const closedMixin = (theme) => ({
-  transition: theme.transitions.create("width", {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.leavingScreen,
-  }),
-  overflowX: "hidden",
-  width: `calc(${theme.spacing(7)} + 1px)`,
-  [theme.breakpoints.up("sm")]: {
-    width: `calc(${theme.spacing(8)} + 1px)`,
-  },
-});
-
-const DrawerHeader = styled("div")(({ theme }) => ({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-  padding: theme.spacing(0, 1),
-  // necessary for content to be below app bar
-  ...theme.mixins.toolbar,
-}));
-
-const AppBar = styled(MuiAppBar, {
-  shouldForwardProp: (prop) => prop !== "open",
-})(({ theme, open }) => ({
-  zIndex: theme.zIndex.drawer + 1,
-  transition: theme.transitions.create(["width", "margin"], {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.leavingScreen,
-  }),
-  ...(open && {
-    marginLeft: drawerWidth,
-    width: `calc(100% - ${drawerWidth}px)`,
-    transition: theme.transitions.create(["width", "margin"], {
-      easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.enteringScreen,
-    }),
-  }),
-}));
-
-const Drawer = styled(MuiDrawer, {
-  shouldForwardProp: (prop) => prop !== "open",
-})(({ theme, open }) => ({
-  width: drawerWidth,
-  flexShrink: 0,
-  whiteSpace: "nowrap",
-  boxSizing: "border-box",
-  ...(open && {
-    ...openedMixin(theme),
-    "& .MuiDrawer-paper": openedMixin(theme),
-  }),
-  ...(!open && {
-    ...closedMixin(theme),
-    "& .MuiDrawer-paper": closedMixin(theme),
-  }),
-}));
 
 const fetchClinics = async () => {
   try {
@@ -151,18 +106,22 @@ const calculateRushHours = (allArrivals, clinicId = null) => {
   const rushHoursData = Array.from({ length: 12 }, (_, i) => {
     const hour = (currentHour - i + 24) % 24;
     return {
-      hour: `${hour % 12 || 12} ${hour < 12 ? 'am' : 'pm'}`,
+      hour: `${hour % 12 || 12} ${hour < 12 ? "am" : "pm"}`,
       count: 0,
     };
   }).reverse();
 
   const filteredArrivals = clinicId
-    ? allArrivals.filter(arrival => arrival.clinicId === clinicId)
+    ? allArrivals.filter((arrival) => arrival.clinicId === clinicId)
     : allArrivals;
 
   filteredArrivals.forEach((arrival) => {
     const arrivalHour = new Date(arrival.arrivalTime).getHours();
-    const hourIndex = rushHoursData.findIndex(data => data.hour === `${arrivalHour % 12 || 12} ${arrivalHour < 12 ? 'am' : 'pm'}`);
+    const hourIndex = rushHoursData.findIndex(
+      (data) =>
+        data.hour ===
+        `${arrivalHour % 12 || 12} ${arrivalHour < 12 ? "am" : "pm"}`
+    );
     if (hourIndex !== -1) {
       rushHoursData[hourIndex].count += 1;
     }
@@ -170,13 +129,17 @@ const calculateRushHours = (allArrivals, clinicId = null) => {
 
   return rushHoursData;
 };
-const calculateValuableProviders = (allArrivals, allDoctors, clinicId = null) => {
+const calculateValuableProviders = (
+  allArrivals,
+  allDoctors,
+  clinicId = null
+) => {
   const filteredArrivals = clinicId
-    ? allArrivals.filter(arrival => arrival.clinicId === clinicId)
+    ? allArrivals.filter((arrival) => arrival.clinicId === clinicId)
     : allArrivals;
 
   const providerCount = filteredArrivals.reduce((acc, arrival) => {
-    const doctor = allDoctors.find(doc => doc.id === arrival.doctorID);
+    const doctor = allDoctors.find((doc) => doc.id === arrival.doctorID);
     if (doctor) {
       acc[doctor.id] = acc[doctor.id] || { name: doctor.name, count: 0 };
       acc[doctor.id].count += 1;
@@ -184,10 +147,11 @@ const calculateValuableProviders = (allArrivals, allDoctors, clinicId = null) =>
     return acc;
   }, {});
 
-  const sortedProviders = Object.values(providerCount).sort((a, b) => b.count - a.count);
+  const sortedProviders = Object.values(providerCount).sort(
+    (a, b) => b.count - a.count
+  );
   return sortedProviders.slice(0, 5);
 };
-
 
 const getAllArrivals = async () => {
   try {
@@ -200,22 +164,28 @@ const getAllArrivals = async () => {
           const calledInTime = arrival.calledInTime
             ? new Date(arrival.calledInTime)
             : null;
-          let waitingTime = "Pending";
+          let waitingTime = "";
           let diffMs = "";
 
           if (calledInTime) {
             diffMs = calledInTime - arrivalTime;
-            const diffHrs = Math.floor(diffMs / 3600000);
-            const diffMins = Math.floor((diffMs % 3600000) / 60000);
-            const diffSecs = Math.floor((diffMs % 60000) / 1000);
-            waitingTime = `${diffHrs}h ${diffMins}m ${diffSecs}s`;
           } else {
             diffMs = Date.now() - arrivalTime;
-            const diffHrs = Math.floor(diffMs / 3600000);
-            const diffMins = Math.floor((diffMs % 3600000) / 60000);
-            const diffSecs = Math.floor((diffMs % 60000) / 1000);
-            waitingTime = `${diffHrs}h ${diffMins}m ${diffSecs}s`;
           }
+
+          const diffHrs = Math.floor(diffMs / 3600000);
+          const diffMins = Math.floor((diffMs % 3600000) / 60000);
+          const diffSecs = Math.floor((diffMs % 60000) / 1000);
+
+          if (diffHrs > 0) {
+            waitingTime += `${diffHrs}h `;
+          }
+          if (diffMins > 0 || diffHrs > 0) {
+            waitingTime += `${diffMins}m `;
+          }
+          waitingTime += `${diffSecs}s`;
+
+          waitingTime = waitingTime.trim();
 
           const dob = new Date(arrival.dob).toLocaleString("en-US", {
             day: "2-digit",
@@ -250,22 +220,12 @@ const getAllArrivals = async () => {
         });
       })
     );
+    console.log(allArrivals);
     return allArrivals.flat();
   } catch (error) {
     console.error("Failed to fetch arrivals", error);
   }
 };
-
-const dropdownItemsCEOClinic = [
-  {
-    item: "Clinics",
-    fetch: fetchClinics,
-  },
-  {
-    item: "Arrivals",
-    fetch: getAllArrivals,
-  },
-];
 
 export default function CEOClinics() {
   const theme = useTheme();
@@ -274,36 +234,179 @@ export default function CEOClinics() {
   const [data, setData] = useState([]);
   const [selectedClinic, setSelectedClinic] = useState("All Clinics");
   const [clinics, setClinics] = useState([]);
+  const [clinicsDetails, setClinicsDetails] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [value, setValue] = React.useState("1");
   const [rushHoursData, setRushHoursData] = useState([]);
   const [allArrivals, setAllArrivals] = useState([]);
   const [valuableProvidersData, setValuableProvidersData] = useState([]); // New state
   const [loading, setLoading] = useState(true);
-
-  const [currentDropdownItem, setCurrentDropdownItem] = useState(
-    dropdownItemsCEOClinic[0].item
-  );
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  const [currentTable, setCurrentTable] = useState(0);
   const [rows, setRows] = useState([]);
   const [columns, setColumns] = useState([]);
+  const [recentClinic, setRecentClinic] = useState([]);
+
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [openAddModal, setOpenAddModal] = useState(false);
+  const [modalMode, setModalMode] = useState("add");
+
+  const dropdownItems = [
+    [
+      {
+        item: "Clinics",
+        fetch: fetchClinics,
+      },
+      {
+        item: "Arrivals",
+        fetch: getAllArrivals,
+      },
+    ],
+    clinics.map((clinic) => ({ item: clinic.name })),
+    [
+      {
+        item: "Provider",
+        type: "doctor",
+        fetch: fetchDoctors,
+        add: addDoctor,
+        update: updateDoctor,
+        delete: deleteDoctor,
+      },
+      {
+        item: "Staff",
+        type: "staff",
+        fetch: fetchNurses,
+        add: addNurse,
+        update: updateNurse,
+        delete: deleteNurse,
+      },
+      {
+        item: "Moderator",
+        type: "moderator",
+        fetch: fetchModerators,
+        add: addModerator,
+        update: updateModerator,
+        delete: deleteModerator,
+      },
+      {
+        item: "Admin",
+        type: "admin",
+        fetch: fetchAdmins,
+        add: addAdmin,
+        update: updateAdmin,
+        delete: deleteAdmin,
+      },
+    ],
+  ];
+
+  const [currentDropdownItem, setCurrentDropdownItem] = useState(
+    dropdownItems[currentTable][0].item
+  );
+  const [currentUserRole, setCurrentUserRole] = useState(dropdownItems[2][0]);
+
+  const handleDrawerClose = () => {
+    setIsClosing(true);
+    setMobileOpen(false);
+  };
+
+  const handleDrawerTransitionEnd = () => {
+    setIsClosing(false);
+  };
+
+  const handleOpenAddModal = (mode, user = null) => {
+    setModalMode(mode);
+    setSelectedUser(user);
+    setOpenAddModal(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setOpenAddModal(false);
+  };
+
+  const handleSubmit = async (formData) => {};
+
+  const drawer = (
+    <div>
+      <Toolbar>
+        <Typography
+          component="h1"
+          variant="h5"
+          noWrap
+          sx={{ marginLeft: 2, color: "white", fontWeight: "bold" }}
+        >
+          CEO Dashboard
+        </Typography>
+      </Toolbar>
+      <Divider />
+      <List>
+        {[
+          {
+            text: "Home",
+            icon: <DashboardIcon />,
+            path: "/ceo",
+          },
+          {
+            text: "Clinics",
+            icon: <LocalHospitalIcon />,
+            path: "/ceo-clinics",
+          },
+        ].map((item, index) => (
+          <ListItem key={item.text} disablePadding sx={{ display: "block" }}>
+            <ListItemButton
+              component={Link}
+              to={item.path}
+              sx={{
+                minHeight: 48,
+                justifyContent: open ? "initial" : "center",
+                px: 2.5,
+              }}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  mr: open ? 3 : "auto",
+                  justifyContent: "cente  r",
+                  color: "white",
+                }}
+              >
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText
+                primary={item.text}
+                sx={{ ml: 2, color: "white" }}
+              />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+    </div>
+  );
 
   const handleChange = (event, newValue) => {
     setValue(newValue);
   };
   const handleClinicChange = (event) => {
     const selectedClinicName = event.target.value;
-    const clinicId = selectedClinicName === "All Clinics" ? null : clinics.find(clinic => clinic.name === selectedClinicName)?.id;
+    const clinicId =
+      selectedClinicName === "All Clinics"
+        ? null
+        : clinics.find((clinic) => clinic.name === selectedClinicName)?.id;
     setSelectedClinic(selectedClinicName);
     const rushHours = calculateRushHours(allArrivals, clinicId);
     setRushHoursData(rushHours);
-    const valuableProviders = calculateValuableProviders(allArrivals, doctors, clinicId); // New calculation
+    const valuableProviders = calculateValuableProviders(
+      allArrivals,
+      doctors,
+      clinicId
+    ); // New calculation
     setValuableProvidersData(valuableProviders); // Set new data
   };
-  
 
   useEffect(() => {
-    updateCurrentDropdownItem(currentDropdownItem);
+    updateCurrentDropdownItem(currentDropdownItem, currentTable);
   }, []);
+
   useEffect(() => {
     const fetchClinicsAndArrivals = async () => {
       try {
@@ -341,7 +444,10 @@ export default function CEOClinics() {
         const rushHours = calculateRushHours(allArrivals);
         setRushHoursData(rushHours);
 
-        const valuableProviders = calculateValuableProviders(allArrivals, allDoctors);
+        const valuableProviders = calculateValuableProviders(
+          allArrivals,
+          allDoctors
+        );
         setValuableProvidersData(valuableProviders); // Set new data
       } catch (error) {
         console.error("Failed to fetch clinics and arrivals", error);
@@ -352,16 +458,33 @@ export default function CEOClinics() {
 
     fetchClinicsAndArrivals();
   }, []);
-  const updateCurrentDropdownItem = async (item) => {
-    const selectedItem = dropdownItemsCEOClinic.find((i) => i.item === item);
-    setCurrentDropdownItem(selectedItem.item);
+
+  const updateCurrentDropdownItem = async (item, tableIndex) => {
+    let selectedItem;
+    if (tableIndex !== 2) {
+      selectedItem = dropdownItems[tableIndex].find(
+        (i) => i.item === item || i.role === item
+      );
+
+      setCurrentDropdownItem(selectedItem.item || selectedItem.role);
+    } else if (tableIndex === 2) {
+      selectedItem = dropdownItems[tableIndex].find((i) => {
+        return i.item === item.name;
+      });
+
+      setCurrentDropdownItem(selectedItem.item);
+    }
+
     try {
-      if (selectedItem.item == "Clinics") {
-        // Fetching for clinics
-        const response = await selectedItem.fetch();
-        setData(response);
-        const rows = response.map((clinic) => {
-          return {
+      if (tableIndex === 0) {
+        if (selectedItem.item === "Clinics") {
+          // Fetching clinics data
+          const response = await selectedItem.fetch();
+
+          setClinicsDetails(response);
+
+          setData(response);
+          const rows = response.map((clinic) => ({
             id: clinic.id,
             name: clinic.name,
             providers: clinic.totalDoctors,
@@ -369,44 +492,125 @@ export default function CEOClinics() {
             admins: clinic.totalAdmins,
             moderators: clinic.totalModerators,
             action: null,
-          };
-        });
+          }));
 
-        console.log(rows);
+          const columns = [
+            { id: "name", label: "Clinic Name" },
+            { id: "providers", label: "Providers", align: "right" },
+            { id: "staff", label: "Staff", align: "right" },
+            { id: "admins", label: "Admins", align: "right" },
+            { id: "moderators", label: "Moderators", align: "right" },
+            { id: "action", label: "Action", align: "right" },
+          ];
 
-        const columns = [
-          { id: "name", label: "Clinic Name" },
-          { id: "providers", label: "Providers", align: "right" },
-          { id: "staff", label: "Staff", align: "right" },
-          { id: "admins", label: "Admins", align: "right" },
-          { id: "moderators", label: "Moderators", align: "right" },
-          { id: "action", label: "Action", align: "right" },
-        ];
-
-        setRows(rows);
-        setColumns(columns);
-      } else if (selectedItem.item === "Arrivals") {
-        // Iterate over the clinicIds and then use the clinicIds to one by get arrivals of each clinic... and all of the clinics arrivals data will be the data
-        const data = await selectedItem.fetch();
-        setData(data);
-        console.log(data);
-        const rows = data.map((arrival) => {
-          return {
-            name: arrival.firstName + " " + arrival.lastName,
+          setRows(rows);
+          setColumns(columns);
+        } else if (selectedItem.item === "Arrivals") {
+          // Fetching arrivals data
+          const data = await selectedItem.fetch();
+          const rows = data.map((arrival) => ({
+            name: `${arrival.firstName} ${arrival.lastName}`,
             arrivalTime: arrival.arrivalTime,
             waitingTime: arrival.waitingTime,
             meetingTime: arrival.meetingTime,
             dob: arrival.dob,
-          };
-        });
+          }));
+
+          const columns = [
+            { id: "name", label: "Patient Name" },
+            { id: "arrivalTime", label: "Arrival Time", align: "right" },
+            { id: "waitingTime", label: "Waiting Time", align: "right" },
+            { id: "meetingTime", label: "Meeting Time", align: "right" },
+            { id: "dob", label: "Date of Birth", align: "right" },
+          ];
+          setRows(rows);
+          setColumns(columns);
+        }
+      } else if (tableIndex === 1) {
+        const clinicName = selectedItem.item;
+        const clinic = clinicsDetails.find((c) => c.name === clinicName);
+        setRecentClinic(clinic);
+
+        if (clinic) {
+          const rows = [
+            {
+              id: clinic.id,
+              name: "Provider",
+              roles: "Providers",
+              members: clinic.totalDoctors,
+            },
+            {
+              id: clinic.id,
+              name: "Staff",
+              roles: "Staff",
+              members: clinic.totalNurses,
+            },
+            {
+              id: clinic.id,
+              name: "Moderator",
+              roles: "Moderators",
+              members: clinic.totalModerators,
+            },
+            {
+              id: clinic.id,
+              name: "Admin",
+              roles: "Admins",
+              members: clinic.totalAdmins,
+            },
+          ];
+
+          const columns = [
+            { id: "roles", label: "Roles" },
+            { id: "members", label: "Members", align: "right" },
+            { id: "action", label: "Action", align: "center" },
+          ];
+
+          setRows(rows);
+          setColumns(columns);
+        }
+      } else if (tableIndex === 2) {
+        const response = await selectedItem.fetch(item.id);
+        console.log(response);
+
+        const includeDomain = response.every(
+          (user) => user.domain !== undefined
+        );
+        const includeRoomNumber = response.every(
+          (user) => user.roomNumber !== undefined
+        );
 
         const columns = [
-          { id: "name", label: "Patient Name" },
-          { id: "arrivalTime", label: "Arrival Time", align: "right" },
-          { id: "waitingTime", label: "Waiting Time", align: "right" },
-          { id: "meetingTime", label: "Meeting Time", align: "right" },
-          { id: "dob", label: "Date of Birth", align: "right" },
+          { id: "name", label: "Name" },
+          { id: "email", label: "Email", align: "right" },
         ];
+
+        if (includeDomain) {
+          columns.push({
+            id: "domain",
+            label: "Professional Domain",
+            align: "right",
+          });
+        }
+
+        if (includeRoomNumber) {
+          columns.push({
+            id: "roomNumber",
+            label: "Room Number",
+            align: "right",
+          });
+        }
+
+        columns.push({ id: "action", label: "Action", align: "right" });
+
+        const rows = response.map((i) => ({
+          id: i.id,
+          name: i.name,
+          email: i.email,
+          domain: i.domain,
+          roomNumber: i.roomNumber,
+          action: null,
+        }));
+
         setRows(rows);
         setColumns(columns);
       }
@@ -415,46 +619,40 @@ export default function CEOClinics() {
     }
   };
 
-  const handleRowClick = (clinic) => {
-    const updatedRows = [
-      { id: clinic.id, roles: "Providers", members: clinic.providers },
-      { id: clinic.id, roles: "Staff", members: clinic.staff },
-      { id: clinic.id, roles: "Moderators", members: clinic.moderators },
-      { id: clinic.id, roles: "Admins", members: clinic.admins },
-    ];
-
-    const updatedColumns = [
-      { id: "roles", label: "Roles" },
-      { id: "members", label: "Members", align: "right" },
-      { id: "action", label: "Action", align: "right" },
-    ];
-
-    setRows(updatedRows);
-    setColumns(updatedColumns);
-  };
-  const handleDrawerOpen = () => {
-    setOpen(true);
+  const handleRowClick = (item) => {
+    if (currentTable <= 2) {
+      const newTableIndex = currentTable + 1;
+      setCurrentTable(newTableIndex);
+      if (newTableIndex === 3) {
+        handleClickUser(item);
+        setCurrentTable(newTableIndex - 1);
+      } else {
+        if (newTableIndex === 2) {
+          console.log("row click", item);
+          updateCurrentDropdownItem(item, newTableIndex);
+        } else {
+          updateCurrentDropdownItem(item.name, newTableIndex);
+        }
+      }
+    }
   };
 
-  const handleDrawerClose = () => {
-    setOpen(false);
+  const handleClickUser = (user) => {
+    handleOpenAddModal("read", user);
   };
-
-  function createData(id, name, providers, staff, admins, moderators, action) {
-    return { id, name, providers, staff, admins, moderators, action };
-  }
 
   return (
     <Box sx={{ display: "flex" }}>
       <CssBaseline />
       <AppBar
         position="fixed"
-        open={open}
         sx={{
           backgroundColor: "white",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
+          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          ml: { sm: `${drawerWidth}px` },
         }}
       >
         <Toolbar>
@@ -472,73 +670,52 @@ export default function CEOClinics() {
           </Box>
         </Toolbar>
       </AppBar>
-      <Drawer
-        variant="permanent"
-        open={open}
-        sx={{ backgroundColor: "primary" }}
+      <Box
+        component="nav"
+        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+        aria-label="mailbox folders"
       >
-        <DrawerHeader sx={{ display: "flex", justifyContent: "space-between" }}>
-          <Typography
-            component="h1"
-            variant="h5"
-            noWrap
-            sx={{ marginLeft: 2, color: "white", fontWeight: "bold" }}
-          >
-            CEO Dashboard
-          </Typography>
-          <IconButton onClick={handleDrawerClose} sx={{ color: "white" }}>
-            {theme.direction === "rtl" ? (
-              <ChevronRightIcon />
-            ) : (
-              <ChevronLeftIcon />
-            )}
-          </IconButton>
-        </DrawerHeader>
-        <Divider />
-        <List>
-          {[
-            {
-              text: "Dashboard",
-              icon: <DashboardIcon />,
-              path: "/ceo",
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onTransitionEnd={handleDrawerTransitionEnd}
+          onClose={handleDrawerClose}
+          ModalProps={{
+            keepMounted: true,
+          }}
+          sx={{
+            display: { xs: "block", sm: "none" },
+            "& .MuiDrawer-paper": {
+              boxSizing: "border-box",
+              width: drawerWidth,
             },
-            {
-              text: "Clinics",
-              icon: <LocalHospitalIcon />,
-              path: "/ceo-clinics",
+          }}
+        >
+          {drawer}
+        </Drawer>
+        <Drawer
+          variant="permanent"
+          sx={{
+            display: { xs: "none", sm: "block" },
+            "& .MuiDrawer-paper": {
+              boxSizing: "border-box",
+              width: drawerWidth,
             },
-          ].map((item, index) => (
-            <ListItem key={item.text} disablePadding sx={{ display: "block" }}>
-              <ListItemButton
-                component={Link}
-                to={item.path}
-                sx={{
-                  minHeight: 48,
-                  justifyContent: open ? "initial" : "center",
-                  px: 2.5,
-                }}
-              >
-                <ListItemIcon
-                  sx={{
-                    minWidth: 0,
-                    mr: open ? 3 : "auto",
-                    justifyContent: "cente  r",
-                    color: "white",
-                  }}
-                >
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.text}
-                  sx={{ opacity: open ? 1 : 0, color: "white" }}
-                />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-      </Drawer>
-      <Box component="main" sx={{ flexGrow: 1 }}>
-        <DrawerHeader />
+          }}
+          open
+        >
+          {drawer}
+        </Drawer>
+      </Box>
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          mt: 8,
+          p: 3,
+          width: { sm: `calc(100% - ${drawerWidth}px)` },
+        }}
+      >
         <TabContext value={value}>
           <Box
             sx={{
@@ -558,73 +735,99 @@ export default function CEOClinics() {
             </TabList>
           </Box>
           <TabPanel value="1">
-      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-        <FormControl sx={{ minWidth: 200, ml: 2, height: "2.5rem" }}>
-          <InputLabel id="clinic-select-label">Clinic</InputLabel>
-          <Select
-            labelId="clinic-select-label"
-            id="clinic-select"
-            value={selectedClinic}
-            label="Clinic"
-            onChange={handleClinicChange}
-            sx={{ height: "2.5rem" }}
-          >
-            <MenuItem value="All Clinics">All Clinics</MenuItem>
-            {clinics.map((clinic) => (
-              <MenuItem key={clinic.id} value={clinic.name}>
-                {clinic.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Box>
-      <Grid container spacing={2}>
-        <Grid item xs={12} md={6}>
-        <Card sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}>
-  <CardContent sx={{ p: 2 }}>
-    <Typography variant="h6" fontWeight="bold" sx={{ ml: -2, mt: -3, textAlign: "left" }}>
-      Chart Title 1
-    </Typography>
-  </CardContent>
-</Card>
-        </Grid>
-        <Grid item xs={12} md={6}>
-  <Card sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}>
-    <CardContent sx={{ p: 2, height: '100%' }}>
-      <Typography
-        variant="h6"
-        fontWeight="bold"
-        sx={{ mb: 2, mt: -3, textAlign: "left" }}
-      >
-        Valuable Providers 
-      </Typography>
-      <Box sx={{ height: '90%', width: '90%' }}>
-        <ValuableProvidersPieChart data={valuableProvidersData} />
-      </Box>
-    </CardContent>
-  </Card>
-</Grid>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+              <FormControl sx={{ minWidth: 200, ml: 2, height: "2.5rem" }}>
+                <InputLabel id="clinic-select-label">Clinic</InputLabel>
+                <Select
+                  labelId="clinic-select-label"
+                  id="clinic-select"
+                  value={selectedClinic}
+                  label="Clinic"
+                  onChange={handleClinicChange}
+                  sx={{ height: "2.5rem" }}
+                >
+                  <MenuItem value="All Clinics">All Clinics</MenuItem>
+                  {clinics.map((clinic) => (
+                    <MenuItem key={clinic.id} value={clinic.name}>
+                      {clinic.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <Card
+                  sx={{
+                    p: 3,
+                    m: 1,
+                    borderRadius: 3,
+                    boxShadow: 2,
+                    height: 300,
+                  }}
+                >
+                  <CardContent sx={{ p: 2 }}>
+                    <Typography
+                      variant="h6"
+                      fontWeight="bold"
+                      sx={{ ml: -2, mt: -3, textAlign: "left" }}
+                    >
+                      Chart Title 1
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Card
+                  sx={{
+                    p: 3,
+                    m: 1,
+                    borderRadius: 3,
+                    boxShadow: 2,
+                    height: 300,
+                  }}
+                >
+                  <CardContent sx={{ p: 2, height: "100%" }}>
+                    <Typography
+                      variant="h6"
+                      fontWeight="bold"
+                      sx={{ mb: 2, mt: -3, textAlign: "left" }}
+                    >
+                      Valuable Providers
+                    </Typography>
+                    <Box sx={{ height: "90%", width: "90%" }}>
+                      <ValuableProvidersPieChart data={valuableProvidersData} />
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
 
-        <Grid item xs={12}>
-  <Card sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}>
-    <CardContent sx={{ p: 2, height: '100%' }}>
-      <Typography
-        variant="h6"
-        fontWeight="bold"
-        sx={{ mb: 2, mt: 0, textAlign: "left" }}
-      >
-        Rush Hours 
-      </Typography>
-      <Box sx={{ height: '100%', width: '100%' }}>
-        <RushHoursChart data={rushHoursData} />
-      </Box>
-    </CardContent>
-  </Card>
-</Grid>
-
-
-      </Grid>
-    </TabPanel>
+              <Grid item xs={12}>
+                <Card
+                  sx={{
+                    p: 3,
+                    m: 1,
+                    borderRadius: 3,
+                    boxShadow: 2,
+                    height: 300,
+                  }}
+                >
+                  <CardContent sx={{ p: 2, height: "100%" }}>
+                    <Typography
+                      variant="h6"
+                      fontWeight="bold"
+                      sx={{ mb: 2, mt: 0, textAlign: "left" }}
+                    >
+                      Rush Hours
+                    </Typography>
+                    <Box sx={{ height: "100%", width: "100%" }}>
+                      <RushHoursChart data={rushHoursData} />
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+          </TabPanel>
           <TabPanel value="2">
             <Box sx={{ p: 3, m: 3, borderRadius: 3, boxShadow: 2 }}>
               <Box
@@ -639,10 +842,17 @@ export default function CEOClinics() {
                   value={currentDropdownItem}
                   onChange={(e) => {
                     const selectedItem = e.target.value;
-                    updateCurrentDropdownItem(selectedItem);
+                    if (currentTable === 2) {
+                      updateCurrentDropdownItem(
+                        { name: selectedItem, id: recentClinic.id },
+                        currentTable
+                      );
+                    } else {
+                      updateCurrentDropdownItem(selectedItem, currentTable);
+                    }
                   }}
                 >
-                  {dropdownItemsCEOClinic.map((i) => (
+                  {dropdownItems[currentTable].map((i) => (
                     <MenuItem key={i.item} value={i.item}>
                       {i.item}
                     </MenuItem>
@@ -658,31 +868,17 @@ export default function CEOClinics() {
                 rows={rows}
                 onClick={handleRowClick}
               />
+              <ModalForm
+                open={openAddModal}
+                handleClose={handleCloseAddModal}
+                mode={modalMode}
+                type={currentUserRole.type}
+                selectedUser={selectedUser}
+                onSubmit={handleSubmit}
+              />
             </Box>
           </TabPanel>
         </TabContext>
-      </Box>
-      <Box
-        sx={{
-          position: "fixed",
-          top: 0,
-          left: 7,
-          zIndex: 9999,
-          margin: "1rem",
-        }}
-      >
-        <IconButton
-          color="inherit"
-          aria-label="open drawer"
-          onClick={handleDrawerOpen}
-          edge="start"
-          sx={{
-            marginRight: 5,
-            ...(open && { display: "none" }),
-          }}
-        >
-          <MenuIcon sx={{ color: "primary.main" }} />
-        </IconButton>
       </Box>
     </Box>
   );
