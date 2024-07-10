@@ -21,18 +21,27 @@ const BarcharttotalProvidersPerClinic = ({ data }) => {
     };
   }, []);
 
-  const chartData = {
-    labels: data.map(clinic => clinic.name),
-    datasets: [
-      {
-        data: data.map(clinic => clinic.providers),
-        backgroundColor: theme.palette.primary.main,
-        borderColor: theme.palette.primary.dark,
-        borderWidth: 1,
-        barThickness: 40,
-      },
-    ],
-  };
+  const maxProviders = Math.max(...data.map(clinic => clinic.providers));
+const chartData = {
+  labels: data.map(clinic => clinic.name),
+  datasets: [
+    {
+      data: data.map(clinic => clinic.providers),
+      backgroundColor: data.map(clinic =>
+        clinic.providers === maxProviders ? theme.palette.primary.main : '#CCCCCC'
+      ),
+      borderColor: theme.palette.primary.dark,
+      borderWidth: 0,
+      barThickness: 20,
+      categoryPercentage: 0.8, // Adjust spacing between bars
+      barPercentage: 0.9, 
+      borderRadius:40,// Adjust width of bars
+      
+    },
+  ],
+};
+
+  
 
   const options = {
     responsive: true,
