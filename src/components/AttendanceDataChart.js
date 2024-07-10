@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { BarChart } from "@mui/x-charts/BarChart";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { getAllClinics } from "../services/clinicService";
 import { fetchAttendance } from "../services/attendanceService";
 import { subDays, format, isSameDay } from "date-fns";
@@ -9,35 +9,42 @@ const fetchAttendanceData = async () => {
     const clinics = await getAllClinics();
     console.log("Fetched Clinics:", clinics);
 
-    const attendanceData = {};
+    const pastWeekDates = [...Array(7).keys()]
+      .map((i) => subDays(new Date(), i)) // Generate dates for the past 7 days, oldest to newest
+      .reverse(); // Reverse the order to display current day on the right side
 
-    for (const clinic of clinics) {
-      const attendance = await fetchAttendance(clinic.id);
-      console.log(`Fetched Attendance for ${clinic.name}:`, attendance);
+    // Fetch attendance for all clinics in parallel for each day
+    const attendanceData = await Promise.all(
+      pastWeekDates.map(async (date) => {
+        const dailyAttendance = { name: format(date, "EEEE") }; // Format to display day names (EEEE format)
 
-      const pastWeekDates = [...Array(7).keys()]
-        .map((i) => format(subDays(new Date(), i), "yyyy-MM-dd"))
-        .reverse();
+        // Fetch attendance for each clinic
+        await Promise.all(
+          clinics.map(async (clinic) => {
+            const attendance = await fetchAttendance(clinic.id);
+            const count = attendance.filter(
+              (record) =>
+                isSameDay(new Date(record.datetime), date) && // Compare with the correct date
+                record.status === "present"
+            ).length;
 
-      const clinicAttendance = pastWeekDates.map((date) => {
-        return attendance.filter(
-          (record) =>
-            isSameDay(new Date(record.datetime), new Date(date)) &&
-            record.status === "present"
-        ).length;
-      });
+            dailyAttendance[clinic.name] = count;
+          })
+        );
 
-      attendanceData[clinic.name] = clinicAttendance;
-    }
+        return dailyAttendance;
+      })
+    );
 
     return attendanceData;
   } catch (error) {
     console.error("Error fetching attendance data:", error);
+    return []; // Return empty array if there's an error
   }
 };
 
 const AttendanceDataChart = () => {
-  const [attendanceData, setAttendanceData] = useState({});
+  const [attendanceData, setAttendanceData] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -48,21 +55,22 @@ const AttendanceDataChart = () => {
     fetchData();
   }, []);
 
-  const series = Object.keys(attendanceData).map((clinicName) => ({
-    data: attendanceData[clinicName],
-    label: clinicName,
-    stack: "total",
-  }));
-
   return (
-    <>
+    <ResponsiveContainer width={450} height={300}>
       <BarChart
-        margin={{ top: 100 }}
-        width={400}
-        height={250}
-        series={series}
-      />
-    </>
+        data={attendanceData}
+        margin={{ top: 0, right: 30, left: -40, bottom: 40 }} // Adjust right and left margins
+      >
+        <CartesianGrid strokeDasharray="3 3" vertical={false} /> {/* Remove Y-axis grid */}
+        <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-35} textAnchor="end" height={60} /> {/* Rotate X-axis labels */}
+        <YAxis />
+        <Tooltip />
+        <Legend layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{ marginTop:"-20px", marginRight: "-20px" }} iconType="circle" /> {/* Add space between legend and chart and use circular icons */}
+        {Object.keys(attendanceData[0] || {}).filter(key => key !== 'name').map((clinicName, index) => (
+          <Bar key={clinicName} dataKey={clinicName} stackId="a" fill={`#${Math.floor(Math.random()*16777215).toString(16)}`} />
+        ))}
+      </BarChart>
+    </ResponsiveContainer>
   );
 };
 
