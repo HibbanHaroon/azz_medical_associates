@@ -152,51 +152,55 @@ export default function CEODashboard() {
   const fetchAllDataForClinicArrivals = async () => {
     try {
       const clinics = await getAllClinics();
-
+  
       // Fetch all doctors and arrivals for all clinics in parallel
       const clinicDataPromises = clinics.map(async (clinic) => {
         const doctors = await fetchDoctors(clinic.id);
-
+  
         // Prepare to fetch arrivals in parallel
         const doctorPromises = doctors.map(async (doctor) => {
           const arrivals = await fetchArrivals(clinic.id, doctor.id);
-
-          // Filter arrivals within the last month
-          const oneMonthAgo = new Date();
-          oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-          const oneMonthArrivals = arrivals.filter((arrival) => {
+  
+          // Filter arrivals for today
+          const today = new Date();
+          const todayArrivals = arrivals.filter((arrival) => {
             const arrivalDate = new Date(arrival.arrivalTime);
-            return arrivalDate >= oneMonthAgo;
+            return (
+              arrivalDate.getDate() === today.getDate() &&
+              arrivalDate.getMonth() === today.getMonth() &&
+              arrivalDate.getFullYear() === today.getFullYear()
+            );
           });
-
-          return oneMonthArrivals.length;
+  
+          return todayArrivals.length;
         });
-
+  
         // Sum up arrivals counts for the clinic
-        const oneMonthArrivalsCount = (
+        const todayArrivalsCount = (
           await Promise.all(doctorPromises)
         ).reduce((acc, count) => acc + count, 0);
-
+  
         return {
           clinicName: clinic.name,
-          oneMonthArrivalsCount,
+          todayArrivalsCount,
         };
       });
-
+  
       // Wait for all clinic data to be processed
-      const oneMonthArrivalsPerClinic = await Promise.all(clinicDataPromises);
-
-      // Sort by oneMonthArrivalsCount in descending order
-      oneMonthArrivalsPerClinic.sort(
-        (a, b) => b.oneMonthArrivalsCount - a.oneMonthArrivalsCount
+      const todayArrivalsPerClinic = await Promise.all(clinicDataPromises);
+  
+      // Sort by todayArrivalsCount in descending order
+      todayArrivalsPerClinic.sort(
+        (a, b) => b.todayArrivalsCount - a.todayArrivalsCount
       );
-
-      return oneMonthArrivalsPerClinic;
+  
+      return todayArrivalsPerClinic;
     } catch (error) {
       console.error("Error in fetching data:", error);
       throw error;
     }
   };
+  
   const fetchClinicsBC = async () => {
     try {
       const clinics = await getAllClinics();
@@ -274,6 +278,8 @@ export default function CEODashboard() {
         await fetchClinics();
         await fetchClinicsBC();
         const arrivalsData = await fetchAllDataForClinicArrivals();
+        console.log("....")
+        console.log(arrivalsData)
         setDataForOneMonthArrivals(arrivalsData);
         const monthlyArrivalsData = await fetchMonthlyArrivals();
         setDataForMonthlyArrivals(monthlyArrivalsData);
@@ -537,7 +543,7 @@ export default function CEODashboard() {
                   fontWeight="bold"
                   sx={{ marginBottom: 0, marginTop: 0 }}
                 >
-                  Past One Month Arrivals by Clinic
+                   Arrival count by Clinic for today
                 </Typography>
                 <HorizontalBarOneMonthArrivals data={dataForOneMonthArrivals} />
               </Box>

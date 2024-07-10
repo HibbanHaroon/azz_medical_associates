@@ -13,7 +13,7 @@ const HorizontalBarOneMonthArrivals = ({ data }) => {
     labels: data.map(item => item.clinicName),
     datasets: [
       {
-        data: data.map(item => item.oneMonthArrivalsCount),
+        data: data.map(item => item.todayArrivalsCount),
         backgroundColor: data.map((item, index) =>
           index === 0 ? theme.palette.success.main : theme.palette.primary.main),
         borderColor: data.map((item, index) =>
