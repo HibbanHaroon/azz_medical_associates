@@ -56,7 +56,7 @@ const AttendanceDataChart = () => {
   }, []);
 
   return (
-    <ResponsiveContainer width={450} height={300}>
+    <ResponsiveContainer width={500} height={300}>
       <BarChart
         data={attendanceData}
         margin={{ top: 0, right: 30, left: -40, bottom: 40 }} // Adjust right and left margins
