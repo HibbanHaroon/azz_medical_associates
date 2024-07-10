@@ -65,7 +65,15 @@ const AttendanceDataChart = () => {
         <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-35} textAnchor="end" height={60} /> {/* Rotate X-axis labels */}
         <YAxis />
         <Tooltip />
-        <Legend layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{ marginTop:"-20px", marginRight: "-20px" }} iconType="circle" /> {/* Add space between legend and chart and use circular icons */}
+        <Legend
+  layout="vertical"
+  align="right"
+  verticalAlign="middle"
+  wrapperStyle={{ marginRight: "-20px", marginTop:"-20px" }} // Adjust margin-right to create space
+  iconType="circle"
+  iconSize={8} // Reduce the size of the legend icons
+  contentStyle={{ fontSize: 8 }} // Reduce the font size of the legend text labels
+/>
         {Object.keys(attendanceData[0] || {}).filter(key => key !== 'name').map((clinicName, index) => (
           <Bar key={clinicName} dataKey={clinicName} stackId="a" fill={`#${Math.floor(Math.random()*16777215).toString(16)}`} />
         ))}
