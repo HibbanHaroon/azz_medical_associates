@@ -69,7 +69,7 @@ const AttendanceDataChart = () => {
   layout="vertical"
   align="right"
   verticalAlign="middle"
-  wrapperStyle={{ marginRight: "-20px", marginTop:"-20px" }} // Adjust margin-right to create space
+  wrapperStyle={{ marginRight: "-20px", marginTop:"-35px" }} // Adjust margin-right to create space
   iconType="circle"
   iconSize={8} // Reduce the size of the legend icons
   contentStyle={{ fontSize: 8 }} // Reduce the font size of the legend text labels
