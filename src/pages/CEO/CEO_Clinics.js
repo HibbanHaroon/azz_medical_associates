@@ -74,6 +74,7 @@ import {
 } from "../../services/adminService";
 import { fetchAllArrivals } from "../../services/arrivalsService";
 import AttendanceDataChart from "../../components/AttendanceDataChart";
+import ClinicRatioChart from "../../components/ClinicRatioChart";
 
 const drawerWidth = 300;
 
@@ -262,6 +263,8 @@ export default function CEOClinics() {
 
   const [selectedClinicId, setSelectedClinicId] = useState("all");
 
+  const [isAllClinics, setIsAllClinics] = useState(true);
+
   const dropdownItems = [
     [
       {
@@ -402,6 +405,12 @@ export default function CEOClinics() {
       selectedClinicName === "All Clinics"
         ? null
         : clinics.find((clinic) => clinic.name === selectedClinicName)?.id;
+
+    if (selectedClinicName === "All Clinics") {
+      setIsAllClinics(true);
+    } else {
+      setIsAllClinics(false);
+    }
     setSelectedClinic(selectedClinicName);
     const rushHours = calculateRushHours(allArrivals, clinicId);
     setRushHoursData(rushHours);
@@ -846,6 +855,32 @@ export default function CEOClinics() {
                   </CardContent>
                 </Card>
               </Grid>
+              {isAllClinics && (
+                <Grid item xs={12}>
+                  <Card
+                    sx={{
+                      p: 3,
+                      m: 1,
+                      borderRadius: 3,
+                      boxShadow: 2,
+                      height: 300,
+                    }}
+                  >
+                    <CardContent sx={{ p: 2, height: "100%" }}>
+                      <Typography
+                        variant="h6"
+                        fontWeight="bold"
+                        sx={{ mb: 2, mt: 0, textAlign: "left" }}
+                      >
+                        Arrivals to Providers Ratio
+                      </Typography>
+                      <Box sx={{ height: "100%", width: "100%" }}>
+                        <ClinicRatioChart />
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              )}
 
               <Grid item xs={12}>
                 <Card
