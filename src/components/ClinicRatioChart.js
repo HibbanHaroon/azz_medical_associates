@@ -1,11 +1,64 @@
 import React, { useEffect, useState } from "react";
 import { Bar } from "react-chartjs-2";
+import "chart.js/auto";
 import { fetchAllArrivals } from "../services/arrivalsService";
 import { fetchDoctors } from "../services/doctorService";
 import { getAllClinics } from "../services/clinicService";
 
 const ClinicRatioChart = () => {
-  const [chartData, setChartData] = useState({});
+  const [chartData, setChartData] = useState({ datasets: [] });
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: {
+        display: true,
+        grid: {
+          display: false, // Disable vertical grid lines
+        },
+        ticks: {
+          autoSkip: false,
+        },
+      },
+      y: {
+        display: true,
+        beginAtZero: true,
+        ticks: {
+          stepSize: 1,
+          callback: function (value) {
+            if (Number.isInteger(value)) {
+              return value;
+            }
+          },
+        },
+      },
+    },
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        callbacks: {
+          label: function (context) {
+            let label = context.dataset.label || "";
+            if (label) {
+              label += ": ";
+            }
+            if (context.parsed.y !== null) {
+              label += context.parsed.y;
+            }
+            return label;
+          },
+        },
+      },
+    },
+    elements: {
+      point: {
+        radius: 5,
+      },
+    },
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -29,18 +82,23 @@ const ClinicRatioChart = () => {
         console.log(ratios, clinicNames);
       }
 
-      setChartData({
+      const data = {
         labels: clinicNames,
         datasets: [
           {
             label: "Arrivals to Providers Ratio",
             data: ratios,
-            backgroundColor: "rgba(75, 192, 192, 0.6)",
-            borderColor: "rgba(75, 192, 192, 1)",
+            backgroundColor: ["rgba(75, 192, 192, 0.6)"],
+            borderColor: ["rgba(75, 192, 192, 1)"],
             borderWidth: 1,
+            tension: 0.4,
           },
         ],
-      });
+      };
+
+      console.log(data);
+
+      setChartData(data);
     };
 
     fetchData();
@@ -48,18 +106,8 @@ const ClinicRatioChart = () => {
   }, []);
 
   return (
-    <div>
-      <Bar
-        data={chartData}
-        options={{
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: true,
-            },
-          },
-        }}
-      />
+    <div style={{ height: "200px" }}>
+      <Bar data={chartData} options={options} />
     </div>
   );
 };

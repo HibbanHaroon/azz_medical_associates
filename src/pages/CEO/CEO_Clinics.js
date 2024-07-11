@@ -874,7 +874,7 @@ export default function CEOClinics() {
                       >
                         Arrivals to Providers Ratio
                       </Typography>
-                      <Box sx={{ height: "100%", width: "100%" }}>
+                      <Box sx={{ width: "100%" }}>
                         <ClinicRatioChart />
                       </Box>
                     </CardContent>
