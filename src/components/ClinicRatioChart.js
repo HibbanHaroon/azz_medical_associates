@@ -6,7 +6,7 @@ import { fetchDoctors } from "../services/doctorService";
 import { getAllClinics } from "../services/clinicService";
 import { useTheme } from "@mui/material/styles";
 
-const ClinicRatioChart = () => {
+const ClinicRatioChart = ({ height }) => {
   const [chartData, setChartData] = useState({ datasets: [] });
   const theme = useTheme();
 
@@ -111,7 +111,7 @@ const ClinicRatioChart = () => {
   }, []);
 
   return (
-    <div style={{ height: "250px" }}>
+    <div style={height}>
       <Bar data={chartData} options={options} />
     </div>
   );

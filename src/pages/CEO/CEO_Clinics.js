@@ -75,6 +75,7 @@ import {
 import { fetchAllArrivals } from "../../services/arrivalsService";
 import AttendanceDataChart from "../../components/AttendanceDataChart";
 import ClinicRatioChart from "../../components/ClinicRatioChart";
+import AverageTimeChart from "../../components/AverageTimeChart";
 
 const drawerWidth = 300;
 
@@ -264,6 +265,7 @@ export default function CEOClinics() {
   const [selectedClinicId, setSelectedClinicId] = useState("all");
 
   const [isAllClinics, setIsAllClinics] = useState(true);
+  const [dropdownClinicId, setDropdownClinicId] = useState(null);
 
   const dropdownItems = [
     [
@@ -405,6 +407,8 @@ export default function CEOClinics() {
       selectedClinicName === "All Clinics"
         ? null
         : clinics.find((clinic) => clinic.name === selectedClinicName)?.id;
+
+    setDropdownClinicId(clinicId);
 
     if (selectedClinicName === "All Clinics") {
       setIsAllClinics(true);
@@ -855,7 +859,7 @@ export default function CEOClinics() {
                   </CardContent>
                 </Card>
               </Grid>
-              {isAllClinics && (
+              {/* {isAllClinics && (
                 <Grid item xs={12}>
                   <Card
                     sx={{
@@ -875,12 +879,72 @@ export default function CEOClinics() {
                         Arrivals to Providers Ratio
                       </Typography>
                       <Box sx={{ width: "100%" }}>
-                        <ClinicRatioChart />
+                        <ClinicRatioChart height={{ height: "200px" }} />
                       </Box>
                     </CardContent>
                   </Card>
                 </Grid>
-              )}
+              )} */}
+
+              <Grid item xs={12} md={6}>
+                <Card
+                  sx={{
+                    p: 3,
+                    m: 1,
+                    borderRadius: 3,
+                    boxShadow: 2,
+                    height: 300,
+                  }}
+                >
+                  <CardContent sx={{ p: 2, height: "100%" }}>
+                    <Typography
+                      variant="h6"
+                      fontWeight="bold"
+                      sx={{ mb: 2, mt: 0, textAlign: "left" }}
+                    >
+                      Average Meeting Time for each Provider
+                    </Typography>
+                    <Box sx={{ width: "100%" }}>
+                      <AverageTimeChart
+                        height={{ height: "200px" }}
+                        isAllClinics={isAllClinics}
+                        clinicId={dropdownClinicId}
+                        chartType={"meeting"}
+                      />
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Card
+                  sx={{
+                    p: 3,
+                    m: 1,
+                    borderRadius: 3,
+                    boxShadow: 2,
+                    height: 300,
+                  }}
+                >
+                  <CardContent sx={{ p: 2, height: "100%" }}>
+                    <Typography
+                      variant="h6"
+                      fontWeight="bold"
+                      sx={{ mb: 2, mt: 0, textAlign: "left" }}
+                    >
+                      Average Waiting Time for each Provider
+                    </Typography>
+                    <Box sx={{ width: "100%" }}>
+                      <AverageTimeChart
+                        height={{ height: "200px" }}
+                        isAllClinics={isAllClinics}
+                        clinicId={dropdownClinicId}
+                        chartType={"waiting"}
+                      />
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
 
               <Grid item xs={12}>
                 <Card

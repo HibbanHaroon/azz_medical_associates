@@ -42,6 +42,7 @@ import MonthlyArrivalsChart from "../../components/MonthlyArrivalsChart";
 import ShimmerLoader from "../../components/ShimmerLoader"; // Import the ShimmerLoader component
 import { CircularProgress } from "@mui/material";
 import ClinicRatioChart from "../../components/ClinicRatioChart";
+import AverageTimeChart from "../../components/AverageTimeChart";
 
 const drawerWidth = 300;
 
@@ -575,8 +576,67 @@ export default function CEODashboard() {
                 >
                   Arrivals to Providers Ratio
                 </Typography>
-                <ClinicRatioChart />
+                <ClinicRatioChart height={{ height: "250px" }} />
               </Box>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Card
+                sx={{
+                  p: 3,
+                  m: 1,
+                  borderRadius: 3,
+                  boxShadow: 2,
+                  height: 300,
+                }}
+              >
+                <CardContent sx={{ p: 2, height: "100%" }}>
+                  <Typography
+                    variant="h6"
+                    fontWeight="bold"
+                    sx={{ mb: 2, mt: 0, textAlign: "left" }}
+                  >
+                    Average Meeting Time for each Provider
+                  </Typography>
+                  <Box sx={{ width: "100%" }}>
+                    <AverageTimeChart
+                      height={{ height: "200px" }}
+                      isAllClinics={true}
+                      clinicId={null}
+                      chartType={"meeting"}
+                    />
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Card
+                sx={{
+                  p: 3,
+                  m: 1,
+                  borderRadius: 3,
+                  boxShadow: 2,
+                  height: 300,
+                }}
+              >
+                <CardContent sx={{ p: 2, height: "100%" }}>
+                  <Typography
+                    variant="h6"
+                    fontWeight="bold"
+                    sx={{ mb: 2, mt: 0, textAlign: "left" }}
+                  >
+                    Average Waiting Time for each Provider
+                  </Typography>
+                  <Box sx={{ width: "100%" }}>
+                    <AverageTimeChart
+                      height={{ height: "200px" }}
+                      isAllClinics={true}
+                      clinicId={null}
+                      chartType={"waiting"}
+                    />
+                  </Box>
+                </CardContent>
+              </Card>
             </Grid>
           </Grid>
         )}
