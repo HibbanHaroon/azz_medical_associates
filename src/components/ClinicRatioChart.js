@@ -4,9 +4,11 @@ import "chart.js/auto";
 import { fetchAllArrivals } from "../services/arrivalsService";
 import { fetchDoctors } from "../services/doctorService";
 import { getAllClinics } from "../services/clinicService";
+import { useTheme } from "@mui/material/styles";
 
 const ClinicRatioChart = () => {
   const [chartData, setChartData] = useState({ datasets: [] });
+  const theme = useTheme();
 
   const options = {
     responsive: true,
@@ -88,10 +90,13 @@ const ClinicRatioChart = () => {
           {
             label: "Arrivals to Providers Ratio",
             data: ratios,
-            backgroundColor: ["rgba(75, 192, 192, 0.6)"],
-            borderColor: ["rgba(75, 192, 192, 1)"],
-            borderWidth: 1,
-            tension: 0.4,
+            backgroundColor: theme.palette.primary.main,
+            borderColor: theme.palette.primary.dark,
+            borderWidth: 0,
+            barThickness: 20,
+            categoryPercentage: 0.8,
+            barPercentage: 0.9,
+            borderRadius: 40,
           },
         ],
       };
@@ -106,7 +111,7 @@ const ClinicRatioChart = () => {
   }, []);
 
   return (
-    <div style={{ height: "200px" }}>
+    <div style={{ height: "250px" }}>
       <Bar data={chartData} options={options} />
     </div>
   );

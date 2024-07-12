@@ -1,8 +1,14 @@
 // MonthlyArrivalsChart.js
-import React from 'react';
-import { Bar } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip } from 'chart.js';
-import { useTheme } from '@mui/material/styles';
+import React from "react";
+import { Bar } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Tooltip,
+} from "chart.js";
+import { useTheme } from "@mui/material/styles";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
 
@@ -10,14 +16,17 @@ const MonthlyArrivalsChart = ({ data }) => {
   const theme = useTheme();
 
   const chartData = {
-    labels: data.map(item => item.month),
+    labels: data.map((item) => item.month),
     datasets: [
       {
-        data: data.map(item => item.count),
-        backgroundColor: theme.palette.success.main, // Greenish color
-        borderColor: theme.palette.success.dark,
-        borderWidth: 1,
-        barThickness: 40,
+        data: data.map((item) => item.count),
+        backgroundColor: theme.palette.primary.main,
+        borderColor: theme.palette.primary.dark,
+        borderWidth: 0,
+        barThickness: 20,
+        categoryPercentage: 0.8,
+        barPercentage: 0.9,
+        borderRadius: 40,
       },
     ],
   };
@@ -31,7 +40,7 @@ const MonthlyArrivalsChart = ({ data }) => {
       },
       tooltip: {
         enabled: true,
-        mode: 'index',
+        mode: "index",
         intersect: false,
         callbacks: {
           title: function (tooltipItems) {
@@ -44,7 +53,7 @@ const MonthlyArrivalsChart = ({ data }) => {
       x: {
         ticks: {
           font: {
-            weight: 'bold',
+            weight: "bold",
           },
         },
         grid: {
@@ -55,7 +64,7 @@ const MonthlyArrivalsChart = ({ data }) => {
         beginAtZero: true,
         ticks: {
           font: {
-            weight: 'bold',
+            weight: "bold",
           },
         },
         grid: {
@@ -65,12 +74,12 @@ const MonthlyArrivalsChart = ({ data }) => {
     },
     animation: {
       duration: 1000,
-      easing: 'easeOutBounce',
+      easing: "easeOutBounce",
     },
   };
 
   return (
-    <div style={{ width: '100%', height: '90%' }}>
+    <div style={{ width: "100%", height: "90%" }}>
       <Bar data={chartData} options={options} />
     </div>
   );

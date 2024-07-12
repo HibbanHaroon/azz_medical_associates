@@ -41,6 +41,7 @@ import HorizontalBarOneMonthArrivals from "../../components/HorizontalBarOneMont
 import MonthlyArrivalsChart from "../../components/MonthlyArrivalsChart";
 import ShimmerLoader from "../../components/ShimmerLoader"; // Import the ShimmerLoader component
 import { CircularProgress } from "@mui/material";
+import ClinicRatioChart from "../../components/ClinicRatioChart";
 
 const drawerWidth = 300;
 
@@ -152,15 +153,15 @@ export default function CEODashboard() {
   const fetchAllDataForClinicArrivals = async () => {
     try {
       const clinics = await getAllClinics();
-  
+
       // Fetch all doctors and arrivals for all clinics in parallel
       const clinicDataPromises = clinics.map(async (clinic) => {
         const doctors = await fetchDoctors(clinic.id);
-  
+
         // Prepare to fetch arrivals in parallel
         const doctorPromises = doctors.map(async (doctor) => {
           const arrivals = await fetchArrivals(clinic.id, doctor.id);
-  
+
           // Filter arrivals for today
           const today = new Date();
           const todayArrivals = arrivals.filter((arrival) => {
@@ -171,36 +172,37 @@ export default function CEODashboard() {
               arrivalDate.getFullYear() === today.getFullYear()
             );
           });
-  
+
           return todayArrivals.length;
         });
-  
+
         // Sum up arrivals counts for the clinic
-        const todayArrivalsCount = (
-          await Promise.all(doctorPromises)
-        ).reduce((acc, count) => acc + count, 0);
-  
+        const todayArrivalsCount = (await Promise.all(doctorPromises)).reduce(
+          (acc, count) => acc + count,
+          0
+        );
+
         return {
           clinicName: clinic.name,
           todayArrivalsCount,
         };
       });
-  
+
       // Wait for all clinic data to be processed
       const todayArrivalsPerClinic = await Promise.all(clinicDataPromises);
-  
+
       // Sort by todayArrivalsCount in descending order
       todayArrivalsPerClinic.sort(
         (a, b) => b.todayArrivalsCount - a.todayArrivalsCount
       );
-  
+
       return todayArrivalsPerClinic;
     } catch (error) {
       console.error("Error in fetching data:", error);
       throw error;
     }
   };
-  
+
   const fetchClinicsBC = async () => {
     try {
       const clinics = await getAllClinics();
@@ -227,7 +229,7 @@ export default function CEODashboard() {
     try {
       const clinics = await getAllClinics();
       const currentDate = new Date();
-      const monthlyArrivals = Array.from({ length: 12 }, (_, i) => ({
+      const monthlyArrivals = Array.from({ length: 6 }, (_, i) => ({
         month: new Date(
           currentDate.getFullYear(),
           currentDate.getMonth() - i,
@@ -278,8 +280,8 @@ export default function CEODashboard() {
         await fetchClinics();
         await fetchClinicsBC();
         const arrivalsData = await fetchAllDataForClinicArrivals();
-        console.log("....")
-        console.log(arrivalsData)
+        console.log("....");
+        console.log(arrivalsData);
         setDataForOneMonthArrivals(arrivalsData);
         const monthlyArrivalsData = await fetchMonthlyArrivals();
         setDataForMonthlyArrivals(monthlyArrivalsData);
@@ -543,12 +545,12 @@ export default function CEODashboard() {
                   fontWeight="bold"
                   sx={{ marginBottom: 0, marginTop: 0 }}
                 >
-                   Arrival count by Clinic for today
+                  Arrival count by Clinic for today
                 </Typography>
                 <HorizontalBarOneMonthArrivals data={dataForOneMonthArrivals} />
               </Box>
             </Grid>
-            <Grid item xs={12}>
+            <Grid item xs={12} md={6}>
               <Box
                 sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}
               >
@@ -560,6 +562,20 @@ export default function CEODashboard() {
                   Monthly Arrivals
                 </Typography>
                 <MonthlyArrivalsChart data={DataForMonthlyArrivals} />
+              </Box>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Box
+                sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}
+              >
+                <Typography
+                  variant="h6"
+                  fontWeight="bold"
+                  sx={{ marginBottom: 0, marginTop: 0 }}
+                >
+                  Arrivals to Providers Ratio
+                </Typography>
+                <ClinicRatioChart />
               </Box>
             </Grid>
           </Grid>
