@@ -36,6 +36,7 @@ import { fetchAdmins } from "../../services/adminService";
 import { fetchModerators } from "../../services/moderatorService";
 import { fetchNurses } from "../../services/nurseService";
 import { fetchArrivals } from "../../services/arrivalsService";
+import { fetchAllArrivals } from "../../services/arrivalsService";
 import BarcharttotalProvidersPerClinic from "../../components/BarcharttotalProvidersPerClinic";
 import HorizontalBarOneMonthArrivals from "../../components/HorizontalBarOneMonthArrivals ";
 import MonthlyArrivalsChart from "../../components/MonthlyArrivalsChart";
@@ -43,6 +44,7 @@ import ShimmerLoader from "../../components/ShimmerLoader"; // Import the Shimme
 import { CircularProgress } from "@mui/material";
 import ClinicRatioChart from "../../components/ClinicRatioChart";
 import AverageTimeChart from "../../components/AverageTimeChart";
+import AgeChart from "../../components/AgeChart";
 
 const drawerWidth = 300;
 
@@ -76,6 +78,7 @@ export default function CEODashboard() {
   const placeholder = "Loading data...";
   const placeholderDataBC = [{ name: "Loading...", providers: 0 }];
   const [clinicDataBC, setClinicDataBC] = useState(placeholderDataBC);
+  const [ageData, setAgeData] = useState([]);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
 
@@ -150,6 +153,55 @@ export default function CEODashboard() {
       </List>
     </div>
   );
+  const getAgeDemographics = async () => {
+    const clinics = await getAllClinics();
+  
+    // Fetch all doctors and arrivals for all clinics in parallel
+    const clinicDataPromises = clinics.map(async (clinic) => {
+      const arrivals = await fetchAllArrivals(clinic.id);
+      return arrivals;
+    });
+  
+    const allArrivals = await Promise.all(clinicDataPromises);
+    const flattenedArrivals = allArrivals.flat();
+  
+    // Calculate age demographics
+    const ageDemographics = {
+      '1-10': 0,
+      '11-20': 0,
+      '21-30': 0,
+      '31-40': 0,
+      '41-50': 0,
+      '51-60': 0,
+      '61-70': 0,
+      '71-80': 0,
+      '81-90': 0,
+      '91-100': 0
+    };
+  
+    const currentYear = new Date().getFullYear();
+  
+    flattenedArrivals.forEach(arrival => {
+      const birthYear = new Date(arrival.dob).getFullYear();
+      const age = currentYear - birthYear;
+  
+      if (age >= 1 && age <= 10) ageDemographics['1-10']++;
+      else if (age >= 11 && age <= 20) ageDemographics['11-20']++;
+      else if (age >= 21 && age <= 30) ageDemographics['21-30']++;
+      else if (age >= 31 && age <= 40) ageDemographics['31-40']++;
+      else if (age >= 41 && age <= 50) ageDemographics['41-50']++;
+      else if (age >= 51 && age <= 60) ageDemographics['51-60']++;
+      else if (age >= 61 && age <= 70) ageDemographics['61-70']++;
+      else if (age >= 71 && age <= 80) ageDemographics['71-80']++;
+      else if (age >= 81 && age <= 90) ageDemographics['81-90']++;
+      else if (age >= 91 && age <= 100) ageDemographics['91-100']++;
+    });
+  
+    return Object.entries(ageDemographics).map(([ageRange, count]) => ({
+      ageRange,
+      count
+    }));
+  };
 
   const fetchAllDataForClinicArrivals = async () => {
     try {
@@ -286,6 +338,8 @@ export default function CEODashboard() {
         setDataForOneMonthArrivals(arrivalsData);
         const monthlyArrivalsData = await fetchMonthlyArrivals();
         setDataForMonthlyArrivals(monthlyArrivalsData);
+        const dataa = await getAgeDemographics();
+        setAgeData(dataa);
         setLoading(false); // Set loading to false when all data is fetched
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -595,15 +649,10 @@ export default function CEODashboard() {
                     fontWeight="bold"
                     sx={{ mb: 2, mt: 0, textAlign: "left" }}
                   >
-                    Average Meeting Time for each Provider
+                    Age demographics
                   </Typography>
-                  <Box sx={{ width: "100%" }}>
-                    <AverageTimeChart
-                      height={{ height: "200px" }}
-                      isAllClinics={true}
-                      clinicId={null}
-                      chartType={"meeting"}
-                    />
+                  <Box sx={{ width: "100%", height:"100%" , marginTop:-5 }}>
+                    <AgeChart data={ageData}/>
                   </Box>
                 </CardContent>
               </Card>
