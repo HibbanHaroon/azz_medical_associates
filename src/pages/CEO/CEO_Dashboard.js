@@ -600,7 +600,7 @@ export default function CEODashboard() {
                   fontWeight="bold"
                   sx={{ marginBottom: 0, marginTop: 0 }}
                 >
-                  Arrival count by Clinic for today
+                  Patients Per Day
                 </Typography>
                 <HorizontalBarOneMonthArrivals data={dataForOneMonthArrivals} />
               </Box>
@@ -628,9 +628,9 @@ export default function CEODashboard() {
                   fontWeight="bold"
                   sx={{ marginBottom: 0, marginTop: 0 }}
                 >
-                  Arrivals to Providers Ratio
+                  Patient Provider Ratio
                 </Typography>
-                <ClinicRatioChart height={{ height: "250px" }} />
+                <ClinicRatioChart  />
               </Box>
             </Grid>
             <Grid item xs={12} md={6}>

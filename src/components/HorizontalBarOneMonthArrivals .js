@@ -9,15 +9,16 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 const HorizontalBarOneMonthArrivals = ({ data }) => {
   const theme = useTheme();
 
+  // Sort the data by todayArrivalsCount in descending order and select the top 6
+  const sortedData = [...data].sort((a, b) => b.todayArrivalsCount - a.todayArrivalsCount).slice(0, 6);
+
   const chartData = {
-    labels: data.map(item => item.clinicName),
+    labels: sortedData.map(item => item.clinicName),
     datasets: [
       {
-        data: data.map(item => item.todayArrivalsCount),
-        backgroundColor: data.map((item, index) =>
-          index === 0 ? theme.palette.success.main : theme.palette.primary.main),
-        borderColor: data.map((item, index) =>
-          index === 0 ? theme.palette.success.dark : theme.palette.primary.dark),
+        data: sortedData.map(item => item.todayArrivalsCount),
+        backgroundColor: theme.palette.primary.main,
+        borderColor: theme.palette.primary.dark,
         borderWidth: 1,
         borderRadius: 5,
         barThickness: 10,

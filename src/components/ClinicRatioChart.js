@@ -5,8 +5,13 @@ import { fetchAllArrivals } from "../services/arrivalsService";
 import { fetchDoctors } from "../services/doctorService";
 import { getAllClinics } from "../services/clinicService";
 import { useTheme } from "@mui/material/styles";
+import ChartDataLabels from "chartjs-plugin-datalabels";
+import { Chart } from 'chart.js';
 
-const ClinicRatioChart = ({ height }) => {
+// Register the plugin globally
+Chart.register(ChartDataLabels);
+
+const ClinicRatioChart = () => {
   const [chartData, setChartData] = useState({ datasets: [] });
   const theme = useTheme();
 
@@ -15,12 +20,9 @@ const ClinicRatioChart = ({ height }) => {
     maintainAspectRatio: false,
     scales: {
       x: {
-        display: true,
+        display: false, // Hide x-axis labels
         grid: {
           display: false, // Disable vertical grid lines
-        },
-        ticks: {
-          autoSkip: false,
         },
       },
       y: {
@@ -54,6 +56,22 @@ const ClinicRatioChart = ({ height }) => {
           },
         },
       },
+      datalabels: {
+        anchor: 'end',
+        align: 'start',
+        formatter: (value, context) => {
+          if (value === 0) {
+            return ''; // Do not display label for zero values
+          }
+          return context.chart.data.labels[context.dataIndex];
+        },
+        font: {
+          size: 10,
+        },
+        color: theme.palette.text.primary,
+        rotation: 0, // Ensure labels are horizontal
+        offset: -15, // Adjust the offset to position labels above the bar
+      },
     },
     elements: {
       point: {
@@ -65,15 +83,12 @@ const ClinicRatioChart = ({ height }) => {
   useEffect(() => {
     const fetchData = async () => {
       const clinics = await getAllClinics();
-      //   console.log("heehah", clinics);
       const clinicNames = [];
       var ratios = [];
 
       for (const clinic of clinics) {
         const arrivals = await fetchAllArrivals(clinic.id);
-        // console.log("heehah,I", arrivals);
         const doctors = await fetchDoctors(clinic.id);
-        // console.log("heehah II", doctors);
 
         let ratio = 0;
         if (doctors.length > 0) {
@@ -81,7 +96,6 @@ const ClinicRatioChart = ({ height }) => {
         }
         clinicNames.push(clinic.name);
         ratios.push(parseInt(ratio, 10));
-        console.log(ratios, clinicNames);
       }
 
       const data = {
@@ -101,17 +115,14 @@ const ClinicRatioChart = ({ height }) => {
         ],
       };
 
-      console.log(data);
-
       setChartData(data);
     };
 
     fetchData();
-    console.log(chartData);
   }, []);
 
   return (
-    <div style={height}>
+    <div style={{ width: "100%", height: "95%" }}>
       <Bar data={chartData} options={options} />
     </div>
   );
