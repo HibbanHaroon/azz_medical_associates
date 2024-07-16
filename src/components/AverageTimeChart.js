@@ -17,6 +17,14 @@ const AverageTimeChart = ({ height, isAllClinics, clinicId, chartType }) => {
       ? "Average Waiting Time (mins)"
       : "";
 
+  // Determine topColor based on chartType
+  let topColor =
+    chartType === "meeting"
+      ? "blue"
+      : chartType === "waiting"
+      ? "red"
+      : theme.palette.primary.main;
+
   const options = {
     responsive: true,
     maintainAspectRatio: false,
@@ -111,7 +119,6 @@ const AverageTimeChart = ({ height, isAllClinics, clinicId, chartType }) => {
 
           for (const arrival of doctorArrivals) {
             const calledInTime = new Date(arrival.calledInTime).getTime();
-            console.log(calledInTime);
             const arrivalTime = new Date(arrival.arrivalTime).getTime();
             const endTime = new Date(arrival.endTime).getTime();
             let time = 0;
@@ -120,10 +127,6 @@ const AverageTimeChart = ({ height, isAllClinics, clinicId, chartType }) => {
             } else if (chartType === "waiting") {
               time = calculateWaitingTime(calledInTime, arrivalTime);
             }
-
-            console.log("call", calledInTime);
-            console.log("end", endTime);
-            console.log("meet", time);
 
             doctorTimes[doctor.name].totalTime += time;
             doctorTimes[doctor.name].count += 1;
@@ -140,22 +143,27 @@ const AverageTimeChart = ({ height, isAllClinics, clinicId, chartType }) => {
             : 0,
       }));
 
-      console.log("amt", averageTimes);
-
       // Sort by average meeting time in descending order and take top 6
       const topDoctors = averageTimes
         .sort((a, b) => b.averageTime - a.averageTime)
         .slice(0, 6);
 
-      console.log("top", topDoctors);
+      // Find the maximum average time
+      const maxAverageTime = Math.max(
+        ...topDoctors.map((doctor) => doctor.averageTime)
+      );
 
       const data = {
         labels: topDoctors.map((doctor) => doctor.name),
         datasets: [
           {
-            label: { label },
+            label: label,
             data: topDoctors.map((doctor) => doctor.averageTime),
-            backgroundColor: theme.palette.primary.main,
+            backgroundColor: topDoctors.map((doctor) =>
+              doctor.averageTime === maxAverageTime
+                ? topColor
+                : theme.palette.primary.main
+            ),
             borderColor: theme.palette.primary.dark,
             borderWidth: 0,
             barThickness: 10,
@@ -170,10 +178,10 @@ const AverageTimeChart = ({ height, isAllClinics, clinicId, chartType }) => {
     };
 
     fetchData();
-  }, [isAllClinics, clinicId, theme]);
+  }, [isAllClinics, clinicId, chartType, theme]);
 
   return (
-    <div style={height}>
+    <div style={{ height }}>
       <Bar data={chartData} options={options} />
     </div>
   );

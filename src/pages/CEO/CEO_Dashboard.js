@@ -155,51 +155,43 @@ export default function CEODashboard() {
   );
   const getAgeDemographics = async () => {
     const clinics = await getAllClinics();
-  
+
     // Fetch all doctors and arrivals for all clinics in parallel
     const clinicDataPromises = clinics.map(async (clinic) => {
       const arrivals = await fetchAllArrivals(clinic.id);
       return arrivals;
     });
-  
+
     const allArrivals = await Promise.all(clinicDataPromises);
     const flattenedArrivals = allArrivals.flat();
-  
+
     // Calculate age demographics
     const ageDemographics = {
-      '1-10': 0,
-      '11-20': 0,
-      '21-30': 0,
-      '31-40': 0,
-      '41-50': 0,
-      '51-60': 0,
-      '61-70': 0,
-      '71-80': 0,
-      '81-90': 0,
-      '91-100': 0
+      "0-5": 0,
+      "6-18": 0,
+      "19-35": 0,
+      "36-50": 0,
+      "51-65": 0,
+      "66+": 0,
     };
-  
+
     const currentYear = new Date().getFullYear();
-  
-    flattenedArrivals.forEach(arrival => {
+
+    flattenedArrivals.forEach((arrival) => {
       const birthYear = new Date(arrival.dob).getFullYear();
       const age = currentYear - birthYear;
-  
-      if (age >= 1 && age <= 10) ageDemographics['1-10']++;
-      else if (age >= 11 && age <= 20) ageDemographics['11-20']++;
-      else if (age >= 21 && age <= 30) ageDemographics['21-30']++;
-      else if (age >= 31 && age <= 40) ageDemographics['31-40']++;
-      else if (age >= 41 && age <= 50) ageDemographics['41-50']++;
-      else if (age >= 51 && age <= 60) ageDemographics['51-60']++;
-      else if (age >= 61 && age <= 70) ageDemographics['61-70']++;
-      else if (age >= 71 && age <= 80) ageDemographics['71-80']++;
-      else if (age >= 81 && age <= 90) ageDemographics['81-90']++;
-      else if (age >= 91 && age <= 100) ageDemographics['91-100']++;
+
+      if (age >= 0 && age <= 5) ageDemographics["0-5"]++;
+      else if (age >= 6 && age <= 18) ageDemographics["6-18"]++;
+      else if (age >= 19 && age <= 35) ageDemographics["19-35"]++;
+      else if (age >= 36 && age <= 50) ageDemographics["36-50"]++;
+      else if (age >= 51 && age <= 65) ageDemographics["51-65"]++;
+      else if (age >= 66) ageDemographics["66+"]++;
     });
-  
+
     return Object.entries(ageDemographics).map(([ageRange, count]) => ({
       ageRange,
-      count
+      count,
     }));
   };
 
@@ -586,20 +578,6 @@ export default function CEODashboard() {
                   fontWeight="bold"
                   sx={{ marginBottom: 0, marginTop: 0 }}
                 >
-                  No Of Providers
-                </Typography>
-                <BarcharttotalProvidersPerClinic data={clinicDataBC} />
-              </Box>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Box
-                sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}
-              >
-                <Typography
-                  variant="h6"
-                  fontWeight="bold"
-                  sx={{ marginBottom: 0, marginTop: 0 }}
-                >
                   Patients Per Day
                 </Typography>
                 <HorizontalBarOneMonthArrivals data={dataForOneMonthArrivals} />
@@ -614,12 +592,12 @@ export default function CEODashboard() {
                   fontWeight="bold"
                   sx={{ marginBottom: 0, marginTop: 0 }}
                 >
-                  Monthly Arrivals
+                  Patient Provider Ratio
                 </Typography>
-                <MonthlyArrivalsChart data={DataForMonthlyArrivals} />
+                <ClinicRatioChart />
               </Box>
             </Grid>
-            <Grid item xs={12} md={6}>
+            {/* <Grid item xs={12} md={6}>
               <Box
                 sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}
               >
@@ -628,11 +606,11 @@ export default function CEODashboard() {
                   fontWeight="bold"
                   sx={{ marginBottom: 0, marginTop: 0 }}
                 >
-                  Patient Provider Ratio
+                  No Of Providers
                 </Typography>
-                <ClinicRatioChart  />
+                <BarcharttotalProvidersPerClinic data={clinicDataBC} />
               </Box>
-            </Grid>
+            </Grid> */}
             <Grid item xs={12} md={6}>
               <Card
                 sx={{
@@ -649,15 +627,19 @@ export default function CEODashboard() {
                     fontWeight="bold"
                     sx={{ mb: 2, mt: 0, textAlign: "left" }}
                   >
-                    Age demographics
+                    Average Meeting Time for each Provider
                   </Typography>
-                  <Box sx={{ width: "100%", height:"100%" , marginTop:-5 }}>
-                    <AgeChart data={ageData}/>
+                  <Box sx={{ width: "100%" }}>
+                    <AverageTimeChart
+                      height={{ height: "200px" }}
+                      isAllClinics={true}
+                      clinicId={null}
+                      chartType={"meeting"}
+                    />
                   </Box>
                 </CardContent>
               </Card>
             </Grid>
-
             <Grid item xs={12} md={6}>
               <Card
                 sx={{
@@ -686,6 +668,44 @@ export default function CEODashboard() {
                   </Box>
                 </CardContent>
               </Card>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Card
+                sx={{
+                  p: 3,
+                  m: 1,
+                  borderRadius: 3,
+                  boxShadow: 2,
+                  height: 300,
+                }}
+              >
+                <CardContent sx={{ p: 2, height: "100%" }}>
+                  <Typography
+                    variant="h6"
+                    fontWeight="bold"
+                    sx={{ mb: 2, mt: 0, textAlign: "left" }}
+                  >
+                    Age demographics
+                  </Typography>
+                  <Box sx={{ width: "100%", height: "100%", marginTop: -5 }}>
+                    <AgeChart data={ageData} />
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Box
+                sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}
+              >
+                <Typography
+                  variant="h6"
+                  fontWeight="bold"
+                  sx={{ marginBottom: 0, marginTop: 0 }}
+                >
+                  Monthly Arrivals
+                </Typography>
+                <MonthlyArrivalsChart data={DataForMonthlyArrivals} />
+              </Box>
             </Grid>
           </Grid>
         )}

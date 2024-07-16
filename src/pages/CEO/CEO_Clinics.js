@@ -810,6 +810,7 @@ export default function CEOClinics() {
                 </Select>
               </FormControl>
             </Box>
+            {/* Loader here */}
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
                 <Card
@@ -853,7 +854,7 @@ export default function CEOClinics() {
                     >
                       Valuable Providers
                     </Typography>
-                    <Box sx={{ height: "90%", width: "90%" }}>
+                    <Box sx={{ height: "90%", width: "100%" }}>
                       <ValuableProvidersPieChart data={valuableProvidersData} />
                     </Box>
                   </CardContent>
@@ -902,20 +903,19 @@ export default function CEOClinics() {
                       fontWeight="bold"
                       sx={{ mb: 2, mt: 0, textAlign: "left" }}
                     >
-                      Average Meeting Time for each Provider
+                      Average Waiting Time for each Provider
                     </Typography>
                     <Box sx={{ width: "100%" }}>
                       <AverageTimeChart
                         height={{ height: "200px" }}
                         isAllClinics={isAllClinics}
                         clinicId={dropdownClinicId}
-                        chartType={"meeting"}
+                        chartType={"waiting"}
                       />
                     </Box>
                   </CardContent>
                 </Card>
               </Grid>
-
               <Grid item xs={12} md={6}>
                 <Card
                   sx={{
@@ -932,20 +932,19 @@ export default function CEOClinics() {
                       fontWeight="bold"
                       sx={{ mb: 2, mt: 0, textAlign: "left" }}
                     >
-                      Average Waiting Time for each Provider
+                      Average Meeting Time for each Provider
                     </Typography>
                     <Box sx={{ width: "100%" }}>
                       <AverageTimeChart
                         height={{ height: "200px" }}
                         isAllClinics={isAllClinics}
                         clinicId={dropdownClinicId}
-                        chartType={"waiting"}
+                        chartType={"meeting"}
                       />
                     </Box>
                   </CardContent>
                 </Card>
               </Grid>
-
               <Grid item xs={12}>
                 <Card
                   sx={{
@@ -962,7 +961,7 @@ export default function CEOClinics() {
                       fontWeight="bold"
                       sx={{ mb: 2, mt: 0, textAlign: "left" }}
                     >
-                      Rush Hours
+                      Busy Hours
                     </Typography>
                     <Box sx={{ height: "100%", width: "100%" }}>
                       <RushHoursChart data={rushHoursData} />

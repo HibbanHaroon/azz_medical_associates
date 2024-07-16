@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import dayjs from 'dayjs';
+import dayjs from "dayjs";
 import {
   Container,
   CssBaseline,
@@ -15,7 +15,7 @@ import {
   DialogActions,
   IconButton,
 } from "@mui/material";
-import FaceIcon from '@mui/icons-material/Face';
+import FaceIcon from "@mui/icons-material/Face";
 import ArrivalIcon from "@mui/icons-material/EmojiPeople";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CloseIcon from "@mui/icons-material/Close";
@@ -103,7 +103,6 @@ export default function PatientArrival() {
     });
   };
 
-  
   const handleCallAttended = async (id) => {
     try {
       console.log("audio done + updating now");
@@ -139,17 +138,17 @@ export default function PatientArrival() {
     if (callStack.length > 0) {
       const callRequest = callStack.pop();
       console.log(callRequest);
-      console.log(
-        "voice called for " +
-          callRequest.roomNumber +
-          callRequest.token +
-          callRequest.patientLastName
-      );
-      generateVoiceMessage(
-        callRequest.roomNumber,
-        callRequest.token,
-        callRequest.patientLastName
-      );
+      // console.log(
+      //   "voice called for " +
+      //     callRequest.roomNumber +
+      //     callRequest.token +
+      //     callRequest.patientLastName
+      // );
+      // generateVoiceMessage(
+      //   callRequest.roomNumber,
+      //   callRequest.token,
+      //   callRequest.patientLastName
+      // );
       handleCallAttended(callRequest.id);
     }
   };
@@ -160,7 +159,6 @@ export default function PatientArrival() {
     setFirstName("");
     setLastName("");
     setDob(null);
-    
   };
 
   const handleArrival = async () => {
@@ -222,7 +220,7 @@ export default function PatientArrival() {
           setTimeout(() => {
             setOpenDialog(false);
             handleDialogClose();
-          }, 7000); 
+          }, 7000);
         } else {
           console.error("Error submitting arrival data:", response.statusText);
         }
@@ -385,31 +383,28 @@ export default function PatientArrival() {
               />
             </Box>
 
-
-
-<LocalizationProvider dateAdapter={AdapterDayjs}>
-  <DemoContainer components={["DatePicker"]}>
-    <DemoItem>
-      <DatePicker
-        label="Date of Birth"
-        value={dob}
-        onChange={(newValue) => setDob(newValue)}
-        format="MM-DD-YYYY"
-        maxDate={dayjs()}  // Prevent dates after today
-        slotProps={{
-          textField: {
-            required: true,
-            fullWidth: true,
-            sx: {
-              mb: 1,
-            },
-          },
-        }}
-      />
-    </DemoItem>
-  </DemoContainer>
-</LocalizationProvider>
-
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DemoContainer components={["DatePicker"]}>
+                <DemoItem>
+                  <DatePicker
+                    label="Date of Birth"
+                    value={dob}
+                    onChange={(newValue) => setDob(newValue)}
+                    format="MM-DD-YYYY"
+                    maxDate={dayjs()} // Prevent dates after today
+                    slotProps={{
+                      textField: {
+                        required: true,
+                        fullWidth: true,
+                        sx: {
+                          mb: 1,
+                        },
+                      },
+                    }}
+                  />
+                </DemoItem>
+              </DemoContainer>
+            </LocalizationProvider>
 
             {/* <TextField
               variant="outlined"
@@ -500,13 +495,13 @@ export default function PatientArrival() {
               Notification Sent
             </Typography>
             <Typography variant="body1" sx={{ textAlign: "center", mb: 2 }}>
-               {"Token Number"}
+              {"Token Number"}
             </Typography>
             <Typography variant="h1" sx={{ textAlign: "center", mb: 2 }}>
-               {token < 10 ? `0${token}` : token}
+              {token < 10 ? `0${token}` : token}
             </Typography>
             <Typography variant="subtitle1" sx={{ textAlign: "center", mb: 2 }}>
-               Remember your token number !
+              Remember your token number !
             </Typography>
             <IconButton
               onClick={handleDialogClose}
@@ -541,31 +536,31 @@ export default function PatientArrival() {
         onClose={() => setShowPopup(false)}
         visible={showPopup}
       />
-<Button
-  onClick={handleAttendance}
-  variant="contained"
-  color="primary"
-  sx={{
-    position: "fixed",
-    bottom: "2rem",
-    left: "2rem",
-    zIndex: 999,
-    padding: 1,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    "@media (max-width: 600px)": {
-      padding: "4px 8px",
-      fontSize: "large",
-      marginTop: 90,
-    },
-  }}
->
-  <Box display="flex" flexDirection="column" alignItems="center">
-    <FaceIcon fontSize="large" />
-    <Typography variant="body2">Attendance</Typography>
-  </Box>
-</Button>
+      <Button
+        onClick={handleAttendance}
+        variant="contained"
+        color="primary"
+        sx={{
+          position: "fixed",
+          bottom: "2rem",
+          left: "2rem",
+          zIndex: 999,
+          padding: 1,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          "@media (max-width: 600px)": {
+            padding: "4px 8px",
+            fontSize: "large",
+            marginTop: 90,
+          },
+        }}
+      >
+        <Box display="flex" flexDirection="column" alignItems="center">
+          <FaceIcon fontSize="large" />
+          <Typography variant="body2">Attendance</Typography>
+        </Box>
+      </Button>
 
       <Button
         onClick={handleLiveCall}
@@ -633,8 +628,6 @@ export default function PatientArrival() {
     </div>
   );
 }
-
-
 
 // {
 //   navigate(`/${screenName.toLowerCase()}`, {
