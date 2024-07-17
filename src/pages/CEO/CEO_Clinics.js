@@ -852,7 +852,7 @@ export default function CEOClinics() {
                       fontWeight="bold"
                       sx={{ mb: 2, mt: -3, textAlign: "left" }}
                     >
-                      Valuable Providers
+                      Top Azz Providers
                     </Typography>
                     <Box sx={{ height: "90%", width: "100%" }}>
                       <ValuableProvidersPieChart data={valuableProvidersData} />
@@ -894,7 +894,7 @@ export default function CEOClinics() {
                     m: 1,
                     borderRadius: 3,
                     boxShadow: 2,
-                    height: 300,
+                    height: 350,
                   }}
                 >
                   <CardContent sx={{ p: 2, height: "100%" }}>
@@ -905,9 +905,9 @@ export default function CEOClinics() {
                     >
                       Average Waiting Time for each Provider
                     </Typography>
-                    <Box sx={{ width: "100%" }}>
+                    <Box sx={{ width: "100%", height: "100%" }}>
                       <AverageTimeChart
-                        height={{ height: "200px" }}
+                        height={{ height: "250px" }}
                         isAllClinics={isAllClinics}
                         clinicId={dropdownClinicId}
                         chartType={"waiting"}
@@ -923,7 +923,7 @@ export default function CEOClinics() {
                     m: 1,
                     borderRadius: 3,
                     boxShadow: 2,
-                    height: 300,
+                    height: 350,
                   }}
                 >
                   <CardContent sx={{ p: 2, height: "100%" }}>
@@ -934,9 +934,9 @@ export default function CEOClinics() {
                     >
                       Average Meeting Time for each Provider
                     </Typography>
-                    <Box sx={{ width: "100%" }}>
+                    <Box sx={{ width: "100%", height: "100%" }}>
                       <AverageTimeChart
-                        height={{ height: "200px" }}
+                        height={{ height: "300px" }}
                         isAllClinics={isAllClinics}
                         clinicId={dropdownClinicId}
                         chartType={"meeting"}

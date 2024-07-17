@@ -629,7 +629,7 @@ export default function CEODashboard() {
                   >
                     Average Meeting Time for each Provider
                   </Typography>
-                  <Box sx={{ width: "100%" }}>
+                  <Box sx={{ width: "100%", height: "100%" }}>
                     <AverageTimeChart
                       height={{ height: "200px" }}
                       isAllClinics={true}
@@ -658,7 +658,7 @@ export default function CEODashboard() {
                   >
                     Average Waiting Time for each Provider
                   </Typography>
-                  <Box sx={{ width: "100%" }}>
+                  <Box sx={{ width: "100%", height: "100%" }}>
                     <AverageTimeChart
                       height={{ height: "200px" }}
                       isAllClinics={true}

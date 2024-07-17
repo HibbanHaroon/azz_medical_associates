@@ -5,6 +5,7 @@ import { fetchAllArrivals } from "../services/arrivalsService";
 import { fetchDoctors } from "../services/doctorService";
 import { getAllClinics } from "../services/clinicService";
 import { useTheme } from "@mui/material/styles";
+import { ResponsiveContainer } from "recharts";
 
 const AverageTimeChart = ({ height, isAllClinics, clinicId, chartType }) => {
   const [chartData, setChartData] = useState({ datasets: [] });
@@ -20,7 +21,7 @@ const AverageTimeChart = ({ height, isAllClinics, clinicId, chartType }) => {
   // Determine topColor based on chartType
   let topColor =
     chartType === "meeting"
-      ? "blue"
+      ? "green"
       : chartType === "waiting"
       ? "red"
       : theme.palette.primary.main;
@@ -153,6 +154,8 @@ const AverageTimeChart = ({ height, isAllClinics, clinicId, chartType }) => {
         ...topDoctors.map((doctor) => doctor.averageTime)
       );
 
+      console.log(chartType, topDoctors);
+
       const data = {
         labels: topDoctors.map((doctor) => doctor.name),
         datasets: [
@@ -181,7 +184,7 @@ const AverageTimeChart = ({ height, isAllClinics, clinicId, chartType }) => {
   }, [isAllClinics, clinicId, chartType, theme]);
 
   return (
-    <div style={{ height }}>
+    <div style={{ height: "100%" }}>
       <Bar data={chartData} options={options} />
     </div>
   );
