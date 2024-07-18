@@ -66,6 +66,9 @@ export default function CEODashboard() {
   const theme = useTheme();
   const [open, setOpen] = useState(false);
   const [clinics, setClinics] = useState([]);
+  const [clinicsDetailed, setClinicsDetailed] = useState([]);
+  const [clinicRatios, setClinicRatios] = useState([]);
+  const [clinicNames, setClinicNames] = useState([]);
 
   const [totalClinics, setTotalClinics] = useState(0);
   const [totalDoctors, setTotalDoctors] = useState(0);
@@ -81,6 +84,14 @@ export default function CEODashboard() {
   const [ageData, setAgeData] = useState([]);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+
+  const [topDoctorsMeeting, setTopDoctorsMeeting] = useState([]);
+  const [maxAverageTimeMeeting, setMaxAverageTimeMeeting] = useState(0);
+  const [topDoctorsWaiting, setTopDoctorsWaiting] = useState([]);
+  const [maxAverageTimeWaiting, setMaxAverageTimeWaiting] = useState(0);
+
+  const [allArrivals, setAllArrivals] = useState([]);
+  const [allDoctors, setAllDoctors] = useState([]);
 
   const handleDrawerClose = () => {
     setIsClosing(true);
@@ -153,52 +164,179 @@ export default function CEODashboard() {
       </List>
     </div>
   );
-  const getAgeDemographics = async () => {
-    const clinics = await getAllClinics();
 
-    // Fetch all doctors and arrivals for all clinics in parallel
-    const clinicDataPromises = clinics.map(async (clinic) => {
-      const arrivals = await fetchAllArrivals(clinic.id);
-      return arrivals;
-    });
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      setLoading(true);
 
-    const allArrivals = await Promise.all(clinicDataPromises);
-    const flattenedArrivals = allArrivals.flat();
+      // Clinics Data
+      const clinicData = await getAllClinics();
+      setClinics(clinicData);
 
-    // Calculate age demographics
-    const ageDemographics = {
-      "0-5": 0,
-      "6-18": 0,
-      "19-35": 0,
-      "36-50": 0,
-      "51-65": 0,
-      "66+": 0,
+      // Arrivals Data
+      const arrivalsData = await Promise.all(
+        clinicData.map(async (clinic) => {
+          const arrivals = await fetchAllArrivals(clinic.id);
+          return arrivals.map((arrival) => ({
+            ...arrival,
+            clinicId: clinic.id,
+            arrivalTime: new Date(arrival.arrivalTime),
+          }));
+        })
+      );
+
+      const allArrivals = arrivalsData.flat();
+      setAllArrivals(allArrivals);
+
+      // Doctors Data
+      const doctorsData = await Promise.all(
+        clinicData.map(async (clinic) => {
+          const doctors = await fetchDoctors(clinic.id);
+          return doctors.map((doctor) => ({
+            ...doctor,
+            clinicId: clinic.id,
+          }));
+        })
+      );
+
+      const doctors = doctorsData.flat();
+      setAllDoctors(doctors);
     };
 
-    const currentYear = new Date().getFullYear();
+    fetchInitialData();
+    setLoading(false);
+  }, []);
 
-    flattenedArrivals.forEach((arrival) => {
-      const birthYear = new Date(arrival.dob).getFullYear();
-      const age = currentYear - birthYear;
+  useEffect(() => {
+    const getClinicRatios = () => {
+      var names = [];
+      var ratios = [];
 
-      if (age >= 0 && age <= 5) ageDemographics["0-5"]++;
-      else if (age >= 6 && age <= 18) ageDemographics["6-18"]++;
-      else if (age >= 19 && age <= 35) ageDemographics["19-35"]++;
-      else if (age >= 36 && age <= 50) ageDemographics["36-50"]++;
-      else if (age >= 51 && age <= 65) ageDemographics["51-65"]++;
-      else if (age >= 66) ageDemographics["66+"]++;
-    });
+      for (const clinic of clinics) {
+        const arrivals = allArrivals.filter(
+          (arrival) => arrival.clinicId === clinic.id
+        );
+        const doctors = allDoctors.filter(
+          (doctor) => doctor.clinicId === clinic.id
+        );
 
-    return Object.entries(ageDemographics).map(([ageRange, count]) => ({
-      ageRange,
-      count,
-    }));
-  };
+        let ratio = 0;
+        if (doctors.length > 0) {
+          ratio = arrivals.length / doctors.length;
+        }
+        names.push(clinic.name);
+        ratios.push(parseInt(ratio, 10));
+      }
+
+      setClinicRatios(ratios);
+      setClinicNames(names);
+      console.log("as", names, ratios);
+    };
+
+    const getAgeDemographics = async () => {
+      // Fetch all doctors and arrivals for all clinics in parallel
+      const clinicDataPromises = clinics.map(async (clinic) => {
+        const arrivals = await fetchAllArrivals(clinic.id);
+        return arrivals;
+      });
+
+      const newAllArrivals = await Promise.all(clinicDataPromises);
+      const flattenedArrivals = newAllArrivals.flat();
+
+      // Calculate age demographics
+      const ageDemographics = {
+        "0-5": 0,
+        "6-18": 0,
+        "19-35": 0,
+        "36-50": 0,
+        "51-65": 0,
+        "66+": 0,
+      };
+
+      const currentYear = new Date().getFullYear();
+
+      flattenedArrivals.forEach((arrival) => {
+        const birthYear = new Date(arrival.dob).getFullYear();
+        const age = currentYear - birthYear;
+
+        if (age >= 0 && age <= 5) ageDemographics["0-5"]++;
+        else if (age >= 6 && age <= 18) ageDemographics["6-18"]++;
+        else if (age >= 19 && age <= 35) ageDemographics["19-35"]++;
+        else if (age >= 36 && age <= 50) ageDemographics["36-50"]++;
+        else if (age >= 51 && age <= 65) ageDemographics["51-65"]++;
+        else if (age >= 66) ageDemographics["66+"]++;
+      });
+
+      const data = Object.entries(ageDemographics).map(([ageRange, count]) => ({
+        ageRange,
+        count,
+      }));
+      console.log(data);
+      return data;
+    };
+
+    // Fetch arrivals for the past 12 months
+    const fetchMonthlyArrivals = async () => {
+      try {
+        const currentDate = new Date();
+        const monthlyArrivals = Array.from({ length: 6 }, (_, i) => ({
+          month: new Date(
+            currentDate.getFullYear(),
+            currentDate.getMonth() - i,
+            1
+          ).toLocaleString("default", { month: "short" }),
+          count: 0,
+        })).reverse();
+
+        const clinicDataPromises = clinics.map(async (clinic) => {
+          const doctors = await fetchDoctors(clinic.id);
+          const doctorPromises = doctors.map(async (doctor) => {
+            const arrivals = await fetchArrivals(clinic.id, doctor.id);
+
+            arrivals.forEach((arrival) => {
+              const arrivalDate = new Date(arrival.arrivalTime);
+              const monthYear = arrivalDate.toLocaleString("default", {
+                month: "short",
+                year: "numeric",
+              });
+
+              const monthIndex = monthlyArrivals.findIndex(
+                (ma) =>
+                  ma.month ===
+                  arrivalDate.toLocaleString("default", { month: "short" })
+              );
+
+              if (monthIndex >= 0) {
+                monthlyArrivals[monthIndex].count += 1;
+              }
+            });
+          });
+
+          await Promise.all(doctorPromises);
+          return monthlyArrivals;
+        });
+
+        await Promise.all(clinicDataPromises);
+        return monthlyArrivals;
+      } catch (error) {
+        console.error("Error in fetching data:", error);
+        throw error;
+      }
+    };
+
+    const fetchData = async () => {
+      getClinicRatios();
+      const data = await getAgeDemographics();
+      setAgeData(data);
+      const monthlyArrivalsData = await fetchMonthlyArrivals();
+      setDataForMonthlyArrivals(monthlyArrivalsData);
+    };
+
+    fetchData();
+  }, [clinics, allArrivals, allDoctors]);
 
   const fetchAllDataForClinicArrivals = async () => {
     try {
-      const clinics = await getAllClinics();
-
       // Fetch all doctors and arrivals for all clinics in parallel
       const clinicDataPromises = clinics.map(async (clinic) => {
         const doctors = await fetchDoctors(clinic.id);
@@ -250,8 +388,6 @@ export default function CEODashboard() {
 
   const fetchClinicsBC = async () => {
     try {
-      const clinics = await getAllClinics();
-
       // Fetch doctors count for all clinics in parallel
       const clinicDetails = await Promise.all(
         clinics.map(async (clinic) => {
@@ -269,69 +405,17 @@ export default function CEODashboard() {
       console.error("Failed to fetch clinics", error);
     }
   };
-  // Fetch arrivals for the past 12 months
-  const fetchMonthlyArrivals = async () => {
-    try {
-      const clinics = await getAllClinics();
-      const currentDate = new Date();
-      const monthlyArrivals = Array.from({ length: 6 }, (_, i) => ({
-        month: new Date(
-          currentDate.getFullYear(),
-          currentDate.getMonth() - i,
-          1
-        ).toLocaleString("default", { month: "short" }),
-        count: 0,
-      })).reverse();
-
-      const clinicDataPromises = clinics.map(async (clinic) => {
-        const doctors = await fetchDoctors(clinic.id);
-        const doctorPromises = doctors.map(async (doctor) => {
-          const arrivals = await fetchArrivals(clinic.id, doctor.id);
-
-          arrivals.forEach((arrival) => {
-            const arrivalDate = new Date(arrival.arrivalTime);
-            const monthYear = arrivalDate.toLocaleString("default", {
-              month: "short",
-              year: "numeric",
-            });
-
-            const monthIndex = monthlyArrivals.findIndex(
-              (ma) =>
-                ma.month ===
-                arrivalDate.toLocaleString("default", { month: "short" })
-            );
-
-            if (monthIndex >= 0) {
-              monthlyArrivals[monthIndex].count += 1;
-            }
-          });
-        });
-
-        await Promise.all(doctorPromises);
-        return monthlyArrivals;
-      });
-
-      await Promise.all(clinicDataPromises);
-      return monthlyArrivals;
-    } catch (error) {
-      console.error("Error in fetching data:", error);
-      throw error;
-    }
-  };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         await fetchClinics();
         await fetchClinicsBC();
+
         const arrivalsData = await fetchAllDataForClinicArrivals();
-        console.log("....");
         console.log(arrivalsData);
         setDataForOneMonthArrivals(arrivalsData);
-        const monthlyArrivalsData = await fetchMonthlyArrivals();
-        setDataForMonthlyArrivals(monthlyArrivalsData);
-        const dataa = await getAgeDemographics();
-        setAgeData(dataa);
+
         setLoading(false); // Set loading to false when all data is fetched
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -340,14 +424,12 @@ export default function CEODashboard() {
     };
 
     fetchData();
-  }, []);
+  }, [clinics]);
 
   const fetchClinics = async () => {
     try {
-      const clinicData = await getAllClinics();
-      console.log(clinicData);
       const clinicDetails = await Promise.all(
-        clinicData.map(async (clinic) => {
+        clinics.map(async (clinic) => {
           const doctors = await fetchDoctors(clinic.id);
           const nurses = await fetchNurses(clinic.id);
           const admins = await fetchAdmins(clinic.id);
@@ -361,7 +443,7 @@ export default function CEODashboard() {
           };
         })
       );
-      setClinics(clinicDetails);
+      setClinicsDetailed(clinicDetails);
       setTotalClinics(clinicDetails.length);
       setTotalDoctors(
         clinicDetails.reduce((acc, clinic) => acc + clinic.totalDoctors, 0)
@@ -379,6 +461,100 @@ export default function CEODashboard() {
       console.error("Failed to fetch clinics", error);
     }
   };
+
+  function calculateMeetingTime(calledInTime, endTime) {
+    return endTime !== 0 ? (endTime - calledInTime) / (1000 * 60) : 0;
+  }
+
+  function calculateWaitingTime(calledInTime, arrivalTime) {
+    let diffMs = 0;
+    if (calledInTime !== 0) {
+      diffMs = calledInTime - arrivalTime;
+    } else {
+      diffMs = Date.now() - arrivalTime;
+    }
+
+    const diffHrs = Math.floor(diffMs / 3600000);
+    const diffMins = Math.floor((diffMs % 3600000) / 60000);
+
+    return diffMins;
+  }
+
+  useEffect(() => {
+    const fetchData = async () => {
+      let clinics = [];
+      clinics = await getAllClinics();
+
+      const calculateDoctorTimes = (type) => {
+        const doctorTimes = {};
+
+        for (const clinic of clinics) {
+          const arrivals = allArrivals.filter(
+            (arrival) => arrival.clinicId === clinic.id
+          );
+          const clinicDoctors = allDoctors.filter(
+            (doctor) => doctor.clinicId === clinic.id
+          );
+
+          for (const doctor of clinicDoctors) {
+            if (!doctorTimes[doctor.name]) {
+              doctorTimes[doctor.name] = { totalTime: 0, count: 0 };
+            }
+
+            const doctorArrivals = arrivals.filter(
+              (arrival) => arrival.doctorID === doctor.id
+            );
+
+            for (const arrival of doctorArrivals) {
+              const calledInTime = new Date(arrival.calledInTime).getTime();
+              const arrivalTime = new Date(arrival.arrivalTime).getTime();
+              const endTime = new Date(arrival.endTime).getTime();
+              const time =
+                type === "meeting"
+                  ? calculateMeetingTime(calledInTime, endTime)
+                  : calculateWaitingTime(calledInTime, arrivalTime);
+
+              doctorTimes[doctor.name].totalTime += time;
+              doctorTimes[doctor.name].count += 1;
+            }
+          }
+        }
+
+        const doctorNames = Object.keys(doctorTimes);
+        const averageTimes = doctorNames.map((name) => ({
+          name,
+          averageTime:
+            doctorTimes[name].count !== 0
+              ? Math.round(
+                  doctorTimes[name].totalTime / doctorTimes[name].count
+                )
+              : 0,
+        }));
+
+        const topDoctors = averageTimes
+          .sort((a, b) => b.averageTime - a.averageTime)
+          .slice(0, 6);
+
+        return topDoctors;
+      };
+
+      const topDoctorsMeeting = calculateDoctorTimes("meeting");
+      const maxAverageTimeMeeting = Math.max(
+        ...topDoctorsMeeting.map((doctor) => doctor.averageTime)
+      );
+      setTopDoctorsMeeting(topDoctorsMeeting);
+      setMaxAverageTimeMeeting(maxAverageTimeMeeting);
+
+      const topDoctorsWaiting = calculateDoctorTimes("waiting");
+      const maxAverageTimeWaiting = Math.max(
+        ...topDoctorsWaiting.map((doctor) => doctor.averageTime)
+      );
+      setTopDoctorsWaiting(topDoctorsWaiting);
+      setMaxAverageTimeWaiting(maxAverageTimeWaiting);
+    };
+
+    fetchData();
+  }, [allArrivals, allDoctors]);
 
   const cardsData = [
     {
@@ -594,7 +770,10 @@ export default function CEODashboard() {
                 >
                   Patient Provider Ratio
                 </Typography>
-                <ClinicRatioChart />
+                <ClinicRatioChart
+                  clinicNames={clinicNames}
+                  ratios={clinicRatios}
+                />
               </Box>
             </Grid>
             {/* <Grid item xs={12} md={6}>
@@ -629,12 +808,12 @@ export default function CEODashboard() {
                   >
                     Average Meeting Time for each Provider
                   </Typography>
-                  <Box sx={{ width: "100%", height: "100%" }}>
+                  <Box sx={{ width: "100%" }}>
                     <AverageTimeChart
                       height={{ height: "200px" }}
-                      isAllClinics={true}
-                      clinicId={null}
                       chartType={"meeting"}
+                      topDoctors={topDoctorsMeeting}
+                      maxAverageTime={maxAverageTimeMeeting}
                     />
                   </Box>
                 </CardContent>
@@ -658,12 +837,12 @@ export default function CEODashboard() {
                   >
                     Average Waiting Time for each Provider
                   </Typography>
-                  <Box sx={{ width: "100%", height: "100%" }}>
+                  <Box sx={{ width: "100%" }}>
                     <AverageTimeChart
                       height={{ height: "200px" }}
-                      isAllClinics={true}
-                      clinicId={null}
+                      topDoctors={topDoctorsWaiting}
                       chartType={"waiting"}
+                      maxAverageTime={maxAverageTimeWaiting}
                     />
                   </Box>
                 </CardContent>

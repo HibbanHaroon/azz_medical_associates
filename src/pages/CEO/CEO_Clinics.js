@@ -79,31 +79,6 @@ import AverageTimeChart from "../../components/AverageTimeChart";
 
 const drawerWidth = 300;
 
-const fetchClinics = async () => {
-  try {
-    const clinicData = await getAllClinics();
-    const clinicDetails = await Promise.all(
-      clinicData.map(async (clinic) => {
-        const doctors = await fetchDoctors(clinic.id);
-        const nurses = await fetchNurses(clinic.id);
-        const admins = await fetchAdmins(clinic.id);
-        const moderators = await fetchModerators(clinic.id);
-
-        return {
-          ...clinic,
-          totalDoctors: doctors.length,
-          totalNurses: nurses.length,
-          totalAdmins: admins.length,
-          totalModerators: moderators.length,
-        };
-      })
-    );
-
-    return clinicDetails;
-  } catch (error) {
-    console.error("Failed to fetch clinics", error);
-  }
-};
 const calculateRushHours = (allArrivals, clinicId = null) => {
   const currentHour = new Date().getHours();
   const rushHoursData = Array.from({ length: 12 }, (_, i) => {
@@ -249,6 +224,7 @@ export default function CEOClinics() {
   const [value, setValue] = React.useState("1");
   const [rushHoursData, setRushHoursData] = useState([]);
   const [allArrivals, setAllArrivals] = useState([]);
+  const [arrivalsAllGet, setArrivalsAllGet] = useState([]);
   const [valuableProvidersData, setValuableProvidersData] = useState([]); // New state
   const [loading, setLoading] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -258,6 +234,11 @@ export default function CEOClinics() {
   const [columns, setColumns] = useState([]);
   const [recentClinic, setRecentClinic] = useState([]);
 
+  const [topDoctorsMeeting, setTopDoctorsMeeting] = useState([]);
+  const [maxAverageTimeMeeting, setMaxAverageTimeMeeting] = useState(0);
+  const [topDoctorsWaiting, setTopDoctorsWaiting] = useState([]);
+  const [maxAverageTimeWaiting, setMaxAverageTimeWaiting] = useState(0);
+
   const [selectedUser, setSelectedUser] = useState(null);
   const [openAddModal, setOpenAddModal] = useState(false);
   const [modalMode, setModalMode] = useState("add");
@@ -266,6 +247,73 @@ export default function CEOClinics() {
 
   const [isAllClinics, setIsAllClinics] = useState(true);
   const [dropdownClinicId, setDropdownClinicId] = useState(null);
+
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      setLoading(true);
+
+      // Clinics Data
+      const clinicData = await getAllClinics();
+      setClinics(clinicData);
+
+      // Arrivals Data
+      const arrivalsData = await Promise.all(
+        clinicData.map(async (clinic) => {
+          const arrivals = await fetchAllArrivals(clinic.id);
+          return arrivals.map((arrival) => ({
+            ...arrival,
+            clinicId: clinic.id,
+            arrivalTime: new Date(arrival.arrivalTime),
+          }));
+        })
+      );
+
+      const allArrivals = arrivalsData.flat();
+      setAllArrivals(allArrivals);
+
+      // Doctors Data
+      const doctorsData = await Promise.all(
+        clinicData.map(async (clinic) => {
+          const doctors = await fetchDoctors(clinic.id);
+          return doctors.map((doctor) => ({
+            ...doctor,
+            clinicId: clinic.id,
+          }));
+        })
+      );
+
+      const allDoctors = doctorsData.flat();
+      setDoctors(allDoctors);
+    };
+
+    fetchInitialData();
+    setLoading(false);
+  }, []);
+
+  const fetchClinics = async () => {
+    try {
+      const clinicDetails = await Promise.all(
+        clinics.map(async (clinic) => {
+          const doctors = await fetchDoctors(clinic.id);
+          const nurses = await fetchNurses(clinic.id);
+          const admins = await fetchAdmins(clinic.id);
+          const moderators = await fetchModerators(clinic.id);
+
+          return {
+            ...clinic,
+            totalDoctors: doctors.length,
+            totalNurses: nurses.length,
+            totalAdmins: admins.length,
+            totalModerators: moderators.length,
+          };
+        })
+      );
+
+      return clinicDetails;
+    } catch (error) {
+      console.error("Failed to fetch clinics", error);
+    }
+  };
 
   const dropdownItems = [
     [
@@ -401,6 +449,7 @@ export default function CEOClinics() {
   const handleChange = (event, newValue) => {
     setValue(newValue);
   };
+
   const handleClinicChange = (event) => {
     const selectedClinicName = event.target.value;
     const clinicId =
@@ -433,54 +482,21 @@ export default function CEOClinics() {
   useEffect(() => {
     const fetchClinicsAndArrivals = async () => {
       try {
-        setLoading(true);
-        const clinicData = await getAllClinics();
-        setClinics(clinicData);
-
-        const arrivalsData = await Promise.all(
-          clinicData.map(async (clinic) => {
-            const arrivals = await fetchAllArrivals(clinic.id);
-            return arrivals.map((arrival) => ({
-              ...arrival,
-              clinicId: clinic.id,
-              arrivalTime: new Date(arrival.arrivalTime),
-            }));
-          })
-        );
-
-        const allArrivals = arrivalsData.flat();
-        setAllArrivals(allArrivals);
-
-        const doctorsData = await Promise.all(
-          clinicData.map(async (clinic) => {
-            const doctors = await fetchDoctors(clinic.id);
-            return doctors.map((doctor) => ({
-              ...doctor,
-              clinicId: clinic.id,
-            }));
-          })
-        );
-
-        const allDoctors = doctorsData.flat();
-        setDoctors(allDoctors);
-
         const rushHours = calculateRushHours(allArrivals);
         setRushHoursData(rushHours);
 
         const valuableProviders = calculateValuableProviders(
           allArrivals,
-          allDoctors
+          doctors
         );
-        setValuableProvidersData(valuableProviders); // Set new data
+        setValuableProvidersData(valuableProviders);
       } catch (error) {
         console.error("Failed to fetch clinics and arrivals", error);
-      } finally {
-        setLoading(false);
       }
     };
 
     fetchClinicsAndArrivals();
-  }, []);
+  }, [allArrivals, doctors]);
 
   const updateCurrentDropdownItem = async (item, tableIndex) => {
     let selectedItem;
@@ -531,6 +547,7 @@ export default function CEOClinics() {
         } else if (selectedItem.item === "Arrivals") {
           // Fetching arrivals data
           const allArrivals = await getAllArrivals();
+          setArrivalsAllGet(allArrivals);
           const clinicId =
             selectedClinic === "All Clinics" ? "all" : selectedClinicId;
           const data = allArrivals[clinicId];
@@ -696,6 +713,104 @@ export default function CEOClinics() {
     setColumns(columns);
   };
 
+  function calculateMeetingTime(calledInTime, endTime) {
+    return endTime !== 0 ? (endTime - calledInTime) / (1000 * 60) : 0;
+  }
+
+  function calculateWaitingTime(calledInTime, arrivalTime) {
+    let diffMs = 0;
+    if (calledInTime !== 0) {
+      diffMs = calledInTime - arrivalTime;
+    } else {
+      diffMs = Date.now() - arrivalTime;
+    }
+
+    const diffHrs = Math.floor(diffMs / 3600000);
+    const diffMins = Math.floor((diffMs % 3600000) / 60000);
+
+    return diffMins;
+  }
+
+  useEffect(() => {
+    const fetchData = async () => {
+      let clinics = [];
+      if (isAllClinics) {
+        clinics = await getAllClinics();
+      } else {
+        clinics = [{ id: dropdownClinicId }];
+      }
+
+      const calculateDoctorTimes = (type) => {
+        const doctorTimes = {};
+
+        for (const clinic of clinics) {
+          const arrivals = allArrivals.filter(
+            (arrival) => arrival.clinicId === clinic.id
+          );
+          const clinicDoctors = doctors.filter(
+            (doctor) => doctor.clinicId === clinic.id
+          );
+
+          for (const doctor of clinicDoctors) {
+            if (!doctorTimes[doctor.name]) {
+              doctorTimes[doctor.name] = { totalTime: 0, count: 0 };
+            }
+
+            const doctorArrivals = arrivals.filter(
+              (arrival) => arrival.doctorID === doctor.id
+            );
+
+            for (const arrival of doctorArrivals) {
+              const calledInTime = new Date(arrival.calledInTime).getTime();
+              const arrivalTime = new Date(arrival.arrivalTime).getTime();
+              const endTime = new Date(arrival.endTime).getTime();
+              const time =
+                type === "meeting"
+                  ? calculateMeetingTime(calledInTime, endTime)
+                  : calculateWaitingTime(calledInTime, arrivalTime);
+
+              doctorTimes[doctor.name].totalTime += time;
+              doctorTimes[doctor.name].count += 1;
+            }
+          }
+        }
+
+        const doctorNames = Object.keys(doctorTimes);
+        const averageTimes = doctorNames.map((name) => ({
+          name,
+          averageTime:
+            doctorTimes[name].count !== 0
+              ? Math.round(
+                  doctorTimes[name].totalTime / doctorTimes[name].count
+                )
+              : 0,
+        }));
+
+        const topDoctors = averageTimes
+          .sort((a, b) => b.averageTime - a.averageTime)
+          .slice(0, 6);
+
+        return topDoctors;
+      };
+
+      const topDoctorsMeeting = calculateDoctorTimes("meeting");
+      const maxAverageTimeMeeting = Math.max(
+        ...topDoctorsMeeting.map((doctor) => doctor.averageTime)
+      );
+      setTopDoctorsMeeting(topDoctorsMeeting);
+      setMaxAverageTimeMeeting(maxAverageTimeMeeting);
+
+      const topDoctorsWaiting = calculateDoctorTimes("waiting");
+      const maxAverageTimeWaiting = Math.max(
+        ...topDoctorsWaiting.map((doctor) => doctor.averageTime)
+      );
+      setTopDoctorsWaiting(topDoctorsWaiting);
+      setMaxAverageTimeWaiting(maxAverageTimeWaiting);
+    };
+
+    fetchData();
+  }, [isAllClinics, dropdownClinicId, allArrivals, doctors]);
+
   return (
     <Box sx={{ display: "flex" }}>
       <CssBaseline />
@@ -852,7 +967,7 @@ export default function CEOClinics() {
                       fontWeight="bold"
                       sx={{ mb: 2, mt: -3, textAlign: "left" }}
                     >
-                      Top Azz Providers
+                      Valuable Providers
                     </Typography>
                     <Box sx={{ height: "90%", width: "100%" }}>
                       <ValuableProvidersPieChart data={valuableProvidersData} />
@@ -894,7 +1009,7 @@ export default function CEOClinics() {
                     m: 1,
                     borderRadius: 3,
                     boxShadow: 2,
-                    height: 350,
+                    height: 300,
                   }}
                 >
                   <CardContent sx={{ p: 2, height: "100%" }}>
@@ -905,12 +1020,12 @@ export default function CEOClinics() {
                     >
                       Average Waiting Time for each Provider
                     </Typography>
-                    <Box sx={{ width: "100%", height: "100%" }}>
+                    <Box sx={{ width: "100%" }}>
                       <AverageTimeChart
-                        height={{ height: "250px" }}
-                        isAllClinics={isAllClinics}
-                        clinicId={dropdownClinicId}
+                        height={{ height: "200px" }}
+                        topDoctors={topDoctorsWaiting}
                         chartType={"waiting"}
+                        maxAverageTime={maxAverageTimeWaiting}
                       />
                     </Box>
                   </CardContent>
@@ -923,7 +1038,7 @@ export default function CEOClinics() {
                     m: 1,
                     borderRadius: 3,
                     boxShadow: 2,
-                    height: 350,
+                    height: 300,
                   }}
                 >
                   <CardContent sx={{ p: 2, height: "100%" }}>
@@ -934,12 +1049,12 @@ export default function CEOClinics() {
                     >
                       Average Meeting Time for each Provider
                     </Typography>
-                    <Box sx={{ width: "100%", height: "100%" }}>
+                    <Box sx={{ width: "100%" }}>
                       <AverageTimeChart
-                        height={{ height: "300px" }}
-                        isAllClinics={isAllClinics}
-                        clinicId={dropdownClinicId}
+                        height={{ height: "200px" }}
+                        topDoctors={topDoctorsMeeting}
                         chartType={"meeting"}
+                        maxAverageTime={maxAverageTimeMeeting}
                       />
                     </Box>
                   </CardContent>
