@@ -23,10 +23,12 @@ import CloseIcon from "@mui/icons-material/Close";
 import Webcam from "react-webcam";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
+  fetchAttendance,
   addAttendance,
   updateAttendanceCheckIn,
   updateAttendanceCheckOut,
 } from "../services/attendanceService";
+import showInfoToast from "../utils/showInfoToast";
 // import { getAllClinics } from "../services/clinicService";
 
 export default function NurseAttendance() {
@@ -35,6 +37,7 @@ export default function NurseAttendance() {
 
   // const [selectedClinic, setSelectedClinic] = useState("");
   // const [clinics, setClinics] = useState([]);
+  const [attendance, setAttendance] = useState([]);
   const [nurses, setNurses] = useState([]);
   const [selectedNurse, setSelectedNurse] = useState("");
   const [showCheckButtons, setShowCheckButtons] = useState(false);
@@ -79,13 +82,16 @@ export default function NurseAttendance() {
       try {
         const fetchedNurses = await fetchNurses(clinicId);
         setNurses(fetchedNurses);
+
+        const attendanceData = await fetchAttendance(clinicId);
+        setAttendance(attendanceData);
       } catch (error) {
         console.error("Error fetching nurses:", error.message);
       }
     };
 
     fetchNursesData();
-  }, [clinicId]);
+  }, []);
 
   const markAttendance = async () => {
     try {
@@ -132,8 +138,21 @@ export default function NurseAttendance() {
   }, [showConfirmation]);
 
   const handleNurseSelect = (event) => {
-    const selectedNurse = event.target.value;
-    const nurse = nurses.find((nurse) => nurse.id === selectedNurse);
+    const selectedNurseId = event.target.value;
+    const nurse = nurses.find((nurse) => nurse.id === selectedNurseId);
+
+    const nurseAttendance = attendance.find((record) => record.id === nurse.id);
+
+    console.log("attendance", nurseAttendance);
+    if (nurseAttendance && nurseAttendance.status === "present") {
+      // alert("Attendance already marked for today.");
+      showInfoToast("Attendance already marked for today!");
+      setShowCheckButtons(true);
+      setNurseName(nurse.name);
+      setSelectedNurse(nurse);
+      return;
+    }
+
     setNurseName(nurse.name);
     setSelectedNurse(nurse);
     setShowCamera(true);
@@ -160,6 +179,17 @@ export default function NurseAttendance() {
   };
 
   const handleCheckIn = async () => {
+    const nurseAttendance = attendance.find(
+      (record) => record.id === selectedNurse.id
+    );
+    console.log("check in", nurseAttendance);
+
+    if (nurseAttendance && nurseAttendance.checkInTime !== null) {
+      // alert("Check-in already done.");
+      showInfoToast("Check-in already done.");
+      return;
+    }
+
     const response = await updateAttendanceCheckIn(clinicId, selectedNurse.id, {
       checkInTime: Date.now(),
     });
@@ -172,6 +202,18 @@ export default function NurseAttendance() {
   };
 
   const handleCheckOut = async () => {
+    const nurseAttendance = attendance.find(
+      (record) => record.id === selectedNurse.id
+    );
+
+    console.log("check out", nurseAttendance);
+
+    if (nurseAttendance && nurseAttendance.checkOutTime !== null) {
+      // alert("Check-out already done.");
+      showInfoToast("Check-out already done.");
+      return;
+    }
+
     const response = await updateAttendanceCheckOut(
       clinicId,
       selectedNurse.id,
