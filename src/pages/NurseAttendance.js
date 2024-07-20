@@ -22,7 +22,11 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CloseIcon from "@mui/icons-material/Close";
 import Webcam from "react-webcam";
 import { useNavigate, useLocation } from "react-router-dom";
-import { addAttendance } from "../services/attendanceService";
+import {
+  addAttendance,
+  updateAttendanceCheckIn,
+  updateAttendanceCheckOut,
+} from "../services/attendanceService";
 // import { getAllClinics } from "../services/clinicService";
 
 export default function NurseAttendance() {
@@ -33,6 +37,7 @@ export default function NurseAttendance() {
   // const [clinics, setClinics] = useState([]);
   const [nurses, setNurses] = useState([]);
   const [selectedNurse, setSelectedNurse] = useState("");
+  const [showCheckButtons, setShowCheckButtons] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [nurseName, setNurseName] = useState("");
@@ -89,6 +94,8 @@ export default function NurseAttendance() {
         datetime: new Date().toISOString(),
         status: "present",
         nurseName: selectedNurse.name,
+        checkInTime: null,
+        checkOutTime: null,
       };
 
       // console.log(clinicId, attendanceData);
@@ -130,6 +137,7 @@ export default function NurseAttendance() {
     setNurseName(nurse.name);
     setSelectedNurse(nurse);
     setShowCamera(true);
+    setShowCheckButtons(true);
   };
 
   const generateAudio = (text) => {
@@ -144,11 +152,39 @@ export default function NurseAttendance() {
 
   const handleConfirmationClose = () => {
     setShowConfirmation(false);
-    setSelectedNurse("");
-    setNurseName("");
-    navigate("/arrival", {
-      state: { clinicId: clinicId },
+    // setSelectedNurse("");
+    // setNurseName("");
+    // navigate("/arrival", {
+    //   state: { clinicId: clinicId },
+    // });
+  };
+
+  const handleCheckIn = async () => {
+    const response = await updateAttendanceCheckIn(clinicId, selectedNurse.id, {
+      checkInTime: Date.now(),
     });
+
+    if (!response.ok) {
+      throw new Error(
+        "Failed to update Attendance checkInTime status in the database"
+      );
+    }
+  };
+
+  const handleCheckOut = async () => {
+    const response = await updateAttendanceCheckOut(
+      clinicId,
+      selectedNurse.id,
+      {
+        checkOutTime: Date.now(),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        "Failed to update Attendance checkOutTime status in the database"
+      );
+    }
   };
 
   return (
@@ -257,6 +293,20 @@ export default function NurseAttendance() {
                 boxShadow: 3,
               }}
             />
+          )}
+          {showCheckButtons && (
+            <Box sx={{ display: "flex" }}>
+              <Button onClick={handleCheckIn} variant="outlined" sx={{ mr: 2 }}>
+                Check In
+              </Button>
+              <Button
+                onClick={handleCheckOut}
+                variant="outlined"
+                sx={{ mr: 2 }}
+              >
+                Check Out
+              </Button>
+            </Box>
           )}
         </Box>
       </Container>

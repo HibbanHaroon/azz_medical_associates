@@ -72,9 +72,10 @@ import {
   updateAdmin,
   deleteAdmin,
 } from "../../services/adminService";
+import { fetchAttendance } from "../../services/attendanceService";
 import { fetchAllArrivals } from "../../services/arrivalsService";
 import AttendanceDataChart from "../../components/AttendanceDataChart";
-import ClinicRatioChart from "../../components/ClinicRatioChart";
+import StaffHoursChart from "../../components/StaffHoursChart";
 import AverageTimeChart from "../../components/AverageTimeChart";
 
 const drawerWidth = 300;
@@ -233,6 +234,10 @@ export default function CEOClinics() {
   const [rows, setRows] = useState([]);
   const [columns, setColumns] = useState([]);
   const [recentClinic, setRecentClinic] = useState([]);
+
+  // For Staff Hours Chart
+  const [xAxisLabels, setXAxisLabels] = useState([]);
+  const [staffChartValues, setStaffChartValues] = useState([]);
 
   const [topDoctorsMeeting, setTopDoctorsMeeting] = useState([]);
   const [maxAverageTimeMeeting, setMaxAverageTimeMeeting] = useState(0);
@@ -732,7 +737,7 @@ export default function CEOClinics() {
   }
 
   useEffect(() => {
-    const fetchData = async () => {
+    const getTimeChart = async () => {
       let clinics = [];
       if (isAllClinics) {
         clinics = await getAllClinics();
@@ -806,6 +811,69 @@ export default function CEOClinics() {
       );
       setTopDoctorsWaiting(topDoctorsWaiting);
       setMaxAverageTimeWaiting(maxAverageTimeWaiting);
+    };
+
+    const getStaffHours = async () => {
+      const labels = [];
+      const values = [];
+
+      const calculateAverageTimeSpent = async (clinicId) => {
+        const nurses = await fetchNurses(clinicId);
+        const attendanceRecords = await fetchAttendance(clinicId);
+
+        let totalClinicTime = 0;
+        let staffCount = 0;
+
+        nurses.forEach((nurse) => {
+          let nurseTotalTime = 0;
+          let nurseAttendanceCount = 0;
+
+          attendanceRecords.forEach((record) => {
+            if (record.id === nurse.id) {
+              const checkInTime = new Date(record.checkInTime);
+              const checkOutTime = record.checkOutTime
+                ? new Date(record.checkOutTime)
+                : new Date();
+              const timeSpent = (checkOutTime - checkInTime) / (1000 * 60); // Convert milliseconds to minutes
+
+              nurseTotalTime += timeSpent;
+              nurseAttendanceCount++;
+            }
+          });
+
+          if (nurseAttendanceCount > 0) {
+            totalClinicTime += nurseTotalTime / nurseAttendanceCount;
+            staffCount++;
+          }
+        });
+
+        return staffCount > 0 ? totalClinicTime / staffCount : 0;
+      };
+
+      if (isAllClinics) {
+        for (const clinic of clinics) {
+          const averageTimeSpent = await calculateAverageTimeSpent(clinic.id);
+          labels.push(clinic.name);
+          values.push(averageTimeSpent);
+        }
+      } else {
+        const averageTimeSpent = await calculateAverageTimeSpent(
+          dropdownClinicId
+        );
+        const clinic = clinics.find((clinic) => clinic.id === dropdownClinicId);
+        if (clinic) {
+          labels.push(clinic.name);
+          values.push(averageTimeSpent);
+        }
+      }
+
+      setXAxisLabels(labels);
+      setStaffChartValues(values);
+    };
+
+    const fetchData = () => {
+      getTimeChart();
+      getStaffHours();
     };
 
     fetchData();
@@ -1060,7 +1128,7 @@ export default function CEOClinics() {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12}>
+              <Grid item xs={12} md={6}>
                 <Card
                   sx={{
                     p: 3,
@@ -1083,6 +1151,29 @@ export default function CEOClinics() {
                     </Box>
                   </CardContent>
                 </Card>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Box
+                  sx={{
+                    p: 3,
+                    m: 1,
+                    borderRadius: 3,
+                    boxShadow: 2,
+                    height: 300,
+                  }}
+                >
+                  <Typography
+                    variant="h6"
+                    fontWeight="bold"
+                    sx={{ marginBottom: 0, marginTop: 0 }}
+                  >
+                    Average Staff Attendance
+                  </Typography>
+                  <StaffHoursChart
+                    xAxisLabels={xAxisLabels}
+                    values={staffChartValues}
+                  />
+                </Box>
               </Grid>
             </Grid>
           </TabPanel>

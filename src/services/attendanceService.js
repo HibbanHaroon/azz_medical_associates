@@ -56,6 +56,48 @@ export const updateAttendance = async (clinicId, id, attendanceData) => {
   }
 };
 
+export const updateAttendanceCheckIn = async (clinicId, id, attendanceData) => {
+  try {
+    const response = await fetch(`${API_URL}/${clinicId}/${id}/checkIn`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(attendanceData),
+    });
+    if (!response.ok) {
+      throw new Error("Error updating attendance");
+    }
+    return response;
+  } catch (error) {
+    console.error("Error updating attendance:", error);
+    throw error;
+  }
+};
+
+export const updateAttendanceCheckOut = async (
+  clinicId,
+  id,
+  attendanceData
+) => {
+  try {
+    const response = await fetch(`${API_URL}/${clinicId}/${id}/checkOut`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(attendanceData),
+    });
+    if (!response.ok) {
+      throw new Error("Error updating attendance");
+    }
+    return response;
+  } catch (error) {
+    console.error("Error updating attendance:", error);
+    throw error;
+  }
+};
+
 export const deleteAttendance = async (clinicId, id) => {
   try {
     const response = await fetch(`${API_URL}/${clinicId}/${id}`, {
