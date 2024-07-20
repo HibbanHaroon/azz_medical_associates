@@ -237,6 +237,7 @@ export default function CEOClinics() {
 
   // For Staff Hours Chart
   const [xAxisLabels, setXAxisLabels] = useState([]);
+  const [yAxisUnit, setYAxisUnit] = useState([]);
   const [staffChartValues, setStaffChartValues] = useState([]);
 
   const [topDoctorsMeeting, setTopDoctorsMeeting] = useState([]);
@@ -816,34 +817,46 @@ export default function CEOClinics() {
     const getStaffHours = async () => {
       const labels = [];
       const values = [];
+      let maxValue = 0;
+
+      const calculateTimeSpent = (checkInTime, checkOutTime) => {
+        const checkIn = checkInTime ? new Date(checkInTime) : new Date();
+        const checkOut = checkOutTime ? new Date(checkOutTime) : new Date();
+        return (checkOut - checkIn) / (1000 * 60); // Convert milliseconds to minutes
+      };
 
       const calculateAverageTimeSpent = async (clinicId) => {
-        const nurses = await fetchNurses(clinicId);
-        const attendanceRecords = await fetchAttendance(clinicId);
+        const [nurses, attendanceRecords] = await Promise.all([
+          fetchNurses(clinicId),
+          fetchAttendance(clinicId),
+        ]);
+
+        const nurseTimeMap = new Map();
+
+        attendanceRecords.forEach((record) => {
+          const timeSpent = calculateTimeSpent(
+            record.checkInTime,
+            record.checkOutTime
+          );
+
+          if (!nurseTimeMap.has(record.id)) {
+            nurseTimeMap.set(record.id, { total: 0, count: 0 });
+          }
+
+          const nurseData = nurseTimeMap.get(record.id);
+          nurseData.total += timeSpent;
+          nurseData.count += 1;
+        });
 
         let totalClinicTime = 0;
         let staffCount = 0;
 
         nurses.forEach((nurse) => {
-          let nurseTotalTime = 0;
-          let nurseAttendanceCount = 0;
-
-          attendanceRecords.forEach((record) => {
-            if (record.id === nurse.id) {
-              const checkInTime = new Date(record.checkInTime);
-              const checkOutTime = record.checkOutTime
-                ? new Date(record.checkOutTime)
-                : new Date();
-              const timeSpent = (checkOutTime - checkInTime) / (1000 * 60); // Convert milliseconds to minutes
-
-              nurseTotalTime += timeSpent;
-              nurseAttendanceCount++;
-            }
-          });
-
-          if (nurseAttendanceCount > 0) {
-            totalClinicTime += nurseTotalTime / nurseAttendanceCount;
-            staffCount++;
+          const nurseData = nurseTimeMap.get(nurse.id);
+          if (nurseData && nurseData.count > 0) {
+            const averageTimeSpent = nurseData.total / nurseData.count;
+            totalClinicTime += averageTimeSpent;
+            staffCount += 1;
           }
         });
 
@@ -851,24 +864,64 @@ export default function CEOClinics() {
       };
 
       if (isAllClinics) {
-        for (const clinic of clinics) {
-          const averageTimeSpent = await calculateAverageTimeSpent(clinic.id);
-          labels.push(clinic.name);
-          values.push(averageTimeSpent);
-        }
-      } else {
-        const averageTimeSpent = await calculateAverageTimeSpent(
-          dropdownClinicId
+        const averageTimePromises = clinics.map((clinic) =>
+          calculateAverageTimeSpent(clinic.id)
         );
-        const clinic = clinics.find((clinic) => clinic.id === dropdownClinicId);
-        if (clinic) {
-          labels.push(clinic.name);
-          values.push(averageTimeSpent);
-        }
+
+        const averageTimes = await Promise.all(averageTimePromises);
+
+        averageTimes.forEach((averageTimeSpent, index) => {
+          labels.push(clinics[index].name);
+          values.push(parseFloat(averageTimeSpent.toFixed(2)));
+          if (averageTimeSpent > maxValue) {
+            maxValue = averageTimeSpent;
+          }
+        });
+      } else {
+        const [nurses, attendanceRecords] = await Promise.all([
+          fetchNurses(dropdownClinicId),
+          fetchAttendance(dropdownClinicId),
+        ]);
+
+        const nurseTimeMap = new Map();
+
+        attendanceRecords.forEach((record) => {
+          const timeSpent = calculateTimeSpent(
+            record.checkInTime,
+            record.checkOutTime
+          );
+
+          if (!nurseTimeMap.has(record.id)) {
+            nurseTimeMap.set(record.id, { total: 0, count: 0 });
+          }
+
+          const nurseData = nurseTimeMap.get(record.id);
+          nurseData.total += timeSpent;
+          nurseData.count += 1;
+        });
+
+        nurses.forEach((nurse) => {
+          const nurseData = nurseTimeMap.get(nurse.id);
+          if (nurseData && nurseData.count > 0) {
+            const averageTimeSpent = nurseData.total / nurseData.count;
+            labels.push(nurse.name);
+            values.push(parseFloat(averageTimeSpent.toFixed(2)));
+            if (averageTimeSpent > maxValue) {
+              maxValue = averageTimeSpent;
+            }
+          }
+        });
       }
 
+      // Determine the unit for the y-axis labels
+      const yAxisUnit = maxValue >= 60 ? "h" : "m";
+      const formattedValues = values.map((value) =>
+        yAxisUnit === "h" ? value / 60 : value
+      );
+
       setXAxisLabels(labels);
-      setStaffChartValues(values);
+      setStaffChartValues(formattedValues);
+      setYAxisUnit(yAxisUnit);
     };
 
     const fetchData = () => {
@@ -1171,6 +1224,7 @@ export default function CEOClinics() {
                   </Typography>
                   <StaffHoursChart
                     xAxisLabels={xAxisLabels}
+                    yAxisUnit={yAxisUnit}
                     values={staffChartValues}
                   />
                 </Box>

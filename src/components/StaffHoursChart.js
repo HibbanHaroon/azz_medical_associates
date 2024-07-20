@@ -8,7 +8,7 @@ import { Chart } from "chart.js";
 // Register the plugin globally
 Chart.register(ChartDataLabels);
 
-const StaffHoursChart = ({ xAxisLabels, values }) => {
+const StaffHoursChart = ({ xAxisLabels, values, yAxisUnit }) => {
   const [chartData, setChartData] = useState({ datasets: [] });
   const theme = useTheme();
 
@@ -26,10 +26,10 @@ const StaffHoursChart = ({ xAxisLabels, values }) => {
         display: true,
         beginAtZero: true,
         ticks: {
-          stepSize: 1,
+          stepSize: yAxisUnit === "h" ? 1 : 10, // Adjust the step size based on the unit
           callback: function (value) {
             if (Number.isInteger(value)) {
-              return value;
+              return `${value}${yAxisUnit}`;
             }
           },
         },
@@ -47,7 +47,7 @@ const StaffHoursChart = ({ xAxisLabels, values }) => {
               label += ": ";
             }
             if (context.parsed.y !== null) {
-              label += context.parsed.y;
+              label += `${context.parsed.y}${yAxisUnit}`;
             }
             return label;
           },
@@ -96,7 +96,7 @@ const StaffHoursChart = ({ xAxisLabels, values }) => {
     };
 
     setChartData(data);
-  }, [xAxisLabels, values]);
+  }, [xAxisLabels, values, theme]);
 
   return (
     <div style={{ width: "100%", height: "95%" }}>
