@@ -806,7 +806,7 @@ export default function CEODashboard() {
                     fontWeight="bold"
                     sx={{ mb: 2, mt: 0, textAlign: "left" }}
                   >
-                    Average Meeting Time for each Provider
+                    Patient Meeting Time
                   </Typography>
                   <Box sx={{ width: "100%" }}>
                     <AverageTimeChart
@@ -835,7 +835,7 @@ export default function CEODashboard() {
                     fontWeight="bold"
                     sx={{ mb: 2, mt: 0, textAlign: "left" }}
                   >
-                    Average Waiting Time for each Provider
+                    Patient Waiting Time
                   </Typography>
                   <Box sx={{ width: "100%" }}>
                     <AverageTimeChart

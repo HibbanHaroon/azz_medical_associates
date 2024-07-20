@@ -1064,7 +1064,7 @@ export default function CEOClinics() {
                       fontWeight="bold"
                       sx={{ ml: -2, mt: -3, textAlign: "left" }}
                     >
-                      Attendance Data
+                      Staff Attendance
                     </Typography>
                     <Box sx={{ height: "90%", width: "100%" }}>
                       <AttendanceDataChart />
@@ -1088,7 +1088,7 @@ export default function CEOClinics() {
                       fontWeight="bold"
                       sx={{ mb: 2, mt: -3, textAlign: "left" }}
                     >
-                      Valuable Providers
+                      Provider Of The Month
                     </Typography>
                     <Box sx={{ height: "90%", width: "100%" }}>
                       <ValuableProvidersPieChart data={valuableProvidersData} />
@@ -1139,7 +1139,7 @@ export default function CEOClinics() {
                       fontWeight="bold"
                       sx={{ mb: 2, mt: 0, textAlign: "left" }}
                     >
-                      Average Waiting Time for each Provider
+                      Patient Waiting Time
                     </Typography>
                     <Box sx={{ width: "100%" }}>
                       <AverageTimeChart
@@ -1168,7 +1168,7 @@ export default function CEOClinics() {
                       fontWeight="bold"
                       sx={{ mb: 2, mt: 0, textAlign: "left" }}
                     >
-                      Average Meeting Time for each Provider
+                      Patient Meeting Time
                     </Typography>
                     <Box sx={{ width: "100%" }}>
                       <AverageTimeChart
@@ -1220,7 +1220,7 @@ export default function CEOClinics() {
                     fontWeight="bold"
                     sx={{ marginBottom: 0, marginTop: 0 }}
                   >
-                    Average Staff Attendance
+                    Staff Hours
                   </Typography>
                   <StaffHoursChart
                     xAxisLabels={xAxisLabels}
