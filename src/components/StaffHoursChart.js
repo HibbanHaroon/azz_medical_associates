@@ -47,7 +47,7 @@ const StaffHoursChart = ({ xAxisLabels, values, yAxisUnit }) => {
               label += ": ";
             }
             if (context.parsed.y !== null) {
-              label += `${context.parsed.y}${yAxisUnit}`;
+              label += `${parseFloat(context.parsed.y.toFixed(2))}${yAxisUnit}`;
             }
             return label;
           },
