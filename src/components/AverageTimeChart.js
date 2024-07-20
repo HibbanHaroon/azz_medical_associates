@@ -41,7 +41,7 @@ const AverageTimeChart = ({
           borderWidth: 0,
           barThickness: 10,
           categoryPercentage: 0.8,
-          barPercentage: 0.9,
+          barPercentage: 0.8,
           borderRadius: 40,
         },
       ],
@@ -69,11 +69,16 @@ const AverageTimeChart = ({
             stepSize: 1,
             callback: (value) =>
               Number.isInteger(value) ? `${value} mins` : null,
+            maxRotation: 0,
+            minRotation: 0,
           },
         },
         y: {
           display: true,
           grid: { display: false },
+          ticks: {
+            autoSkip: false,
+          },
         },
       },
       plugins: {
