@@ -1066,8 +1066,8 @@ export default function CEOClinics() {
                     >
                       Attendance Data
                     </Typography>
-                    <Box sx={{ height: "90%", width: "90%" }}>
-                      <AttendanceDataChart data1={valuableProvidersData} />
+                    <Box sx={{ height: "90%", width: "100%" }}>
+                      <AttendanceDataChart />
                     </Box>
                   </CardContent>
                 </Card>
