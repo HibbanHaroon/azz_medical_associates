@@ -113,9 +113,12 @@ const calculateValuableProviders = (
   allDoctors,
   clinicId = null
 ) => {
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.setDate(now.getDate() - 30));
+
   const filteredArrivals = clinicId
-    ? allArrivals.filter((arrival) => arrival.clinicId === clinicId)
-    : allArrivals;
+    ? allArrivals.filter((arrival) => arrival.clinicId === clinicId && new Date(arrival.arrivalTime) >= thirtyDaysAgo)
+    : allArrivals.filter((arrival) => new Date(arrival.arrivalTime) >= thirtyDaysAgo);
 
   const providerCount = filteredArrivals.reduce((acc, arrival) => {
     const doctor = allDoctors.find((doc) => doc.id === arrival.doctorID);
@@ -129,8 +132,10 @@ const calculateValuableProviders = (
   const sortedProviders = Object.values(providerCount).sort(
     (a, b) => b.count - a.count
   );
+
   return sortedProviders.slice(0, 5);
 };
+
 
 const getAllArrivals = async () => {
   try {

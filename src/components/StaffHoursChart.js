@@ -78,13 +78,28 @@ const StaffHoursChart = ({ xAxisLabels, values, yAxisUnit }) => {
   };
 
   useEffect(() => {
+    // Determine indices of the highest and lowest non-zero values
+    const maxIndex = values.indexOf(Math.max(...values));
+    const nonZeroValues = values.filter((value) => value !== 0);
+    const minIndex = values.indexOf(Math.min(...nonZeroValues));
+
+    const backgroundColors = values.map((value, index) => {
+      if (index === maxIndex) {
+        return "green";
+      } else if (index === minIndex) {
+        return "red";
+      } else {
+        return theme.palette.primary.main;
+      }
+    });
+
     const data = {
       labels: xAxisLabels,
       datasets: [
         {
           label: "Average Staff Attendance",
           data: values,
-          backgroundColor: theme.palette.primary.main,
+          backgroundColor: backgroundColors,
           borderColor: theme.palette.primary.dark,
           borderWidth: 0,
           barThickness: 20,
