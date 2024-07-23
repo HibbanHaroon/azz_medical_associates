@@ -8,74 +8,37 @@ import {
   Button,
   Dialog,
   DialogTitle,
-  DialogContent,
   DialogActions,
   Typography,
   Avatar,
   IconButton,
-  // FormControl,
-  // Select,
 } from "@mui/material";
 import { fetchNurses } from "../services/nurseService";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CloseIcon from "@mui/icons-material/Close";
 import Webcam from "react-webcam";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import {
   fetchAttendance,
-  addAttendance,
-  updateAttendanceCheckIn,
-  updateAttendanceCheckOut,
+  addOrUpdateAttendance,
+  updateAttendance,
 } from "../services/attendanceService";
 import showInfoToast from "../utils/showInfoToast";
-// import { getAllClinics } from "../services/clinicService";
+import showErrorToast from "../utils/showErrorToast";
 
 export default function NurseAttendance() {
   const { state } = useLocation();
   const { clinicId } = state;
 
-  // const [selectedClinic, setSelectedClinic] = useState("");
-  // const [clinics, setClinics] = useState([]);
   const [attendance, setAttendance] = useState([]);
   const [nurses, setNurses] = useState([]);
   const [selectedNurse, setSelectedNurse] = useState("");
-  const [showCheckButtons, setShowCheckButtons] = useState(false);
+  const [showCheckInButton, setShowCheckInButton] = useState(false);
+  const [showCheckOutButton, setShowCheckOutButton] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [nurseName, setNurseName] = useState("");
-  const navigate = useNavigate();
-
-  async function ff(clinicId) {
-    try {
-      const staff = await fetchNurses(clinicId); // Wait for fetchNurses to complete
-
-      // Check if staff is an array (assuming fetchNurses returns an array of staff)
-      if (Array.isArray(staff)) {
-        staff.forEach((person) => {
-          console.log(person.name); // Log the name of each staff member
-        });
-      } else {
-        console.log("Invalid staff data format:", staff);
-      }
-    } catch (error) {
-      console.error("Error in ff function:", error.message);
-    }
-  }
-  ff(clinicId);
-
-  // useEffect(() => {
-  //   const fetchClinics = async () => {
-  //     try {
-  //       const fetchedClinics = await getAllClinics();
-  //       setClinics(fetchedClinics);
-  //     } catch (error) {
-  //       console.error("Failed to fetch clinics", error);
-  //     }
-  //   };
-
-  //   fetchClinics();
-  // }, []);
 
   useEffect(() => {
     const fetchNursesData = async () => {
@@ -91,35 +54,20 @@ export default function NurseAttendance() {
     };
 
     fetchNursesData();
-  }, []);
+  }, [clinicId]);
 
-  const markAttendance = async () => {
-    try {
-      const attendanceData = {
-        id: selectedNurse.id,
-        datetime: new Date().toISOString(),
-        status: "present",
-        nurseName: selectedNurse.name,
-        checkInTime: null,
-        checkOutTime: null,
-      };
-
-      // console.log(clinicId, attendanceData);
-
-      const response = await addAttendance(clinicId, attendanceData);
-
-      // console.log(response);
-    } catch (error) {
-      console.error("Error adding attendance record:", error);
-    }
+  const isSameDay = (date1, date2) => {
+    return (
+      date1.getFullYear() === date2.getFullYear() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getDate() === date2.getDate()
+    );
   };
 
   useEffect(() => {
     if (showCamera) {
       const timer = setTimeout(() => {
         setShowCamera(false);
-        // Marking attendance here
-        markAttendance();
         setShowConfirmation(true);
       }, 5000);
 
@@ -141,26 +89,45 @@ export default function NurseAttendance() {
     const selectedNurseId = event.target.value;
     const nurse = nurses.find((nurse) => nurse.id === selectedNurseId);
 
-    const nurseAttendance = attendance.find((record) => record.id === nurse.id);
-
-    console.log("attendance", nurseAttendance);
-    if (nurseAttendance && nurseAttendance.status === "present") {
-      // alert("Attendance already marked for today.");
-      showInfoToast("Attendance already marked for today!");
-      setShowCheckButtons(true);
-      setNurseName(nurse.name);
-      setSelectedNurse(nurse);
-      return;
-    }
-
+    setSelectedNurse(selectedNurseId);
     setNurseName(nurse.name);
-    setSelectedNurse(nurse);
-    setShowCamera(true);
-    setShowCheckButtons(true);
   };
 
+  useEffect(() => {
+    if (selectedNurse) {
+      const nurse = nurses.find((nurse) => nurse.id === selectedNurse);
+      const nurseAttendance = attendance.find(
+        (record) => record.id === nurse.id
+      );
+
+      const today = new Date();
+      const todayAttendance = nurseAttendance
+        ? nurseAttendance.pastThirtyDays.find((day) =>
+            isSameDay(new Date(day.datetime), today)
+          )
+        : null;
+
+      if (todayAttendance) {
+        if (todayAttendance.checkInTime !== null) {
+          // showInfoToast("Attendance is already marked for the day!");
+          setShowCheckInButton(false);
+        } else {
+          setShowCheckInButton(true);
+        }
+        if (todayAttendance.checkOutTime !== null) {
+          // showInfoToast("Check-out is already done for the day!");
+          setShowCheckOutButton(false);
+        } else {
+          setShowCheckOutButton(true);
+        }
+      } else {
+        setShowCheckInButton(true);
+        setShowCheckOutButton(true);
+      }
+    }
+  }, [nurses, selectedNurse, attendance]);
+
   const generateAudio = (text) => {
-    console.log("nurse marked voice");
     if ("speechSynthesis" in window) {
       const message = new SpeechSynthesisUtterance(text);
       window.speechSynthesis.speak(message);
@@ -179,53 +146,175 @@ export default function NurseAttendance() {
   };
 
   const handleCheckIn = async () => {
+    const today = new Date();
     const nurseAttendance = attendance.find(
-      (record) => record.id === selectedNurse.id
+      (record) =>
+        record.id === selectedNurse &&
+        record.pastThirtyDays.some((day) =>
+          isSameDay(new Date(day.datetime), today)
+        )
     );
-    console.log("check in", nurseAttendance);
 
-    if (nurseAttendance && nurseAttendance.checkInTime !== null) {
-      // alert("Check-in already done.");
+    const todayAttendance = nurseAttendance
+      ? nurseAttendance.pastThirtyDays.find((day) => {
+          const result = isSameDay(new Date(day.datetime), today);
+          return result;
+        })
+      : null;
+
+    if (todayAttendance && todayAttendance.checkInTime !== null) {
       showInfoToast("Check-in already done.");
+      setShowCheckInButton(false);
       return;
     }
 
-    const response = await updateAttendanceCheckIn(clinicId, selectedNurse.id, {
-      checkInTime: Date.now(),
-    });
+    if (!nurseAttendance) {
+      // If attendance record doesn't exist, create it first
+      try {
+        const attendanceData = {
+          id: selectedNurse,
+          datetime: new Date().toISOString(),
+          status: "present",
+          nurseName: nurseName,
+          checkInTime: new Date().toISOString(),
+          checkOutTime: null,
+        };
 
-    if (!response.ok) {
-      throw new Error(
-        "Failed to update Attendance checkInTime status in the database"
-      );
+        const response = await addOrUpdateAttendance(clinicId, attendanceData);
+        if (!response) {
+          throw new Error("Failed to create attendance record");
+        }
+        // Need to resolve the fetchAttendenceById error in order to carry out the two below.
+        showInfoToast("Check-in successfully done.");
+
+        setAttendance((prevAttendance) => {
+          const existingRecordIndex = prevAttendance.findIndex(
+            (record) => record.id === selectedNurse
+          );
+
+          if (existingRecordIndex !== -1) {
+            // Update the existing record
+            return prevAttendance.map((record) =>
+              record.id === selectedNurse
+                ? {
+                    ...record,
+                    pastThirtyDays: [
+                      ...record.pastThirtyDays,
+                      ...response.pastThirtyDays, // Assuming response.pastThirtyDays is an array
+                    ],
+                  }
+                : record
+            );
+          } else {
+            // Add a new record
+            return [
+              ...prevAttendance,
+              {
+                id: selectedNurse,
+                nurseName: nurseName,
+                pastThirtyDays: response.pastThirtyDays, // Assuming response.pastThirtyDays is an array
+              },
+            ];
+          }
+        });
+        setShowCamera(true);
+
+        setShowCheckInButton(false);
+      } catch (error) {
+        console.error("Error creating attendance record:", error);
+        showErrorToast("Error creating attendance record. Please try again.");
+      }
     }
   };
 
   const handleCheckOut = async () => {
+    const today = new Date();
     const nurseAttendance = attendance.find(
-      (record) => record.id === selectedNurse.id
+      (record) =>
+        record.id === selectedNurse &&
+        record.pastThirtyDays.some((day) =>
+          isSameDay(new Date(day.datetime), today)
+        )
     );
 
-    console.log("check out", nurseAttendance);
+    const todayAttendance = nurseAttendance
+      ? nurseAttendance.pastThirtyDays.find((day) =>
+          isSameDay(new Date(day.datetime), today)
+        )
+      : null;
 
-    if (nurseAttendance && nurseAttendance.checkOutTime !== null) {
-      // alert("Check-out already done.");
-      showInfoToast("Check-out already done.");
+    if (!todayAttendance || todayAttendance.checkInTime === null) {
+      showErrorToast("Please check in first for the day.");
       return;
     }
 
-    const response = await updateAttendanceCheckOut(
-      clinicId,
-      selectedNurse.id,
-      {
-        checkOutTime: Date.now(),
-      }
-    );
+    if (todayAttendance.checkOutTime !== null) {
+      showInfoToast("Check-out already done.");
+      setShowCheckOutButton(false);
+      return;
+    }
 
-    if (!response.ok) {
-      throw new Error(
-        "Failed to update Attendance checkOutTime status in the database"
+    try {
+      // Update the checkOutTime in the local pastThirtyDays array
+      todayAttendance.checkOutTime = new Date().toISOString();
+
+      // Prepare the updated pastThirtyDays array for the API call
+      const updatedPastThirtyDays = nurseAttendance.pastThirtyDays.map((day) =>
+        isSameDay(new Date(day.datetime), today) ? todayAttendance : day
       );
+
+      const updatedAttendanceData = {
+        ...nurseAttendance,
+        pastThirtyDays: updatedPastThirtyDays,
+      };
+
+      const response = await updateAttendance(
+        clinicId,
+        selectedNurse,
+        updatedAttendanceData
+      );
+
+      if (!response) {
+        throw new Error("Failed to update check-out time");
+      }
+      // There occurred some error, otherwise attendance is being marked
+      showInfoToast("Check-out successfully done.");
+
+      setAttendance((prevAttendance) => {
+        const existingRecordIndex = prevAttendance.findIndex(
+          (record) => record.id === selectedNurse
+        );
+
+        if (existingRecordIndex !== -1) {
+          // Update the existing record
+          return prevAttendance.map((record) =>
+            record.id === selectedNurse
+              ? {
+                  ...record,
+                  pastThirtyDays: [
+                    ...record.pastThirtyDays,
+                    ...response.pastThirtyDays, // Assuming response.pastThirtyDays is an array
+                  ],
+                }
+              : record
+          );
+        } else {
+          // Add a new record
+          return [
+            ...prevAttendance,
+            {
+              id: selectedNurse,
+              nurseName: nurseName,
+              pastThirtyDays: response.pastThirtyDays, // Assuming response.pastThirtyDays is an array
+            },
+          ];
+        }
+      });
+
+      setShowCheckOutButton(false);
+    } catch (error) {
+      console.error("Error updating check-out time:", error);
+      showErrorToast("Error updating check-out time. Please try again.");
     }
   };
 
@@ -336,20 +425,38 @@ export default function NurseAttendance() {
               }}
             />
           )}
-          {showCheckButtons && (
-            <Box sx={{ display: "flex" }}>
-              <Button onClick={handleCheckIn} variant="outlined" sx={{ mr: 2 }}>
+          <Box sx={{ display: "flex" }}>
+            {showCheckInButton && (
+              <Button
+                onClick={handleCheckIn}
+                variant="outlined"
+                sx={{ mr: 2 }}
+                disabled={attendance.some(
+                  (record) =>
+                    isSameDay(new Date(record.datetime), new Date()) &&
+                    record.id === selectedNurse.id &&
+                    record.checkInTime !== null
+                )}
+              >
                 Check In
               </Button>
+            )}
+            {showCheckOutButton && (
               <Button
                 onClick={handleCheckOut}
                 variant="outlined"
                 sx={{ mr: 2 }}
+                disabled={attendance.some(
+                  (record) =>
+                    isSameDay(new Date(record.datetime), new Date()) &&
+                    record.id === selectedNurse.id &&
+                    record.checkOutTime !== null
+                )}
               >
                 Check Out
               </Button>
-            </Box>
-          )}
+            )}
+          </Box>
         </Box>
       </Container>
       <Dialog open={showConfirmation} onClose={handleConfirmationClose}>

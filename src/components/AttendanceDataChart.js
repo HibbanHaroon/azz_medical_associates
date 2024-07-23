@@ -11,7 +11,7 @@ import {
 } from "recharts";
 import { getAllClinics } from "../services/clinicService";
 import { fetchAttendance } from "../services/attendanceService";
-import { subDays, format, isSameDay } from "date-fns";
+import { subDays, format } from "date-fns";
 
 const fetchAttendanceData = async (clinics) => {
   try {
@@ -26,11 +26,16 @@ const fetchAttendanceData = async (clinics) => {
         await Promise.all(
           clinics.map(async (clinic) => {
             const attendance = await fetchAttendance(clinic.id);
-            const count = attendance.filter(
-              (record) =>
-                isSameDay(new Date(record.datetime), date) &&
-                record.status === "present"
-            ).length;
+            const count = attendance.reduce((acc, record) => {
+              const recordDate = new Date(record.datetime);
+              const isSameDay =
+                recordDate.toISOString().split("T")[0] ===
+                date.toISOString().split("T")[0];
+              if (isSameDay && record.status === "present") {
+                return acc + 1;
+              }
+              return acc;
+            }, 0);
 
             dailyAttendance[clinic.name] = count;
           })
