@@ -11,11 +11,15 @@ import {
   Select,
   FormControl,
   InputLabel,
+  Button,
 } from "@mui/material";
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import io from "socket.io-client";
 import { fetchDoctors } from "../services/doctorService";
 import { fetchArrivals } from "../services/arrivalsService";
+import DownloadIcon from "@mui/icons-material/Download";
+import { jsPDF } from "jspdf";
+import "jspdf-autotable";
 
 export default function ModeratorScreen(props) {
   const { state } = useLocation();
@@ -122,6 +126,107 @@ export default function ModeratorScreen(props) {
 
     return new Date(b.arrivalTime) - new Date(a.arrivalTime);
   });
+
+  const getTodaysArrivals = () => {
+    const today = new Date();
+    const todayDate = today.toISOString().split("T")[0];
+
+    return sortedArrivals.filter((arrival) => {
+      const arrivalDate = new Date(arrival.arrivalTime)
+        .toISOString()
+        .split("T")[0];
+      return arrivalDate === todayDate;
+    });
+  };
+
+  const handleDownloadReport = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(22);
+    doc.text("Arrivals Report", 20, 20);
+    doc.setFontSize(16);
+    doc.text("For Moderator", 20, 30);
+    doc.setFontSize(12);
+    doc.text(`Date: ${new Date().toLocaleString()}`, 20, 40);
+
+    const arrivals = getTodaysArrivals();
+    const tableColumn = [
+      "Patient Name",
+      "DOB",
+      "Provider",
+      "Arrival Time",
+      "Meeting Time",
+      "Waiting Time",
+    ];
+    const tableRows = [];
+
+    arrivals.forEach((arrival) => {
+      const providerName =
+        doctors.find((doc) => doc.id === arrival.doctorId)?.name || "N/A";
+      const arrivalTime = new Date(arrival.arrivalTime);
+      const calledInTime = arrival.calledInTime
+        ? new Date(arrival.calledInTime)
+        : null;
+      let waitingTime = "";
+      let diffMs = "";
+
+      if (calledInTime) {
+        diffMs = calledInTime - arrivalTime;
+      } else {
+        diffMs = Date.now() - arrivalTime;
+      }
+
+      const diffHrs = Math.floor(diffMs / 3600000);
+      const diffMins = Math.floor((diffMs % 3600000) / 60000);
+      const diffSecs = Math.floor((diffMs % 60000) / 1000);
+
+      if (diffHrs > 0) {
+        waitingTime += `${diffHrs}h `;
+      }
+      if (diffMins > 0 || diffHrs > 0) {
+        waitingTime += `${diffMins}m `;
+      }
+      waitingTime += `${diffSecs}s`;
+
+      waitingTime = waitingTime.trim();
+
+      const rowData = [
+        `${arrival.firstName} ${arrival.lastName}`,
+        new Date(arrival.dob).toLocaleString("en-US", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }),
+        providerName,
+        arrivalTime.toLocaleString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }),
+        calledInTime
+          ? calledInTime.toLocaleString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })
+          : "Pending",
+        calledInTime ? waitingTime : "Pending",
+      ];
+      tableRows.push(rowData);
+    });
+
+    doc.autoTable({
+      head: [tableColumn],
+      body: tableRows,
+      startY: 50,
+    });
+    doc.save("arrivals_report.pdf");
+  };
 
   const selectedDoctorName =
     selectedDoctor && doctors.find((doc) => doc.id === selectedDoctor)?.name;
@@ -283,6 +388,31 @@ export default function ModeratorScreen(props) {
           </Box>
         </Box>
       </Container>
+      <Button
+        onClick={handleDownloadReport}
+        variant="contained"
+        color="primary"
+        sx={{
+          position: "fixed",
+          bottom: "2rem",
+          right: "2rem",
+          zIndex: 999,
+          padding: 1,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          "@media (max-width: 600px)": {
+            padding: "4px 8px",
+            fontSize: "large",
+            marginTop: 90,
+          },
+        }}
+      >
+        <Box display="flex" flexDirection="column" alignItems="center">
+          <DownloadIcon fontSize="large" />
+          <Typography variant="body2">Download Report</Typography>
+        </Box>
+      </Button>
     </div>
   );
 }
