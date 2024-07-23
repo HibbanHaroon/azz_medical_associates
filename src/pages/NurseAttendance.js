@@ -277,6 +277,10 @@ export default function NurseAttendance() {
       if (!response) {
         throw new Error("Failed to update check-out time");
       }
+
+      generateAudio(
+        `${nurseName}, your checkout for the day has been marked successfully!`
+      );
       // There occurred some error, otherwise attendance is being marked
       showInfoToast("Check-out successfully done.");
 
