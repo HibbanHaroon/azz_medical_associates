@@ -26,11 +26,12 @@ import {
 } from "../services/attendanceService";
 import showInfoToast from "../utils/showInfoToast";
 import showErrorToast from "../utils/showErrorToast";
+import { useNavigate } from "react-router-dom";
 
 export default function NurseAttendance() {
   const { state } = useLocation();
   const { clinicId } = state;
-
+const navigate = useNavigate();
   const [attendance, setAttendance] = useState([]);
   const [nurses, setNurses] = useState([]);
   const [selectedNurse, setSelectedNurse] = useState("");
@@ -80,7 +81,6 @@ export default function NurseAttendance() {
       const timer = setTimeout(() => {
         handleConfirmationClose();
       }, 5000);
-      generateAudio(`${nurseName}, your attendance has been marked!`);
       return () => clearTimeout(timer);
     }
   }, [showConfirmation]);
@@ -122,7 +122,7 @@ export default function NurseAttendance() {
         }
       } else {
         setShowCheckInButton(true);
-        setShowCheckOutButton(true);
+        // setShowCheckOutButton(true);
       }
     }
   }, [nurses, selectedNurse, attendance]);
@@ -138,11 +138,9 @@ export default function NurseAttendance() {
 
   const handleConfirmationClose = () => {
     setShowConfirmation(false);
-    // setSelectedNurse("");
-    // setNurseName("");
-    // navigate("/arrival", {
-    //   state: { clinicId: clinicId },
-    // });
+    navigate("/arrival", {
+      state: { clinicId: clinicId },
+    });
   };
 
   const handleCheckIn = async () => {
@@ -170,6 +168,7 @@ export default function NurseAttendance() {
 
     if (!nurseAttendance) {
       // If attendance record doesn't exist, create it first
+      setShowCamera(true);
       try {
         const attendanceData = {
           id: selectedNurse,
@@ -185,7 +184,13 @@ export default function NurseAttendance() {
           throw new Error("Failed to create attendance record");
         }
         // Need to resolve the fetchAttendenceById error in order to carry out the two below.
-        showInfoToast("Check-in successfully done.");
+        setTimeout(() => {
+          showInfoToast("Check-in successfully done.");
+          generateAudio(
+            `${nurseName}, your check-in for the day has been marked successfully!`
+          );
+        }, 4000);
+        
 
         setAttendance((prevAttendance) => {
           const existingRecordIndex = prevAttendance.findIndex(
@@ -217,7 +222,7 @@ export default function NurseAttendance() {
             ];
           }
         });
-        setShowCamera(true);
+        
 
         setShowCheckInButton(false);
       } catch (error) {
@@ -228,6 +233,7 @@ export default function NurseAttendance() {
   };
 
   const handleCheckOut = async () => {
+    setShowCamera(true);
     const today = new Date();
     const nurseAttendance = attendance.find(
       (record) =>
@@ -278,11 +284,13 @@ export default function NurseAttendance() {
         throw new Error("Failed to update check-out time");
       }
 
-      generateAudio(
-        `${nurseName}, your checkout for the day has been marked successfully!`
-      );
       // There occurred some error, otherwise attendance is being marked
-      showInfoToast("Check-out successfully done.");
+      setTimeout(() => {
+        showInfoToast("Check-out successfully done.");
+        generateAudio(
+          `${nurseName}, your checkout for the day has been marked successfully!`
+        );
+      }, 4000);
 
       setAttendance((prevAttendance) => {
         const existingRecordIndex = prevAttendance.findIndex(
