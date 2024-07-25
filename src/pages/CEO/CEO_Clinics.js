@@ -823,39 +823,40 @@ export default function CEOClinics() {
       const labels = [];
       const values = [];
       let maxValue = 0;
-
+    
       const calculateTimeSpent = (checkInTime, checkOutTime) => {
-        const checkIn = checkInTime ? new Date(checkInTime) : new Date();
-        const checkOut = checkOutTime ? new Date(checkOutTime) : new Date();
+        const checkIn = new Date(checkInTime);
+        const checkOut = new Date(checkOutTime);
         return (checkOut - checkIn) / (1000 * 60); // Convert milliseconds to minutes
       };
-
+    
       const calculateAverageTimeSpent = async (clinicId) => {
         const [nurses, attendanceRecords] = await Promise.all([
           fetchNurses(clinicId),
           fetchAttendance(clinicId),
         ]);
-
+    
         const nurseTimeMap = new Map();
-
-        attendanceRecords.forEach((record) => {
-          const timeSpent = calculateTimeSpent(
-            record.checkInTime,
-            record.checkOutTime
-          );
-
-          if (!nurseTimeMap.has(record.id)) {
-            nurseTimeMap.set(record.id, { total: 0, count: 0 });
-          }
-
-          const nurseData = nurseTimeMap.get(record.id);
-          nurseData.total += timeSpent;
-          nurseData.count += 1;
+    
+        attendanceRecords.forEach((nurse) => {
+          nurse.pastThirtyDays.forEach((record) => {
+            if (record.checkInTime && record.checkOutTime) {
+              const timeSpent = calculateTimeSpent(record.checkInTime, record.checkOutTime);
+    
+              if (!nurseTimeMap.has(nurse.id)) {
+                nurseTimeMap.set(nurse.id, { total: 0, count: 0 });
+              }
+    
+              const nurseData = nurseTimeMap.get(nurse.id);
+              nurseData.total += timeSpent;
+              nurseData.count += 1;
+            }
+          });
         });
-
+    
         let totalClinicTime = 0;
         let staffCount = 0;
-
+    
         nurses.forEach((nurse) => {
           const nurseData = nurseTimeMap.get(nurse.id);
           if (nurseData && nurseData.count > 0) {
@@ -864,17 +865,17 @@ export default function CEOClinics() {
             staffCount += 1;
           }
         });
-
+    
         return staffCount > 0 ? totalClinicTime / staffCount : 0;
       };
-
+    
       if (isAllClinics) {
         const averageTimePromises = clinics.map((clinic) =>
           calculateAverageTimeSpent(clinic.id)
         );
-
+    
         const averageTimes = await Promise.all(averageTimePromises);
-
+    
         averageTimes.forEach((averageTimeSpent, index) => {
           labels.push(clinics[index].name);
           values.push(parseFloat(averageTimeSpent.toFixed(2)));
@@ -887,24 +888,25 @@ export default function CEOClinics() {
           fetchNurses(dropdownClinicId),
           fetchAttendance(dropdownClinicId),
         ]);
-
+    
         const nurseTimeMap = new Map();
-
-        attendanceRecords.forEach((record) => {
-          const timeSpent = calculateTimeSpent(
-            record.checkInTime,
-            record.checkOutTime
-          );
-
-          if (!nurseTimeMap.has(record.id)) {
-            nurseTimeMap.set(record.id, { total: 0, count: 0 });
-          }
-
-          const nurseData = nurseTimeMap.get(record.id);
-          nurseData.total += timeSpent;
-          nurseData.count += 1;
+    
+        attendanceRecords.forEach((nurse) => {
+          nurse.pastThirtyDays.forEach((record) => {
+            if (record.checkInTime && record.checkOutTime) {
+              const timeSpent = calculateTimeSpent(record.checkInTime, record.checkOutTime);
+    
+              if (!nurseTimeMap.has(nurse.id)) {
+                nurseTimeMap.set(nurse.id, { total: 0, count: 0 });
+              }
+    
+              const nurseData = nurseTimeMap.get(nurse.id);
+              nurseData.total += timeSpent;
+              nurseData.count += 1;
+            }
+          });
         });
-
+    
         nurses.forEach((nurse) => {
           const nurseData = nurseTimeMap.get(nurse.id);
           if (nurseData && nurseData.count > 0) {
@@ -917,18 +919,18 @@ export default function CEOClinics() {
           }
         });
       }
-
+    
       // Determine the unit for the y-axis labels
       const yAxisUnit = maxValue >= 60 ? "h" : "m";
       const formattedValues = values.map((value) =>
         yAxisUnit === "h" ? value / 60 : value
       );
-
+    
       setXAxisLabels(labels);
       setStaffChartValues(formattedValues);
       setYAxisUnit(yAxisUnit);
     };
-
+    
     const fetchData = () => {
       getTimeChart();
       getStaffHours();

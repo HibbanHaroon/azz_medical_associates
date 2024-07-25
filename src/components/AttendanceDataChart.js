@@ -17,24 +17,23 @@ const fetchAttendanceData = async (clinics) => {
   try {
     const pastWeekDates = [...Array(7).keys()]
       .map((i) => subDays(new Date(), i))
-      .reverse();
+      .reverse()
+      .map((date) => date.toISOString().split("T")[0]); // Format dates to ISO string (yyyy-mm-dd)
 
     const attendanceData = await Promise.all(
       pastWeekDates.map(async (date) => {
-        const dailyAttendance = { name: format(date, "EEEE") };
+        const dailyAttendance = { name: format(new Date(date), "EEEE") };
 
         await Promise.all(
           clinics.map(async (clinic) => {
-            const attendance = await fetchAttendance(clinic.id);
-            const count = attendance.reduce((acc, record) => {
-              const recordDate = new Date(record.datetime);
-              const isSameDay =
-                recordDate.toISOString().split("T")[0] ===
-                date.toISOString().split("T")[0];
-              if (isSameDay && record.status === "present") {
-                return acc + 1;
-              }
-              return acc;
+            const clinicAttendance = await fetchAttendance(clinic.id);
+            const count = clinicAttendance.reduce((acc, nurse) => {
+              const dailyRecords = nurse.pastThirtyDays.filter(
+                (record) =>
+                  record.datetime.split("T")[0] === date &&
+                  record.status === "present"
+              ).length;
+              return acc + dailyRecords;
             }, 0);
 
             dailyAttendance[clinic.name] = count;
@@ -51,6 +50,7 @@ const fetchAttendanceData = async (clinics) => {
     return [];
   }
 };
+
 
 const AttendanceDataChart = () => {
   const [attendanceData, setAttendanceData] = useState([]);
