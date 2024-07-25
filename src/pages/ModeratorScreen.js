@@ -141,91 +141,111 @@ export default function ModeratorScreen(props) {
 
   const handleDownloadReport = () => {
     const doc = new jsPDF();
-    doc.setFontSize(22);
-    doc.text("Arrivals Report", 20, 20);
-    doc.setFontSize(16);
-    doc.text("For Moderator", 20, 30);
-    doc.setFontSize(12);
-    doc.text(`Date: ${new Date().toLocaleString()}`, 20, 40);
 
-    const arrivals = getTodaysArrivals();
-    const tableColumn = [
-      "Patient Name",
-      "DOB",
-      "Provider",
-      "Arrival Time",
-      "Meeting Time",
-      "Waiting Time",
-    ];
-    const tableRows = [];
+    const logo = new Image();
+    logo.src = "/assets/logos/logoHAUTO.png";
+    logo.onload = () => {
+      doc.addImage(logo, "PNG", 20, 20, 80, 17);
 
-    arrivals.forEach((arrival) => {
-      const providerName =
-        doctors.find((doc) => doc.id === arrival.doctorId)?.name || "N/A";
-      const arrivalTime = new Date(arrival.arrivalTime);
-      const calledInTime = arrival.calledInTime
-        ? new Date(arrival.calledInTime)
-        : null;
-      let waitingTime = "";
-      let diffMs = "";
+      doc.setFontSize(22);
+      doc.text("Patient List", 20, 50);
+      doc.setFontSize(16);
+      doc.text("For Moderator", 20, 60);
+      doc.setFontSize(12);
 
-      if (calledInTime) {
-        diffMs = calledInTime - arrivalTime;
-      } else {
-        diffMs = Date.now() - arrivalTime;
-      }
+      const currentDate = new Date();
+      const dateTimeStr = `Date and Time: ${currentDate.toLocaleString()}`;
+      const durationStr = `Duration: ${currentDate.toLocaleString("en-US", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })}`;
 
-      const diffHrs = Math.floor(diffMs / 3600000);
-      const diffMins = Math.floor((diffMs % 3600000) / 60000);
-      const diffSecs = Math.floor((diffMs % 60000) / 1000);
+      doc.text(dateTimeStr, 20, 70);
+      doc.text(durationStr, 130, 70);
 
-      if (diffHrs > 0) {
-        waitingTime += `${diffHrs}h `;
-      }
-      if (diffMins > 0 || diffHrs > 0) {
-        waitingTime += `${diffMins}m `;
-      }
-      waitingTime += `${diffSecs}s`;
-
-      waitingTime = waitingTime.trim();
-
-      const rowData = [
-        `${arrival.firstName} ${arrival.lastName}`,
-        new Date(arrival.dob).toLocaleString("en-US", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        }),
-        providerName,
-        arrivalTime.toLocaleString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        }),
-        calledInTime
-          ? calledInTime.toLocaleString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: true,
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-            })
-          : "Pending",
-        calledInTime ? waitingTime : "Pending",
+      const arrivals = getTodaysArrivals();
+      const tableColumn = [
+        "Patient Name",
+        "Provider",
+        "Arrival Time",
+        "Meeting Time",
+        "Waiting Time",
       ];
-      tableRows.push(rowData);
-    });
+      const tableRows = [];
 
-    doc.autoTable({
-      head: [tableColumn],
-      body: tableRows,
-      startY: 50,
-    });
-    doc.save("arrivals_report.pdf");
+      arrivals.forEach((arrival) => {
+        const providerName =
+          doctors.find((doc) => doc.id === arrival.doctorId)?.name || "N/A";
+        const arrivalTime = new Date(arrival.arrivalTime);
+        const calledInTime = arrival.calledInTime
+          ? new Date(arrival.calledInTime)
+          : null;
+        let waitingTime = "";
+        let diffMs = "";
+
+        if (calledInTime) {
+          diffMs = calledInTime - arrivalTime;
+        } else {
+          diffMs = Date.now() - arrivalTime;
+        }
+
+        const diffHrs = Math.floor(diffMs / 3600000);
+        const diffMins = Math.floor((diffMs % 3600000) / 60000);
+        const diffSecs = Math.floor((diffMs % 60000) / 1000);
+
+        if (diffHrs > 0) {
+          waitingTime += `${diffHrs}h `;
+        }
+        if (diffMins > 0 || diffHrs > 0) {
+          waitingTime += `${diffMins}m `;
+        }
+        waitingTime += `${diffSecs}s`;
+
+        waitingTime = waitingTime.trim();
+
+        const rowData = [
+          `${arrival.firstName} ${arrival.lastName}`,
+          providerName,
+          arrivalTime.toLocaleString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          }),
+          calledInTime
+            ? calledInTime.toLocaleString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })
+            : "Pending",
+          calledInTime ? waitingTime : "Pending",
+        ];
+        tableRows.push(rowData);
+      });
+
+      doc.autoTable({
+        head: [tableColumn],
+        body: tableRows,
+        startY: 80,
+      });
+
+      doc.setFontSize(10);
+      doc.text(
+        "This report is system generated.",
+        20,
+        doc.internal.pageSize.height - 10
+      );
+
+      doc.save("arrivals_report.pdf");
+    };
   };
 
   const selectedDoctorName =
