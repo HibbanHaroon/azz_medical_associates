@@ -249,9 +249,6 @@ export default function CEOClinics() {
   const [isAllClinics, setIsAllClinics] = useState(true);
   const [dropdownClinicId, setDropdownClinicId] = useState(null);
 
-  const [totalStaff, setTotalStaff] = useState([]);
-  const [totalPresentDays, setTotalPresentDays] = useState([]);
-
   useEffect(() => {
     const fetchInitialData = async () => {
       setLoading(true);
@@ -321,13 +318,14 @@ export default function CEOClinics() {
 
   const getStaffHours = async (
     showAttendanceRows = false,
-    showAllClinics = true
+    showAllClinics = true,
+    individualClinicId = null
   ) => {
     const labels = [];
     const values = [];
-    let tempTotalStaff = [];
-    let tempTotalPresentDays = [];
     let maxValue = 0;
+    let attendanceData = {};
+    let localAttendanceData = {};
 
     const calculateTimeSpent = (checkInTime, checkOutTime) => {
       const checkIn = new Date(checkInTime);
@@ -374,12 +372,14 @@ export default function CEOClinics() {
         }
       });
 
-      tempTotalStaff.push(staffCount);
+      if (!localAttendanceData[clinicId]) {
+        localAttendanceData[clinicId] = {};
+      }
+
+      localAttendanceData[clinicId].total = nurses.length;
 
       return staffCount > 0 ? totalClinicTime / staffCount : 0;
     };
-
-    setTotalStaff(tempTotalStaff);
 
     if (isAllClinics && showAllClinics) {
       const averageTimePromises = clinics.map((clinic) =>
@@ -391,15 +391,27 @@ export default function CEOClinics() {
       averageTimes.forEach((averageTimeSpent, index) => {
         labels.push(clinics[index].name);
         values.push(parseFloat(averageTimeSpent.toFixed(2)));
+
+        // For Attendance Table
+        if (!localAttendanceData[clinics[index].id]) {
+          localAttendanceData[clinics[index].id] = {};
+        }
+        localAttendanceData[clinics[index].id].name = clinics[index].name;
+        localAttendanceData[clinics[index].id].average = parseFloat(
+          averageTimeSpent.toFixed(2)
+        );
+
         if (averageTimeSpent > maxValue) {
           maxValue = averageTimeSpent;
         }
+
+        attendanceData = localAttendanceData;
       });
     } else {
-      console.log("inside lol", dropdownClinicId);
+      let localIndividualAttendanceData = {};
       const [nurses, attendanceRecords] = await Promise.all([
-        fetchNurses(dropdownClinicId),
-        fetchAttendance(dropdownClinicId),
+        fetchNurses(individualClinicId),
+        fetchAttendance(individualClinicId),
       ]);
 
       const nurseTimeMap = new Map();
@@ -425,10 +437,11 @@ export default function CEOClinics() {
             nursePresentDays += 1;
           }
         });
-        tempTotalPresentDays.push(nursePresentDays);
+        if (!localIndividualAttendanceData[nurse.id]) {
+          localIndividualAttendanceData[nurse.id] = {};
+        }
+        localIndividualAttendanceData[nurse.id].total = nursePresentDays;
       });
-
-      setTotalPresentDays(tempTotalPresentDays);
 
       nurses.forEach((nurse) => {
         const nurseData = nurseTimeMap.get(nurse.id);
@@ -436,11 +449,23 @@ export default function CEOClinics() {
           const averageTimeSpent = nurseData.total / nurseData.count;
           labels.push(nurse.name);
           values.push(parseFloat(averageTimeSpent.toFixed(2)));
+
+          // for Attendance Table Individual Clinic
+          if (!localIndividualAttendanceData[nurse.id]) {
+            localIndividualAttendanceData[nurse.id] = {};
+          }
+          localIndividualAttendanceData[nurse.id].name = nurse.name;
+          localIndividualAttendanceData[nurse.id].average = parseFloat(
+            averageTimeSpent.toFixed(2)
+          );
+
           if (averageTimeSpent > maxValue) {
             maxValue = averageTimeSpent;
           }
         }
       });
+
+      attendanceData = localIndividualAttendanceData;
     }
 
     // Determine the unit for the y-axis labels
@@ -453,15 +478,15 @@ export default function CEOClinics() {
     setStaffChartValues(formattedValues);
     setYAxisUnit(yAxisUnit);
 
-    console.log("xaxis", labels);
-    console.log("values", formattedValues);
-    console.log("yaxis", yAxisUnit);
+    // console.log("xaxis", labels);
+    // console.log("values", formattedValues);
+    // console.log("yaxis", yAxisUnit);
 
     if (currentTable === 0 && showAttendanceRows) {
-      const rows = labels.map((label, i) => ({
-        name: label,
-        total: showAllClinics ? totalStaff[i] : totalPresentDays[i],
-        average: `${formattedValues[i]}${yAxisUnit}`,
+      const rows = Object.keys(attendanceData).map((id) => ({
+        name: attendanceData[id].name,
+        total: attendanceData[id].total,
+        average: `${attendanceData[id].average}${yAxisUnit}`,
       }));
 
       const columns = [
@@ -649,7 +674,7 @@ export default function CEOClinics() {
 
   useEffect(() => {
     updateCurrentDropdownItem(currentDropdownItem, currentTable);
-  }, []);
+  }, [clinics]);
 
   useEffect(() => {
     const fetchClinicsAndArrivals = async () => {
@@ -744,7 +769,7 @@ export default function CEOClinics() {
           setColumns(columns);
         } else if (selectedItem.item === "Attendance") {
           // maybe call get staff hours here
-          getStaffHours();
+          getStaffHours(true);
         }
       } else if (tableIndex === 1) {
         const clinicName = selectedItem.item;
@@ -790,7 +815,7 @@ export default function CEOClinics() {
         }
       } else if (tableIndex === 2) {
         const response = await selectedItem.fetch(item.id);
-        console.log(response);
+        // console.log(response);
 
         const includeDomain = response.every(
           (user) => user.domain !== undefined
@@ -848,7 +873,6 @@ export default function CEOClinics() {
         setCurrentTable(newTableIndex - 1);
       } else {
         if (newTableIndex === 2) {
-          console.log("row click", item);
           updateCurrentDropdownItem(item, newTableIndex);
         } else {
           updateCurrentDropdownItem(item.name, newTableIndex);
@@ -1017,19 +1041,13 @@ export default function CEOClinics() {
       doc.text(dateTimeStr, 20, 70);
       doc.text(durationStr, 130, 70);
 
-      const tableColumn = [
-        isAllClinics ? "Clinic Name" : "Staff Name",
-        isAllClinics ? "Total Staff" : "Total Present Days",
-        isAllClinics ? "Average Hours/Staff" : "Average Hours/Day",
-      ];
+      const tableColumn = columns.map((column) => {
+        return column.label;
+      });
       const tableRows = [];
 
-      const rowData = xAxisLabels.map((label, i) => {
-        return [
-          label,
-          isAllClinics ? totalStaff[i] : totalPresentDays[i],
-          `${staffChartValues[i]}${yAxisUnit}`,
-        ];
+      const rowData = rows.map((row) => {
+        return [row.name, row.total, row.average];
       });
 
       tableRows.push(...rowData);
@@ -1377,7 +1395,7 @@ export default function CEOClinics() {
                     }
                     if (currentTable === 0 && selectedItem === "Attendance") {
                       updateCurrentDropdownItem(selectedItem, currentTable);
-                      getStaffHours(true);
+                      // getStaffHours(true);
                     }
                   }}
                 >
@@ -1409,14 +1427,15 @@ export default function CEOClinics() {
                           setSelectedClinicId(selectedClinicId);
                           if (currentDropdownItem === "Arrivals") {
                             await fetchArrivalsData(selectedClinicId);
-                          } else if (currentDropdownItem === "Attendance") {
+                          }
+                          if (currentDropdownItem === "Attendance") {
                             if (selectedClinicName === "All Clinics") {
                               getStaffHours(true, true);
-                              setIsAllClinics(true);
+                              // setIsAllClinics(true);
                             } else {
                               setDropdownClinicId(selectedClinicId);
-                              setIsAllClinics(false);
-                              getStaffHours(true, false);
+                              // setIsAllClinics(false);
+                              getStaffHours(true, false, selectedClinicId);
                             }
                           }
                         }}
