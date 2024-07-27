@@ -27,6 +27,7 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  CircularProgress,
 } from "@mui/material";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
 import TableComponent from "../../components/TableComponent";
@@ -229,6 +230,7 @@ export default function CEOClinics() {
   const [rows, setRows] = useState([]);
   const [columns, setColumns] = useState([]);
   const [recentClinic, setRecentClinic] = useState([]);
+  const [downloading, setDownloading] = useState(false);
 
   // For Staff Hours Chart
   const [xAxisLabels, setXAxisLabels] = useState([]);
@@ -1016,57 +1018,64 @@ export default function CEOClinics() {
   }, [isAllClinics, dropdownClinicId, allArrivals, doctors]);
 
   const handleDownloadReport = () => {
-    const doc = new jsPDF();
+    setDownloading(true);
+    try {
+      const doc = new jsPDF();
 
-    const logo = new Image();
-    logo.src = "/assets/logos/logoHAUTO.png";
-    logo.onload = () => {
-      doc.addImage(logo, "PNG", 20, 20, 80, 17);
+      const logo = new Image();
+      logo.src = "/assets/logos/logoHAUTO.png";
+      logo.onload = () => {
+        doc.addImage(logo, "PNG", 20, 20, 80, 17);
 
-      doc.setFontSize(22);
-      doc.text("Staff Attendance", 20, 50);
-      doc.setFontSize(16);
-      doc.text("For CEO", 20, 60);
-      doc.setFontSize(12);
+        doc.setFontSize(22);
+        doc.text("Staff Attendance", 20, 50);
+        doc.setFontSize(16);
+        doc.text("For CEO", 20, 60);
+        doc.setFontSize(12);
 
-      const currentDate = new Date();
-      const dateTimeStr = `Date and Time: ${currentDate.toLocaleString()}`;
-      const durationStr = `Duration: ${currentDate.toLocaleString("en-US", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      })}`;
+        const currentDate = new Date();
+        const dateTimeStr = `Date and Time: ${currentDate.toLocaleString()}`;
+        const durationStr = `Duration: ${currentDate.toLocaleString("en-US", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })}`;
 
-      doc.text(dateTimeStr, 20, 70);
-      doc.text(durationStr, 130, 70);
+        doc.text(dateTimeStr, 20, 70);
+        doc.text(durationStr, 130, 70);
 
-      const tableColumn = columns.map((column) => {
-        return column.label;
-      });
-      const tableRows = [];
+        const tableColumn = columns.map((column) => {
+          return column.label;
+        });
+        const tableRows = [];
 
-      const rowData = rows.map((row) => {
-        return [row.name, row.total, row.average];
-      });
+        const rowData = rows.map((row) => {
+          return [row.name, row.total, row.average];
+        });
 
-      tableRows.push(...rowData);
+        tableRows.push(...rowData);
 
-      doc.autoTable({
-        head: [tableColumn],
-        body: tableRows,
-        startY: 80,
-      });
+        doc.autoTable({
+          head: [tableColumn],
+          body: tableRows,
+          startY: 80,
+        });
 
-      doc.setFontSize(10);
-      doc.text(
-        "This report is system generated.",
-        20,
-        doc.internal.pageSize.height - 10
-      );
+        doc.setFontSize(10);
+        doc.text(
+          "This report is system generated.",
+          20,
+          doc.internal.pageSize.height - 10
+        );
 
-      doc.save("staff_attendance_report.pdf");
-    };
+        doc.save("staff_attendance_report.pdf");
+      };
+    } catch (error) {
+      console.error("Error downloading report:", error);
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
@@ -1453,10 +1462,15 @@ export default function CEOClinics() {
                 {currentTable === 0 && currentDropdownItem === "Attendance" && (
                   <Button
                     variant="outlined"
-                    startIcon={<DownloadIcon></DownloadIcon>}
+                    startIcon={!downloading && <DownloadIcon />}
                     onClick={handleDownloadReport}
+                    disabled={downloading}
                   >
-                    Download Report
+                    {downloading ? (
+                      <CircularProgress size={24} />
+                    ) : (
+                      "Download Report"
+                    )}
                   </Button>
                 )}
                 {/* Search field */}
