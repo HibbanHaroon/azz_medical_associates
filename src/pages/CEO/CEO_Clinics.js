@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 import Drawer from "@mui/material/Drawer";
@@ -64,6 +64,7 @@ import StaffHoursChart from "../../components/StaffHoursChart";
 import AverageTimeChart from "../../components/AverageTimeChart";
 import DownloadIcon from "@mui/icons-material/Download";
 import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 import "jspdf-autotable";
 
 const drawerWidth = 300;
@@ -250,6 +251,14 @@ export default function CEOClinics() {
 
   const [isAllClinics, setIsAllClinics] = useState(true);
   const [dropdownClinicId, setDropdownClinicId] = useState(null);
+
+  // useRefs for the Graphs to display in the Analytics Report
+  const attendanceRef = useRef();
+  const providerOfTheMonthRef = useRef();
+  const patientWaitingTimeRef = useRef();
+  const patientMeetingTimeRef = useRef();
+  const busyHoursRef = useRef();
+  const staffHoursRef = useRef();
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -1078,6 +1087,75 @@ export default function CEOClinics() {
     }
   };
 
+  const handleDownloadAnalyticsReport = async () => {
+    setDownloading(true);
+    try {
+      const doc = new jsPDF();
+
+      const logo = new Image();
+      logo.src = "/assets/logos/logoHAUTO.png";
+      logo.onload = async () => {
+        doc.addImage(logo, "PNG", 20, 20, 80, 17);
+
+        doc.setFontSize(22);
+        doc.text("Analytics Report", 20, 50);
+        doc.setFontSize(16);
+        doc.text("For CEO", 20, 60);
+        doc.setFontSize(12);
+
+        const currentDate = new Date();
+        const dateTimeStr = `Date and Time: ${currentDate.toLocaleString()}`;
+        const durationStr = `Duration: ${currentDate.toLocaleString("en-US", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })}`;
+
+        doc.text(dateTimeStr, 20, 70);
+        doc.text(durationStr, 130, 70);
+
+        const charts = [
+          attendanceRef.current,
+          providerOfTheMonthRef.current,
+          patientWaitingTimeRef.current,
+          patientMeetingTimeRef.current,
+          busyHoursRef.current,
+          staffHoursRef.current,
+        ];
+
+        for (let i = 0; i < charts.length; i++) {
+          const chart = charts[i];
+          const canvas = await html2canvas(chart);
+          const imgData = canvas.toDataURL("image/png");
+
+          const pageWidth = doc.internal.pageSize.getWidth();
+          const pageHeight = doc.internal.pageSize.getHeight();
+          const imgWidth = (pageWidth - 40) / 2;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+          const x = (i % 2) * (imgWidth + 20) + 10; // 20px margin on both sides
+          const y = 80 + Math.floor(i / 2) * (imgHeight + 20); // 20px margin between rows
+
+          doc.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
+        }
+
+        doc.setFontSize(10);
+        doc.text(
+          "This report is system generated.",
+          20,
+          doc.internal.pageSize.height - 10
+        );
+
+        doc.save("analytics_report.pdf");
+      };
+    } catch (error) {
+      console.error("Error downloading report:", error);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <Box sx={{ display: "flex" }}>
       <CssBaseline />
@@ -1172,7 +1250,14 @@ export default function CEOClinics() {
             </TabList>
           </Box>
           <TabPanel value="1">
-            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                mb: 2,
+              }}
+            >
               <FormControl sx={{ minWidth: 200, ml: 2, height: "2.5rem" }}>
                 <InputLabel id="clinic-select-label">Clinic</InputLabel>
                 <Select
@@ -1191,6 +1276,18 @@ export default function CEOClinics() {
                   ))}
                 </Select>
               </FormControl>
+              <Button
+                variant="outlined"
+                startIcon={!downloading && <DownloadIcon />}
+                onClick={handleDownloadAnalyticsReport}
+                disabled={downloading}
+              >
+                {downloading ? (
+                  <CircularProgress size={24} />
+                ) : (
+                  "Download Report"
+                )}
+              </Button>
             </Box>
             {/* Loader here */}
             <Grid container spacing={2}>
@@ -1203,6 +1300,7 @@ export default function CEOClinics() {
                     boxShadow: 2,
                     height: 300,
                   }}
+                  ref={attendanceRef}
                 >
                   <CardContent sx={{ p: 2 }}>
                     <Typography
@@ -1227,6 +1325,7 @@ export default function CEOClinics() {
                     boxShadow: 2,
                     height: 300,
                   }}
+                  ref={providerOfTheMonthRef}
                 >
                   <CardContent sx={{ p: 2, height: "100%" }}>
                     <Typography
@@ -1278,6 +1377,7 @@ export default function CEOClinics() {
                     boxShadow: 2,
                     height: 300,
                   }}
+                  ref={patientWaitingTimeRef}
                 >
                   <CardContent sx={{ p: 2, height: "100%" }}>
                     <Typography
@@ -1307,6 +1407,7 @@ export default function CEOClinics() {
                     boxShadow: 2,
                     height: 300,
                   }}
+                  ref={patientMeetingTimeRef}
                 >
                   <CardContent sx={{ p: 2, height: "100%" }}>
                     <Typography
@@ -1336,6 +1437,7 @@ export default function CEOClinics() {
                     boxShadow: 2,
                     height: 300,
                   }}
+                  ref={busyHoursRef}
                 >
                   <CardContent sx={{ p: 2, height: "100%" }}>
                     <Typography
@@ -1360,6 +1462,7 @@ export default function CEOClinics() {
                     boxShadow: 2,
                     height: 300,
                   }}
+                  ref={staffHoursRef}
                 >
                   <Typography
                     variant="h6"
