@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { styled, useTheme } from "@mui/material/styles";
 import Drawer from "@mui/material/Drawer";
@@ -26,6 +26,7 @@ import {
   Grid,
   Typography,
   Skeleton,
+  Button,
 } from "@mui/material";
 import GroupsIcon from "@mui/icons-material/Groups";
 import PersonIcon from "@mui/icons-material/Person";
@@ -45,6 +46,10 @@ import { CircularProgress } from "@mui/material";
 import ClinicRatioChart from "../../components/ClinicRatioChart";
 import AverageTimeChart from "../../components/AverageTimeChart";
 import AgeChart from "../../components/AgeChart";
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
+import "jspdf-autotable";
+import DownloadIcon from "@mui/icons-material/Download";
 
 const drawerWidth = 300;
 
@@ -92,6 +97,16 @@ export default function CEODashboard() {
 
   const [allArrivals, setAllArrivals] = useState([]);
   const [allDoctors, setAllDoctors] = useState([]);
+
+  const [downloading, setDownloading] = useState(false);
+
+  // useRefs for the Graphs to display in the Analytics Report
+  const patientsPerDayRef = useRef();
+  const patientProviderRatioRef = useRef();
+  const patientWaitingTimeRef = useRef();
+  const patientMeetingTimeRef = useRef();
+  const ageDemographicsRef = useRef();
+  const monthlyArrivalsRef = useRef();
 
   const handleDrawerClose = () => {
     setIsClosing(true);
@@ -556,6 +571,75 @@ export default function CEODashboard() {
     fetchData();
   }, [allArrivals, allDoctors]);
 
+  const handleDownloadAnalyticsReport = async () => {
+    setDownloading(true);
+    try {
+      const doc = new jsPDF();
+
+      const logo = new Image();
+      logo.src = "/assets/logos/logoHAUTO.png";
+      logo.onload = async () => {
+        doc.addImage(logo, "PNG", 20, 20, 80, 17);
+
+        doc.setFontSize(22);
+        doc.text("Analytics Report", 20, 50);
+        doc.setFontSize(16);
+        doc.text("For CEO", 20, 60);
+        doc.setFontSize(12);
+
+        const currentDate = new Date();
+        const dateTimeStr = `Date and Time: ${currentDate.toLocaleString()}`;
+        const durationStr = `Duration: ${currentDate.toLocaleString("en-US", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })}`;
+
+        doc.text(dateTimeStr, 20, 70);
+        doc.text(durationStr, 130, 70);
+
+        const charts = [
+          patientsPerDayRef.current,
+          patientProviderRatioRef.current,
+          patientWaitingTimeRef.current,
+          patientMeetingTimeRef.current,
+          ageDemographicsRef.current,
+          monthlyArrivalsRef.current,
+        ];
+
+        for (let i = 0; i < charts.length; i++) {
+          const chart = charts[i];
+          const canvas = await html2canvas(chart);
+          const imgData = canvas.toDataURL("image/png");
+
+          const pageWidth = doc.internal.pageSize.getWidth();
+          const pageHeight = doc.internal.pageSize.getHeight();
+          const imgWidth = (pageWidth - 40) / 2;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+          const x = (i % 2) * (imgWidth + 20) + 10; // 20px margin on both sides
+          const y = 80 + Math.floor(i / 2) * (imgHeight + 20); // 20px margin between rows
+
+          doc.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
+        }
+
+        doc.setFontSize(10);
+        doc.text(
+          "This report is system generated.",
+          20,
+          doc.internal.pageSize.height - 10
+        );
+
+        doc.save("analytics_report.pdf");
+      };
+    } catch (error) {
+      console.error("Error downloading report:", error);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   const cardsData = [
     {
       title: "Total Clinics",
@@ -687,6 +771,16 @@ export default function CEODashboard() {
             ))}
           </Grid>
         </Box>
+        <Box sx={{ display: "flex", justifyContent: "end", mt: 3 }}>
+          <Button
+            variant="outlined"
+            startIcon={!downloading && <DownloadIcon />}
+            onClick={handleDownloadAnalyticsReport}
+            disabled={downloading}
+          >
+            {downloading ? <CircularProgress size={24} /> : "Download Report"}
+          </Button>
+        </Box>
         <Box sx={{ height: "1.5rem", marginTop: 0 }}></Box>
         {loading ? (
           <Box
@@ -748,6 +842,7 @@ export default function CEODashboard() {
             <Grid item xs={12} md={6}>
               <Box
                 sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}
+                ref={patientsPerDayRef}
               >
                 <Typography
                   variant="h6"
@@ -762,6 +857,7 @@ export default function CEODashboard() {
             <Grid item xs={12} md={6}>
               <Box
                 sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}
+                ref={patientProviderRatioRef}
               >
                 <Typography
                   variant="h6"
@@ -799,6 +895,7 @@ export default function CEODashboard() {
                   boxShadow: 2,
                   height: 300,
                 }}
+                ref={patientMeetingTimeRef}
               >
                 <CardContent sx={{ p: 2, height: "100%" }}>
                   <Typography
@@ -828,6 +925,7 @@ export default function CEODashboard() {
                   boxShadow: 2,
                   height: 300,
                 }}
+                ref={patientWaitingTimeRef}
               >
                 <CardContent sx={{ p: 2, height: "100%" }}>
                   <Typography
@@ -857,6 +955,7 @@ export default function CEODashboard() {
                   boxShadow: 2,
                   height: 300,
                 }}
+                ref={ageDemographicsRef}
               >
                 <CardContent sx={{ p: 2, height: "100%" }}>
                   <Typography
@@ -875,6 +974,7 @@ export default function CEODashboard() {
             <Grid item xs={12} md={6}>
               <Box
                 sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}
+                ref={monthlyArrivalsRef}
               >
                 <Typography
                   variant="h6"
