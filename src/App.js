@@ -4,7 +4,8 @@ import HomeScreen from "./pages/HomeScreen";
 import PatientArrival from "./pages/PatientArrival";
 import DoctorScreen from "./pages/DoctorScreen";
 import ModeratorScreen from "./pages/ModeratorScreen";
-import AdminScreen from "./pages/AdminScreen";
+import AdminScreen from "./pages/Admin/AdminScreen";
+import AdminAttendanceScreen from "./pages/Admin/AdminAttendanceScreen";
 import NurseAttendance from "./pages/NurseAttendance";
 import PatientWaitingScreen from "./pages/PatientWaitingScreen";
 import { ThemeProvider } from "@mui/material/styles";
@@ -80,6 +81,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AdminScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/adminAttendance"
+              element={
+                <ProtectedRoute>
+                  <AdminAttendanceScreen />
                 </ProtectedRoute>
               }
             />

@@ -424,9 +424,12 @@ const HomeScreen = () => {
     }
   };
 
-  const handleDownloadAttendance = () => {
-    console.log("Download Attendance Report clicked");
-    getStaffHours();
+  const handleAdminAttendanceScreenNavigation = () => {
+    navigate(`/adminAttendance`, {
+      state: {
+        clinicId: clinicId,
+      },
+    });
   };
 
   const renderAdminOptions = () => (
@@ -483,11 +486,11 @@ const HomeScreen = () => {
           color: "white",
           cursor: "pointer",
         }}
-        onClick={handleDownloadAttendance}
+        onClick={handleAdminAttendanceScreenNavigation}
       >
         <AssignmentTurnedInIcon sx={{ fontSize: 40, mr: 2 }} />
         <Typography variant="h6" component="div">
-          Download Attendance Report
+          View Attendance Report
         </Typography>
       </Paper>
       <Divider sx={{ width: "100%", mb: 2 }} />
