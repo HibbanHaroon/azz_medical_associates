@@ -29,6 +29,7 @@ import { useAuth } from "../context/AuthContext";
 const SigninScreen = () => {
   const { login } = useAuth();
   const [selectedClinic, setSelectedClinic] = useState("");
+  const [selectedClinicName, setSelectedClinicName] = useState("");
   const [selectedUserType, setSelectedUserType] = useState("");
   const [clinics, setClinics] = useState([]);
   const [email, setEmail] = useState("");
@@ -147,6 +148,7 @@ const SigninScreen = () => {
           navigate(`/moderator`, {
             state: {
               clinicId: selectedClinic,
+              clinicName: selectedClinicName,
             },
           });
           break;
@@ -158,6 +160,7 @@ const SigninScreen = () => {
             state: {
               userId: userId,
               clinicId: selectedClinic,
+              clinicName: selectedClinicName,
               userType: selectedUserType,
             },
           });
@@ -179,6 +182,13 @@ const SigninScreen = () => {
 
   const handleForgotPasswordModalClose = () => {
     setForgotPasswordModalOpen(false);
+  };
+
+  const handleClinicChange = (e) => {
+    const selectedClinicId = e.target.value;
+    const clinic = clinics.find((clinic) => clinic.id === selectedClinicId);
+    setSelectedClinic(selectedClinicId);
+    setSelectedClinicName(clinic ? clinic.name : "");
   };
 
   return (
@@ -298,7 +308,7 @@ const SigninScreen = () => {
               <FormControl fullWidth sx={{ mb: 2 }}>
                 <Select
                   value={selectedClinic}
-                  onChange={(e) => setSelectedClinic(e.target.value)}
+                  onChange={handleClinicChange}
                   displayEmpty
                 >
                   <MenuItem value="" disabled>

@@ -23,7 +23,7 @@ import "jspdf-autotable";
 
 export default function ModeratorScreen(props) {
   const { state } = useLocation();
-  const { clinicId } = state;
+  const { clinicId, clinicName } = state;
   const [searchQuery, setSearchQuery] = useState("");
   const [doctors, setDoctors] = useState([]);
   const [patientsByDoctor, setPatientsByDoctor] = useState({});
@@ -145,12 +145,26 @@ export default function ModeratorScreen(props) {
     const logo = new Image();
     logo.src = "/assets/logos/logoHAUTO.png";
     logo.onload = () => {
-      doc.addImage(logo, "PNG", 20, 20, 80, 17);
+      doc.addImage(logo, "PNG", 20, 20, 50, 10);
+
+      const pageWidth = doc.internal.pageSize.getWidth();
 
       doc.setFontSize(22);
-      doc.text("Patient List", 20, 50);
+      const title = "Patient List";
+      const titleWidth =
+        (doc.getStringUnitWidth(title) * doc.internal.getFontSize()) /
+        doc.internal.scaleFactor;
+      const titleX = (pageWidth - titleWidth) / 2;
+      doc.text(title, titleX, 47);
+
       doc.setFontSize(16);
-      doc.text("For Moderator", 20, 60);
+      const subtitle = `${clinicName}`;
+      const subtitleWidth =
+        (doc.getStringUnitWidth(subtitle) * doc.internal.getFontSize()) /
+        doc.internal.scaleFactor;
+      const subtitleX = (pageWidth - subtitleWidth) / 2;
+      doc.text(subtitle, subtitleX, 60);
+
       doc.setFontSize(12);
 
       const currentDate = new Date();

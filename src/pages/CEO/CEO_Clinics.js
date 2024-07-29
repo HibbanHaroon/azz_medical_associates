@@ -1034,12 +1034,26 @@ export default function CEOClinics() {
       const logo = new Image();
       logo.src = "/assets/logos/logoHAUTO.png";
       logo.onload = () => {
-        doc.addImage(logo, "PNG", 20, 20, 80, 17);
+        doc.addImage(logo, "PNG", 20, 20, 50, 10);
+
+        const pageWidth = doc.internal.pageSize.getWidth();
 
         doc.setFontSize(22);
-        doc.text("Staff Attendance", 20, 50);
+        const title = "Staff Attendance";
+        const titleWidth =
+          (doc.getStringUnitWidth(title) * doc.internal.getFontSize()) /
+          doc.internal.scaleFactor;
+        const titleX = (pageWidth - titleWidth) / 2;
+        doc.text(title, titleX, 47);
+
         doc.setFontSize(16);
-        doc.text("For CEO", 20, 60);
+        const subtitle = "For CEO";
+        const subtitleWidth =
+          (doc.getStringUnitWidth(subtitle) * doc.internal.getFontSize()) /
+          doc.internal.scaleFactor;
+        const subtitleX = (pageWidth - subtitleWidth) / 2;
+        doc.text(subtitle, subtitleX, 60);
+
         doc.setFontSize(12);
 
         const currentDate = new Date();
@@ -1095,12 +1109,26 @@ export default function CEOClinics() {
       const logo = new Image();
       logo.src = "/assets/logos/logoHAUTO.png";
       logo.onload = async () => {
-        doc.addImage(logo, "PNG", 20, 20, 80, 17);
+        doc.addImage(logo, "PNG", 20, 20, 50, 10);
+
+        const pageWidth = doc.internal.pageSize.getWidth();
 
         doc.setFontSize(22);
-        doc.text("Analytics Report", 20, 50);
+        const title = "Analytics Report";
+        const titleWidth =
+          (doc.getStringUnitWidth(title) * doc.internal.getFontSize()) /
+          doc.internal.scaleFactor;
+        const titleX = (pageWidth - titleWidth) / 2;
+        doc.text(title, titleX, 47);
+
         doc.setFontSize(16);
-        doc.text("For CEO", 20, 60);
+        const subtitle = "For CEO";
+        const subtitleWidth =
+          (doc.getStringUnitWidth(subtitle) * doc.internal.getFontSize()) /
+          doc.internal.scaleFactor;
+        const subtitleX = (pageWidth - subtitleWidth) / 2;
+        doc.text(subtitle, subtitleX, 60);
+
         doc.setFontSize(12);
 
         const currentDate = new Date();
