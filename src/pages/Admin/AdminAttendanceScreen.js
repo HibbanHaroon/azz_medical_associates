@@ -110,9 +110,9 @@ const AdminAttendanceScreen = () => {
       ...(filter !== "Today"
         ? [{ id: "date", label: "Number of Days Present", align: "right" }]
         : []),
-      { id: "checkIn", label: "Average Check In Time", align: "right" },
-      { id: "checkOut", label: "Average Check Out Time", align: "right" },
-      { id: "averageHours", label: "Average Hours Spent", align: "right" },
+      { id: "checkIn", label: "Check In Time", align: "right" },
+      { id: "checkOut", label: "Check Out Time", align: "right" },
+      { id: "averageHours", label: "Hours Spent", align: "right" },
     ];
 
     nurses.forEach((nurse) => {
