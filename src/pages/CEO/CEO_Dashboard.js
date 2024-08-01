@@ -597,10 +597,12 @@ export default function CEODashboard() {
           (doc.getStringUnitWidth(subtitle) * doc.internal.getFontSize()) /
           doc.internal.scaleFactor;
         const subtitleX = (pageWidth - subtitleWidth) / 2;
-        doc.text(subtitle, subtitleX, 60);
+        doc.setTextColor(128, 128, 128);
+        doc.text(subtitle, subtitleX, 56);
+
+        doc.setTextColor(0, 0, 0);
 
         doc.setFontSize(12);
-
         const currentDate = new Date();
         const dateTimeStr = `Date and Time: ${currentDate.toLocaleString()}`;
         const durationStr = `Duration: ${currentDate.toLocaleString("en-US", {
