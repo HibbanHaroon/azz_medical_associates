@@ -17,10 +17,11 @@ import { fetchAttendance } from "../../services/attendanceService";
 import { fetchNurses } from "../../services/nurseService";
 import DownloadIcon from "@mui/icons-material/Download";
 
-const calculateTimeSpent = (checkInTime, checkOutTime) => {
-  const checkIn = new Date(checkInTime);
-  const checkOut = new Date(checkOutTime);
-  return (checkOut - checkIn) / (1000 * 60 * 60);
+const calculateTimeSpent = (checkIn, checkOut) => {
+  const diffMs = checkOut - checkIn;
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  return { hours: diffHours, minutes: diffMinutes };
 };
 
 const filterAttendanceRecords = (records, filter) => {
@@ -90,14 +91,21 @@ const AdminAttendanceScreen = () => {
       filteredRecords.forEach((day) => {
         const nurseData = nurseTimeMap.get(record.id);
 
-        if (day.checkInTime && day.checkOutTime) {
-          nurseData.totalHours += calculateTimeSpent(
-            day.checkInTime,
-            day.checkOutTime
+        if (day.checkInTime) {
+          const checkIn = new Date(day.checkInTime);
+          const checkOut = day.checkOutTime
+            ? new Date(day.checkOutTime)
+            : new Date();
+
+          const timeSpent = calculateTimeSpent(checkIn, checkOut);
+          nurseData.totalHours += timeSpent.hours + timeSpent.minutes / 60;
+
+          nurseData.checkIns.push(new Date(checkIn));
+          nurseData.checkOuts.push(
+            day.checkOutTime ? new Date(checkOut) : "Not Checked Out"
           );
-          nurseData.checkIns.push(new Date(day.checkInTime));
-          nurseData.checkOuts.push(new Date(day.checkOutTime));
         }
+
         if (day.status === "present") {
           nurseData.totalDays += 1;
         }
@@ -128,17 +136,28 @@ const AdminAttendanceScreen = () => {
                 ) / nurseData.checkIns.length
               )
             : "Not Checked In";
+
         const avgCheckOutTime =
           nurseData.checkOuts.length > 0
-            ? new Date(
-                nurseData.checkOuts.reduce(
-                  (acc, time) => acc + time.getTime(),
-                  0
-                ) / nurseData.checkOuts.length
-              )
+            ? nurseData.checkOuts[0] === "Not Checked Out"
+              ? "Not Checked Out"
+              : new Date(
+                  nurseData.checkOuts
+                    .filter((time) => time !== "Not Checked Out")
+                    .reduce((acc, time) => acc + time.getTime(), 0) /
+                    nurseData.checkOuts.filter(
+                      (time) => time !== "Not Checked Out"
+                    ).length
+                )
             : "Not Checked Out";
+
         let avgHoursSpent = nurseData.totalHours / nurseData.totalDays;
-        avgHoursSpent = avgHoursSpent.toFixed(2);
+        const hours = Math.floor(avgHoursSpent);
+        const minutes = Math.round((avgHoursSpent % 1) * 60);
+        let timeSpentFormatted = `${minutes}m`;
+        if (hours > 0) {
+          timeSpentFormatted = `${hours}h ${timeSpentFormatted}`;
+        }
 
         if (avgHoursSpent > maxValue) {
           maxValue = avgHoursSpent;
@@ -154,7 +173,7 @@ const AdminAttendanceScreen = () => {
             avgCheckOutTime === "Not Checked Out"
               ? avgCheckOutTime
               : avgCheckOutTime.toLocaleTimeString(),
-          averageHours: `${avgHoursSpent}`,
+          averageHours: timeSpentFormatted,
         };
 
         if (filter !== "Today") {
@@ -163,12 +182,6 @@ const AdminAttendanceScreen = () => {
 
         newRows.push(row);
       }
-    });
-
-    // Determine if the average hours should be in hours or minutes
-    const hourUnit = maxValue >= 60 ? "h" : "m";
-    newRows.forEach((row) => {
-      row.averageHours = `${row.averageHours}${hourUnit}`;
     });
 
     setRows(newRows);
