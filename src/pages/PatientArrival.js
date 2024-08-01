@@ -209,11 +209,9 @@ export default function PatientArrival() {
         // );
 
         if (response.ok) {
+          generateVoiceMessage(arrivalData.firstName, arrivalData.token);
+          console.log("lol", arrivalData.firstName);
           setOpenDialog(true);
-          // setFirstName("");
-          // setLastName("");
-          // setDob("");
-          // setSelectedDoctor("");
 
           // Call the socket io here that a new arrival is added.
           notifyNewArrival();
@@ -241,12 +239,12 @@ export default function PatientArrival() {
       "https://meet.jit.si/moderated/675bc45dbef4950dd78a7a71d17892dc1c9839c307b49dc1a73ec21bab5537b8";
   };
 
-  const generateAudio = (roomNumber, token, lastName) => {
+  const generateAudio = (firstName, token) => {
     console.log("check3");
     if ("speechSynthesis" in window) {
       console.log("check4");
       const message = new SpeechSynthesisUtterance(
-        `Token Number : ${token} . Proceed to room number : ${roomNumber}. The Provider is waiting for you in room number: ${roomNumber} .`
+        `${firstName} . Your arrival has been marked for token number : ${token}. Please be seated you will be called soon.`
       );
       window.speechSynthesis.speak(message);
     } else {
@@ -254,9 +252,9 @@ export default function PatientArrival() {
     }
   };
 
-  const generateVoiceMessage = (roomNumber, token, lastName) => {
+  const generateVoiceMessage = (firstName, token) => {
     console.log("check2");
-    generateAudio(roomNumber, token, lastName);
+    generateAudio(firstName, token);
   };
 
   return (
