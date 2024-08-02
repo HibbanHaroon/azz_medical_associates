@@ -260,6 +260,25 @@ export default function CEOClinics() {
   const busyHoursRef = useRef();
   const staffHoursRef = useRef();
 
+  // Initial loading graph
+  const [loadingGraph, setLoadingGraph] = useState({
+    attendanceGraph: true,
+    providerOfTheMonthGraph: true,
+    patientWaitingTimeGraph: true,
+    patientMeetingTimeGraph: true,
+    busyHoursGraph: true,
+    staffHoursGraph: true,
+  });
+
+  // Function to check if all data is loaded
+  const isAllDataLoaded = () => {
+    return Object.values(loadingGraph).every((value) => value === false);
+  };
+
+  const updateLoadingGraph = (graphKey, isLoading) => {
+    setLoadingGraph((prevMap) => ({ ...prevMap, [graphKey]: isLoading }));
+  };
+
   useEffect(() => {
     const fetchInitialData = async () => {
       setLoading(true);
@@ -675,12 +694,17 @@ export default function CEOClinics() {
     setSelectedClinic(selectedClinicName);
     const rushHours = calculateRushHours(allArrivals, clinicId);
     setRushHoursData(rushHours);
+
+    updateLoadingGraph("busyHoursGraph", false);
+
     const valuableProviders = calculateValuableProviders(
       allArrivals,
       doctors,
       clinicId
     ); // New calculation
     setValuableProvidersData(valuableProviders); // Set new data
+
+    updateLoadingGraph("providerOfTheMonthGraph", false);
   };
 
   useEffect(() => {
@@ -693,11 +717,15 @@ export default function CEOClinics() {
         const rushHours = calculateRushHours(allArrivals);
         setRushHoursData(rushHours);
 
+        updateLoadingGraph("busyHoursGraph", false);
+
         const valuableProviders = calculateValuableProviders(
           allArrivals,
           doctors
         );
         setValuableProvidersData(valuableProviders);
+
+        updateLoadingGraph("providerOfTheMonthGraph", false);
       } catch (error) {
         console.error("Failed to fetch clinics and arrivals", error);
       }
@@ -1021,9 +1049,13 @@ export default function CEOClinics() {
     const fetchData = () => {
       getTimeChart();
       getStaffHours();
+
+      updateLoadingGraph("patientWaitingTimeGraph", false);
+      updateLoadingGraph("patientMeetingTimeGraph", false);
     };
 
     fetchData();
+    updateLoadingGraph("staffHoursGraph", false);
   }, [isAllClinics, dropdownClinicId, allArrivals, doctors]);
 
   const handleDownloadReport = () => {
@@ -1312,7 +1344,7 @@ export default function CEOClinics() {
                 variant="outlined"
                 startIcon={!downloading && <DownloadIcon />}
                 onClick={handleDownloadAnalyticsReport}
-                disabled={downloading}
+                disabled={!isAllDataLoaded()}
               >
                 {downloading ? (
                   <CircularProgress size={24} />
@@ -1343,7 +1375,9 @@ export default function CEOClinics() {
                       Staff Attendance
                     </Typography>
                     <Box sx={{ height: "90%", width: "100%" }}>
-                      <AttendanceDataChart />
+                      <AttendanceDataChart
+                        updateLoadingGraph={updateLoadingGraph}
+                      />
                     </Box>
                   </CardContent>
                 </Card>

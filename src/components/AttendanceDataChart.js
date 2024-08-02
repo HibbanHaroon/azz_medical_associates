@@ -51,8 +51,7 @@ const fetchAttendanceData = async (clinics) => {
   }
 };
 
-
-const AttendanceDataChart = () => {
+const AttendanceDataChart = ({ updateLoadingGraph }) => {
   const [attendanceData, setAttendanceData] = useState([]);
   const [clinicColors, setClinicColors] = useState({});
 
@@ -82,6 +81,8 @@ const AttendanceDataChart = () => {
 
         const data = await fetchAttendanceData(clinics);
         setAttendanceData(data);
+
+        updateLoadingGraph("attendanceGraph", false);
       } catch (error) {
         console.error("Error fetching clinic data:", error);
       }
