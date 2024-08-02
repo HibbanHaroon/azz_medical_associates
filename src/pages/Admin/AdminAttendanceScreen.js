@@ -215,12 +215,7 @@ const AdminAttendanceScreen = () => {
 
         const tableColumn = columns.map((column) => column.label);
         const tableRows = rows.map((row) => {
-          const rowData = [
-            row.name,
-            row.checkIn,
-            row.checkOut,
-            row.averageHours,
-          ];
+          const rowData = [row.name, row.checkIn, row.checkOut, row.hoursSpent];
           if (columns.some((col) => col.id === "date")) {
             rowData.splice(1, 0, row.date);
           }
