@@ -108,6 +108,25 @@ export default function CEODashboard() {
   const ageDemographicsRef = useRef();
   const monthlyArrivalsRef = useRef();
 
+  // Initial loading graph
+  const [loadingGraph, setLoadingGraph] = useState({
+    patientsPerDayGraph: true,
+    patientProviderRatioGraph: true,
+    patientWaitingTimeGraph: true,
+    patientMeetingTimeGraph: true,
+    ageDemographicsGraph: true,
+    monthlyArrivalsGraph: true,
+  });
+
+  // Function to check if all data is loaded
+  const isAllDataLoaded = () => {
+    return Object.values(loadingGraph).every((value) => value === false);
+  };
+
+  const updateLoadingGraph = (graphKey, isLoading) => {
+    setLoadingGraph((prevMap) => ({ ...prevMap, [graphKey]: isLoading }));
+  };
+
   const handleDrawerClose = () => {
     setIsClosing(true);
     setMobileOpen(false);
@@ -122,6 +141,33 @@ export default function CEODashboard() {
       setMobileOpen(!mobileOpen);
     }
   };
+
+  useEffect(() => {
+    if (
+      dataForOneMonthArrivals !== null &&
+      clinicNames.length > 0 &&
+      clinicRatios.length > 0 &&
+      ageData.length > 0 &&
+      DataForMonthlyArrivals !== null &&
+      topDoctorsMeeting.length > 0 &&
+      topDoctorsWaiting.length > 0
+    ) {
+      updateLoadingGraph("patientsPerDayGraph", false);
+      updateLoadingGraph("patientProviderRatioGraph", false);
+      updateLoadingGraph("patientWaitingTimeGraph", false);
+      updateLoadingGraph("patientMeetingTimeGraph", false);
+      updateLoadingGraph("ageDemographicsGraph", false);
+      updateLoadingGraph("monthlyArrivalsGraph", false);
+    }
+  }, [
+    dataForOneMonthArrivals,
+    clinicNames,
+    clinicRatios,
+    ageData,
+    DataForMonthlyArrivals,
+    topDoctorsMeeting,
+    topDoctorsWaiting,
+  ]);
 
   const drawer = (
     <div>
@@ -792,7 +838,7 @@ export default function CEODashboard() {
             variant="outlined"
             startIcon={!downloading && <DownloadIcon />}
             onClick={handleDownloadAnalyticsReport}
-            disabled={downloading}
+            disabled={!isAllDataLoaded()}
           >
             {downloading ? <CircularProgress size={24} /> : "Download Report"}
           </Button>
