@@ -42,6 +42,41 @@ const filterAttendanceRecords = (records, filter) => {
   });
 };
 
+const generateDateRange = (filter) => {
+  const now = new Date();
+  const dates = [];
+  let startDate;
+
+  if (filter === "Today") {
+    startDate = new Date(now.setHours(0, 0, 0, 0));
+    dates.push(startDate);
+  } else if (filter === "Weekly") {
+    startDate = new Date(now.setDate(now.getDate() - 7));
+    for (let i = 0; i < 7; i++) {
+      dates.push(
+        new Date(
+          startDate.getFullYear(),
+          startDate.getMonth(),
+          startDate.getDate() + i
+        )
+      );
+    }
+  } else if (filter === "Monthly") {
+    startDate = new Date(now.setDate(now.getDate() - 30));
+    for (let i = 0; i < 30; i++) {
+      dates.push(
+        new Date(
+          startDate.getFullYear(),
+          startDate.getMonth(),
+          startDate.getDate() + i
+        )
+      );
+    }
+  }
+
+  return dates;
+};
+
 const AdminAttendanceScreen = () => {
   const dropdownItems = [
     { item: "Today" },
@@ -52,7 +87,6 @@ const AdminAttendanceScreen = () => {
   const [currentDropdownItem, setCurrentDropdownItem] = useState(
     dropdownItems[0].item
   );
-  const [attendanceData, setAttendanceData] = useState([]);
   const [rows, setRows] = useState([]);
   const [columns, setColumns] = useState([]);
   const [downloading, setDownloading] = useState(false);
@@ -70,123 +104,69 @@ const AdminAttendanceScreen = () => {
       fetchAttendance(clinicId),
     ]);
 
-    const nurseTimeMap = new Map();
-    let maxValue = 0;
-
-    attendanceRecords.forEach((record) => {
-      const filteredRecords = filterAttendanceRecords(
-        record.pastThirtyDays,
-        filter
-      );
-
-      if (!nurseTimeMap.has(record.id)) {
-        nurseTimeMap.set(record.id, {
-          totalHours: 0,
-          totalDays: 0,
-          checkIns: [],
-          checkOuts: [],
-        });
-      }
-
-      filteredRecords.forEach((day) => {
-        const nurseData = nurseTimeMap.get(record.id);
-
-        if (day.checkInTime) {
-          const checkIn = new Date(day.checkInTime);
-          const checkOut = day.checkOutTime
-            ? new Date(day.checkOutTime)
-            : new Date();
-
-          const timeSpent = calculateTimeSpent(checkIn, checkOut);
-          nurseData.totalHours += timeSpent.hours + timeSpent.minutes / 60;
-
-          nurseData.checkIns.push(new Date(checkIn));
-          nurseData.checkOuts.push(
-            day.checkOutTime ? new Date(checkOut) : "Not Checked Out"
-          );
-        }
-
-        if (day.status === "present") {
-          nurseData.totalDays += 1;
-        }
-      });
-    });
-
+    const dateRange = generateDateRange(filter);
     const newRows = [];
     const newColumns = [
       { id: "name", label: "Staff Name" },
       ...(filter !== "Today"
-        ? [{ id: "date", label: "Number of Days Present", align: "right" }]
+        ? [{ id: "date", label: "Date", align: "right" }]
         : []),
       { id: "checkIn", label: "Check In Time", align: "right" },
       { id: "checkOut", label: "Check Out Time", align: "right" },
-      { id: "averageHours", label: "Hours Spent", align: "right" },
+      { id: "hoursSpent", label: "Hours Spent", align: "right" },
     ];
 
     nurses.forEach((nurse) => {
-      const nurseData = nurseTimeMap.get(nurse.id);
+      dateRange.forEach((date) => {
+        const record = attendanceRecords.find((rec) => rec.id === nurse.id);
 
-      if (nurseData) {
-        const avgCheckInTime =
-          nurseData.checkIns.length > 0
-            ? new Date(
-                nurseData.checkIns.reduce(
-                  (acc, time) => acc + time.getTime(),
-                  0
-                ) / nurseData.checkIns.length
-              )
-            : "Not Checked In";
+        if (record) {
+          const dayRecord = record.pastThirtyDays.find((day) => {
+            const isSameDate =
+              new Date(day.datetime).toDateString() === date.toDateString();
+            return isSameDate;
+          });
 
-        const avgCheckOutTime =
-          nurseData.checkOuts.length > 0
-            ? nurseData.checkOuts[0] === "Not Checked Out"
-              ? "Not Checked Out"
-              : new Date(
-                  nurseData.checkOuts
-                    .filter((time) => time !== "Not Checked Out")
-                    .reduce((acc, time) => acc + time.getTime(), 0) /
-                    nurseData.checkOuts.filter(
-                      (time) => time !== "Not Checked Out"
-                    ).length
-                )
-            : "Not Checked Out";
+          const checkIn = dayRecord?.checkInTime
+            ? new Date(dayRecord.checkInTime)
+            : null;
+          const checkOut = dayRecord?.checkOutTime
+            ? new Date(dayRecord.checkOutTime)
+            : null;
+          let timeSpent = { hours: 0, minutes: 0 };
 
-        let avgHoursSpent = nurseData.totalHours / nurseData.totalDays;
-        const hours = Math.floor(avgHoursSpent);
-        const minutes = Math.round((avgHoursSpent % 1) * 60);
-        let timeSpentFormatted = `${minutes}m`;
-        if (hours > 0) {
-          timeSpentFormatted = `${hours}h ${timeSpentFormatted}`;
+          if (checkIn) {
+            const endTime = checkOut || new Date();
+            timeSpent = calculateTimeSpent(checkIn, endTime);
+          }
+
+          newRows.push({
+            name: nurse.name,
+            date: date.toLocaleDateString(),
+            checkIn: checkIn ? checkIn.toLocaleTimeString() : "Not Checked In",
+            checkOut: checkOut
+              ? checkOut.toLocaleTimeString()
+              : "Not Checked Out",
+            hoursSpent: `${timeSpent.hours}h ${timeSpent.minutes}m`,
+          });
+        } else {
+          // Basically if the nurse doesn't have any attendance record still display entry but with Not Checked In, Not Checked Out, 0h 0m in the entries.
+          newRows.push({
+            name: nurse.name,
+            date: date.toLocaleDateString(),
+            checkIn: "Not Checked In",
+            checkOut: "Not Checked Out",
+            hoursSpent: "0h 0m",
+          });
         }
-
-        if (avgHoursSpent > maxValue) {
-          maxValue = avgHoursSpent;
-        }
-
-        const row = {
-          name: nurse.name,
-          checkIn:
-            avgCheckInTime === "Not Checked In"
-              ? avgCheckInTime
-              : avgCheckInTime.toLocaleTimeString(),
-          checkOut:
-            avgCheckOutTime === "Not Checked Out"
-              ? avgCheckOutTime
-              : avgCheckOutTime.toLocaleTimeString(),
-          averageHours: timeSpentFormatted,
-        };
-
-        if (filter !== "Today") {
-          row.date = nurseData.totalDays.toString();
-        }
-
-        newRows.push(row);
-      }
+      });
     });
+
+    // Sort rows by date (descending order)
+    newRows.sort((a, b) => new Date(b.date) - new Date(a.date));
 
     setRows(newRows);
     setColumns(newColumns);
-    setAttendanceData(nurseTimeMap);
   };
 
   const handleDownloadReport = () => {
