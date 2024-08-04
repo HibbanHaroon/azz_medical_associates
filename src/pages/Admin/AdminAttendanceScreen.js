@@ -147,7 +147,12 @@ const AdminAttendanceScreen = () => {
             checkOut: checkOut
               ? checkOut.toLocaleTimeString()
               : "Not Checked Out",
-            hoursSpent: `${timeSpent.hours}h ${timeSpent.minutes}m`,
+              hoursSpent: !checkIn && !checkOut
+                          ? "Attendance Not Marked"
+                          : checkIn && !checkOut
+                          ? "Not Checked Out"
+                          : `${timeSpent.hours}h ${timeSpent.minutes}m`,
+
           });
         } else {
           // Basically if the nurse doesn't have any attendance record still display entry but with Not Checked In, Not Checked Out, 0h 0m in the entries.

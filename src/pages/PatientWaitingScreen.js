@@ -102,7 +102,7 @@ export default function PatientWaitingScreen(props) {
     if ("speechSynthesis" in window) {
       console.log("check4");
       const message = new SpeechSynthesisUtterance(
-        `Token Number : ${token} . Proceed to room number : ${roomNumber}. The Provider is waiting for you in room number: ${roomNumber} .`
+        `Token Number : ${token} . Proceed to room number : ${roomNumber}. The Provider is waiting for you.`
       );
       window.speechSynthesis.speak(message);
     } else {
