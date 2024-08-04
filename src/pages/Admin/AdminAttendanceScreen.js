@@ -16,6 +16,7 @@ import TableComponent from "../../components/TableComponent";
 import { fetchAttendance } from "../../services/attendanceService";
 import { fetchNurses } from "../../services/nurseService";
 import DownloadIcon from "@mui/icons-material/Download";
+import { parse, format } from 'date-fns';
 
 const calculateTimeSpent = (checkIn, checkOut) => {
   const diffMs = checkOut - checkIn;
@@ -115,12 +116,12 @@ const [sortDirection, setSortDirection] = useState("desc"); // Default sort dire
   
         if (record) {
           const dayRecord = record.pastThirtyDays.find((day) => {
-            const isSameDate = new Date(day.datetime).toDateString() === date.toDateString();
-            return isSameDate;
+            const recordDate = parse(day.datetime, 'yyyy-MM-dd', new Date());
+            return recordDate.toDateString() === date.toDateString();
           });
   
-          const checkIn = dayRecord?.checkInTime ? new Date(dayRecord.checkInTime) : null;
-          const checkOut = dayRecord?.checkOutTime ? new Date(dayRecord.checkOutTime) : null;
+          const checkIn = dayRecord?.checkInTime ? parse(dayRecord.checkInTime, 'yyyy-MM-ddTHH:mm:ss', new Date()) : null;
+          const checkOut = dayRecord?.checkOutTime ? parse(dayRecord.checkOutTime, 'yyyy-MM-ddTHH:mm:ss', new Date()) : null;
           let timeSpent = { hours: 0, minutes: 0 };
   
           if (checkIn) {
@@ -130,9 +131,9 @@ const [sortDirection, setSortDirection] = useState("desc"); // Default sort dire
   
           const row = {
             name: nurse.name,
-            date: date.toLocaleDateString(),
-            checkIn: checkIn ? checkIn.toLocaleTimeString() : "Not Checked In",
-            checkOut: checkOut ? checkOut.toLocaleTimeString() : "Not Checked Out",
+            date: format(date, 'M/d/yyyy'),
+            checkIn: checkIn ? format(checkIn, 'h:mm:ss a') : "Not Checked In",
+            checkOut: checkOut ? format(checkOut, 'h:mm:ss a') : "Not Checked Out",
             hoursSpent: !checkIn && !checkOut ? "Attendance Not Marked"
                         : checkIn && !checkOut ? "Not Checked Out"
                         : `${timeSpent.hours}h ${timeSpent.minutes}m`,
@@ -145,7 +146,7 @@ const [sortDirection, setSortDirection] = useState("desc"); // Default sort dire
         } else {
           const row = {
             name: nurse.name,
-            date: date.toLocaleDateString(),
+            date: format(date, 'M/d/yyyy'),
             checkIn: "Not Checked In",
             checkOut: "Not Checked Out",
             hoursSpent: "0h 0m",
@@ -174,9 +175,7 @@ const [sortDirection, setSortDirection] = useState("desc"); // Default sort dire
       { id: "hoursSpent", label: "Hours Spent", align: "right" },
     ]);
   };
-  
-  
-  
+    
   const handleDownloadReport = () => {
     setDownloading(true);
     try {
