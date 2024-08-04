@@ -373,7 +373,7 @@ export default function CEOClinics() {
 
       attendanceRecords.forEach((nurse) => {
         nurse.pastThirtyDays.forEach((record) => {
-          if (record.checkInTime && record.checkOutTime) {
+          if (record.checkInTime && record.checkOutTime!== null) {
             const timeSpent = calculateTimeSpent(
               record.checkInTime,
               record.checkOutTime
