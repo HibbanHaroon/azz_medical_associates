@@ -78,6 +78,8 @@ const generateDateRange = (filter) => {
 };
 
 const AdminAttendanceScreen = () => {
+const [sortColumn, setSortColumn] = useState("date"); // Default sort by date
+const [sortDirection, setSortDirection] = useState("desc"); // Default sort direction
   const dropdownItems = [
     { item: "Today" },
     { item: "Weekly" },
@@ -103,10 +105,66 @@ const AdminAttendanceScreen = () => {
       fetchNurses(clinicId),
       fetchAttendance(clinicId),
     ]);
-
+  
     const dateRange = generateDateRange(filter);
-    const newRows = [];
-    const newColumns = [
+    const groupedRows = {};
+  
+    nurses.forEach((nurse) => {
+      dateRange.forEach((date) => {
+        const record = attendanceRecords.find((rec) => rec.id === nurse.id);
+  
+        if (record) {
+          const dayRecord = record.pastThirtyDays.find((day) => {
+            const isSameDate = new Date(day.datetime).toDateString() === date.toDateString();
+            return isSameDate;
+          });
+  
+          const checkIn = dayRecord?.checkInTime ? new Date(dayRecord.checkInTime) : null;
+          const checkOut = dayRecord?.checkOutTime ? new Date(dayRecord.checkOutTime) : null;
+          let timeSpent = { hours: 0, minutes: 0 };
+  
+          if (checkIn) {
+            const endTime = checkOut || new Date();
+            timeSpent = calculateTimeSpent(checkIn, endTime);
+          }
+  
+          const row = {
+            name: nurse.name,
+            date: date.toLocaleDateString(),
+            checkIn: checkIn ? checkIn.toLocaleTimeString() : "Not Checked In",
+            checkOut: checkOut ? checkOut.toLocaleTimeString() : "Not Checked Out",
+            hoursSpent: !checkIn && !checkOut ? "Attendance Not Marked"
+                        : checkIn && !checkOut ? "Not Checked Out"
+                        : `${timeSpent.hours}h ${timeSpent.minutes}m`,
+          };
+  
+          if (!groupedRows[row.date]) {
+            groupedRows[row.date] = [];
+          }
+          groupedRows[row.date].push(row);
+        } else {
+          const row = {
+            name: nurse.name,
+            date: date.toLocaleDateString(),
+            checkIn: "Not Checked In",
+            checkOut: "Not Checked Out",
+            hoursSpent: "0h 0m",
+          };
+  
+          if (!groupedRows[row.date]) {
+            groupedRows[row.date] = [];
+          }
+          groupedRows[row.date].push(row);
+        }
+      });
+    });
+  
+    // Sort dates in descending order and flatten the grouped data
+    const sortedDates = Object.keys(groupedRows).sort((a, b) => new Date(b) - new Date(a));
+    const newRows = sortedDates.flatMap(date => groupedRows[date]);
+  
+    setRows(newRows);
+    setColumns((prevColumns) => [
       { id: "name", label: "Staff Name" },
       ...(filter !== "Today"
         ? [{ id: "date", label: "Date", align: "right" }]
@@ -114,71 +172,11 @@ const AdminAttendanceScreen = () => {
       { id: "checkIn", label: "Check In Time", align: "right" },
       { id: "checkOut", label: "Check Out Time", align: "right" },
       { id: "hoursSpent", label: "Hours Spent", align: "right" },
-    ];
-
-    nurses.forEach((nurse) => {
-      dateRange.forEach((date) => {
-        const record = attendanceRecords.find((rec) => rec.id === nurse.id);
-
-        if (record) {
-          const dayRecord = record.pastThirtyDays.find((day) => {
-            const isSameDate =
-              new Date(day.datetime).toDateString() === date.toDateString();
-            return isSameDate;
-          });
-
-          const checkIn = dayRecord?.checkInTime
-            ? new Date(dayRecord.checkInTime)
-            : null;
-          const checkOut = dayRecord?.checkOutTime
-            ? new Date(dayRecord.checkOutTime)
-            : null;
-          let timeSpent = { hours: 0, minutes: 0 };
-
-          if (checkIn) {
-            const endTime = checkOut || new Date();
-            timeSpent = calculateTimeSpent(checkIn, endTime);
-          }
-
-          newRows.push({
-            name: nurse.name,
-            date: date.toLocaleDateString(),
-            checkIn: checkIn ? checkIn.toLocaleTimeString() : "Not Checked In",
-            checkOut: checkOut
-              ? checkOut.toLocaleTimeString()
-              : "Not Checked Out",
-              hoursSpent: !checkIn && !checkOut
-                          ? "Attendance Not Marked"
-                          : checkIn && !checkOut
-                          ? "Not Checked Out"
-                          : `${timeSpent.hours}h ${timeSpent.minutes}m`,
-
-          });
-        } else {
-          // Basically if the nurse doesn't have any attendance record still display entry but with Not Checked In, Not Checked Out, 0h 0m in the entries.
-          newRows.push({
-            name: nurse.name,
-            date: date.toLocaleDateString(),
-            checkIn: "Not Checked In",
-            checkOut: "Not Checked Out",
-            hoursSpent: "0h 0m",
-          });
-        }
-      });
-    });
-
-    // Sort rows by date (descending order)
-// Sort rows by date (descending order)
-newRows.sort((a, b) => {
-  const dateA = new Date(a.date);
-  const dateB = new Date(b.date);
-  return dateB - dateA;
-});
-
-    setRows(newRows);
-    setColumns(newColumns);
+    ]);
   };
-
+  
+  
+  
   const handleDownloadReport = () => {
     setDownloading(true);
     try {
@@ -353,11 +351,12 @@ newRows.sort((a, b) => {
 
             {/* Attendance Table */}
             <TableComponent
-              ariaLabel="attendance table"
-              columns={columns}
-              rows={rows}
-              onClick={() => {}}
-            />
+  ariaLabel="attendance table"
+  columns={columns}
+  rows={rows}
+  onClick={() => {}}
+/>
+
           </Box>
         </Box>
       </Box>
