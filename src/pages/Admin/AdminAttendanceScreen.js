@@ -168,7 +168,12 @@ const AdminAttendanceScreen = () => {
     });
 
     // Sort rows by date (descending order)
-    newRows.sort((a, b) => new Date(b.date) - new Date(a.date));
+// Sort rows by date (descending order)
+newRows.sort((a, b) => {
+  const dateA = new Date(a.date);
+  const dateB = new Date(b.date);
+  return dateB - dateA;
+});
 
     setRows(newRows);
     setColumns(newColumns);
