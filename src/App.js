@@ -34,8 +34,26 @@ function App() {
         <Router>
           <Routes>
             <Route path="/signin" element={<SigninScreenWithLogout />} />
-            <Route path="/ceo" element={<CEODashboard />} />
-            <Route path="/ceo-clinics" element={<CEOClinics />} />
+            <Route
+              path="/ceo-signin"
+              element={<SigninScreenWithLogout role="CEO" />}
+            />
+            <Route
+              path="/ceo"
+              element={
+                <ProtectedRoute role="CEO">
+                  <CEODashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/ceo-clinics"
+              element={
+                <ProtectedRoute role="CEO">
+                  <CEOClinics />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/"
               element={

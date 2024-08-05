@@ -1,10 +1,11 @@
 // SigninScreenWithLogout.js
 import React, { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import CEOSigninScreen from "../pages/CEO/CEOSigninScreen";
 import SigninScreen from "../pages/SigninScreen";
 import { useAuth } from "../context/AuthContext";
 
-const SigninScreenWithLogout = () => {
+const SigninScreenWithLogout = ({ role }) => {
   const { logout } = useAuth();
   const location = useLocation();
 
@@ -12,7 +13,7 @@ const SigninScreenWithLogout = () => {
     logout();
   }, [location, logout]);
 
-  return <SigninScreen />;
+  return role === "CEO" ? <CEOSigninScreen /> : <SigninScreen />;
 };
 
 export default SigninScreenWithLogout;
