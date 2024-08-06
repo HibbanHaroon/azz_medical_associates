@@ -16,7 +16,6 @@ import TableComponent from "../../components/TableComponent";
 import { fetchAttendance } from "../../services/attendanceService";
 import { fetchNurses } from "../../services/nurseService";
 import DownloadIcon from "@mui/icons-material/Download";
-import { parse, format } from 'date-fns';
 
 const calculateTimeSpent = (checkIn, checkOut) => {
   const diffMs = checkOut - checkIn;
@@ -79,8 +78,8 @@ const generateDateRange = (filter) => {
 };
 
 const AdminAttendanceScreen = () => {
-const [sortColumn, setSortColumn] = useState("date"); // Default sort by date
-const [sortDirection, setSortDirection] = useState("desc"); // Default sort direction
+  const [sortColumn, setSortColumn] = useState("date"); // Default sort by date
+  const [sortDirection, setSortDirection] = useState("desc"); // Default sort direction
   const dropdownItems = [
     { item: "Today" },
     { item: "Weekly" },
@@ -106,39 +105,49 @@ const [sortDirection, setSortDirection] = useState("desc"); // Default sort dire
       fetchNurses(clinicId),
       fetchAttendance(clinicId),
     ]);
-  
+
     const dateRange = generateDateRange(filter);
     const groupedRows = {};
-  
+
     nurses.forEach((nurse) => {
       dateRange.forEach((date) => {
         const record = attendanceRecords.find((rec) => rec.id === nurse.id);
-  
+
         if (record) {
           const dayRecord = record.pastThirtyDays.find((day) => {
-            const recordDate = parse(day.datetime, 'yyyy-MM-dd', new Date());
-            return recordDate.toDateString() === date.toDateString();
+            const isSameDate =
+              new Date(day.datetime).toDateString() === date.toDateString();
+            return isSameDate;
           });
-  
-          const checkIn = dayRecord?.checkInTime ? parse(dayRecord.checkInTime, 'yyyy-MM-ddTHH:mm:ss', new Date()) : null;
-          const checkOut = dayRecord?.checkOutTime ? parse(dayRecord.checkOutTime, 'yyyy-MM-ddTHH:mm:ss', new Date()) : null;
+
+          const checkIn = dayRecord?.checkInTime
+            ? new Date(dayRecord.checkInTime)
+            : null;
+          const checkOut = dayRecord?.checkOutTime
+            ? new Date(dayRecord.checkOutTime)
+            : null;
           let timeSpent = { hours: 0, minutes: 0 };
-  
+
           if (checkIn) {
             const endTime = checkOut || new Date();
             timeSpent = calculateTimeSpent(checkIn, endTime);
           }
-  
+
           const row = {
             name: nurse.name,
-            date: format(date, 'M/d/yyyy'),
-            checkIn: checkIn ? format(checkIn, 'h:mm:ss a') : "Not Checked In",
-            checkOut: checkOut ? format(checkOut, 'h:mm:ss a') : "Not Checked Out",
-            hoursSpent: !checkIn && !checkOut ? "Attendance Not Marked"
-                        : checkIn && !checkOut ? "Not Checked Out"
-                        : `${timeSpent.hours}h ${timeSpent.minutes}m`,
+            date: date.toLocaleDateString(),
+            checkIn: checkIn ? checkIn.toLocaleTimeString() : "Not Checked In",
+            checkOut: checkOut
+              ? checkOut.toLocaleTimeString()
+              : "Not Checked Out",
+            hoursSpent:
+              !checkIn && !checkOut
+                ? "Attendance Not Marked"
+                : checkIn && !checkOut
+                ? "Not Checked Out"
+                : `${timeSpent.hours}h ${timeSpent.minutes}m`,
           };
-  
+
           if (!groupedRows[row.date]) {
             groupedRows[row.date] = [];
           }
@@ -146,12 +155,12 @@ const [sortDirection, setSortDirection] = useState("desc"); // Default sort dire
         } else {
           const row = {
             name: nurse.name,
-            date: format(date, 'M/d/yyyy'),
+            date: date.toLocaleDateString(),
             checkIn: "Not Checked In",
             checkOut: "Not Checked Out",
             hoursSpent: "0h 0m",
           };
-  
+
           if (!groupedRows[row.date]) {
             groupedRows[row.date] = [];
           }
@@ -159,11 +168,13 @@ const [sortDirection, setSortDirection] = useState("desc"); // Default sort dire
         }
       });
     });
-  
+
     // Sort dates in descending order and flatten the grouped data
-    const sortedDates = Object.keys(groupedRows).sort((a, b) => new Date(b) - new Date(a));
-    const newRows = sortedDates.flatMap(date => groupedRows[date]);
-  
+    const sortedDates = Object.keys(groupedRows).sort(
+      (a, b) => new Date(b) - new Date(a)
+    );
+    const newRows = sortedDates.flatMap((date) => groupedRows[date]);
+
     setRows(newRows);
     setColumns((prevColumns) => [
       { id: "name", label: "Staff Name" },
@@ -175,7 +186,7 @@ const [sortDirection, setSortDirection] = useState("desc"); // Default sort dire
       { id: "hoursSpent", label: "Hours Spent", align: "right" },
     ]);
   };
-    
+
   const handleDownloadReport = () => {
     setDownloading(true);
     try {
@@ -350,12 +361,11 @@ const [sortDirection, setSortDirection] = useState("desc"); // Default sort dire
 
             {/* Attendance Table */}
             <TableComponent
-  ariaLabel="attendance table"
-  columns={columns}
-  rows={rows}
-  onClick={() => {}}
-/>
-
+              ariaLabel="attendance table"
+              columns={columns}
+              rows={rows}
+              onClick={() => {}}
+            />
           </Box>
         </Box>
       </Box>
