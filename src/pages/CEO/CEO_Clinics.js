@@ -66,6 +66,7 @@ import DownloadIcon from "@mui/icons-material/Download";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import "jspdf-autotable";
+import { ArrowBack } from "@mui/icons-material";
 
 const drawerWidth = 300;
 
@@ -373,7 +374,7 @@ export default function CEOClinics() {
 
       attendanceRecords.forEach((nurse) => {
         nurse.pastThirtyDays.forEach((record) => {
-          if (record.checkInTime && record.checkOutTime!== null) {
+          if (record.checkInTime && record.checkOutTime !== null) {
             const timeSpent = calculateTimeSpent(
               record.checkInTime,
               record.checkOutTime
@@ -916,6 +917,19 @@ export default function CEOClinics() {
         } else {
           updateCurrentDropdownItem(item.name, newTableIndex);
         }
+      }
+    }
+  };
+
+  const handleBackButton = (item) => {
+    if (currentTable > 0) {
+      const newTableIndex = currentTable - 1;
+      setCurrentTable(newTableIndex);
+
+      if (newTableIndex === 2) {
+        updateCurrentDropdownItem(item, newTableIndex);
+      } else {
+        updateCurrentDropdownItem(item.name, newTableIndex);
       }
     }
   };
@@ -1548,6 +1562,17 @@ export default function CEOClinics() {
           </TabPanel>
           <TabPanel value="2">
             <Box sx={{ p: 3, m: 3, borderRadius: 3, boxShadow: 2 }}>
+              {currentTable !== 0 && (
+                <Box sx={{ display: "flex", mb: 2 }}>
+                  <Button
+                    onClick={handleBackButton}
+                    startIcon={<ArrowBack />}
+                    style={{ textTransform: "none" }}
+                  >
+                    Back
+                  </Button>
+                </Box>
+              )}
               <Box
                 sx={{
                   display: "flex",
