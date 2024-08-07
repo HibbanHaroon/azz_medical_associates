@@ -57,6 +57,7 @@ import {
 import { auth } from "../../firebase";
 import showErrorToast from "../../utils/showErrorToast";
 import showSuccessToast from "../../utils/showSuccessToast";
+import { ArrowBack } from "@mui/icons-material";
 
 const drawerWidth = 240;
 
@@ -347,6 +348,10 @@ export default function UserTypeScreen() {
     )
   );
 
+  const handleBack = () => {
+    window.history.back();
+  };
+
   return (
     <Box sx={{ display: "flex" }}>
       <CssBaseline />
@@ -450,6 +455,15 @@ export default function UserTypeScreen() {
               backgroundColor: "white",
             }}
           >
+            <Box sx={{ display: "flex", mb: 2 }}>
+              <Button
+                onClick={handleBack}
+                startIcon={<ArrowBack />}
+                style={{ textTransform: "none" }}
+              >
+                Back
+              </Button>
+            </Box>
             <Box
               sx={{
                 display: "flex",
