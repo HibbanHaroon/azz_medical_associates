@@ -1,46 +1,83 @@
 // services/arrivalsService.js
 
+import { convertToLocalTime, convertToUTC } from "../utils/dateUtils";
+
 // const API_URL = "http://localhost:3001/api/arrivals";
 const BASE_API_URL = "https://az-medical-p9w9.onrender.com/api";
 const API_URL = "https://az-medical-p9w9.onrender.com/api/arrivals";
 
+// Fetch arrivals with local time conversion
 export const fetchArrivals = async (clinicId, doctorId) => {
   try {
-    console.log(clinicId);
-    console.log(doctorId);
     const response = await fetch(`${API_URL}/${clinicId}/${doctorId}`);
     if (!response.ok) {
       throw new Error("Error fetching arrivals");
     }
     const data = await response.json();
-    return data.arrivals;
+
+    // Convert the date fields to local time
+    return data.arrivals.map((arrival) => ({
+      ...arrival,
+      arrivalTime: convertToLocalTime(arrival.arrivalTime),
+      calledInTime: arrival.calledInTime
+        ? convertToLocalTime(arrival.calledInTime)
+        : null,
+      dob: convertToLocalTime(arrival.dob),
+      endTime: arrival.endTime ? convertToLocalTime(arrival.endTime) : null,
+      startTime: arrival.startTime
+        ? convertToLocalTime(arrival.startTime)
+        : null,
+    }));
   } catch (error) {
     console.error("Error fetching arrivals:", error);
     throw error;
   }
 };
 
+// Fetch all arrivals with local time conversion
 export const fetchAllArrivals = async (clinicId) => {
   try {
     const response = await fetch(`${BASE_API_URL}/${clinicId}/allArrivals`);
     if (!response.ok) {
       throw new Error("Error fetching all arrivals");
     }
-    return response.json();
+    const data = await response.json();
+
+    // Convert the date fields to local time
+    return data.arrivals.map((arrival) => ({
+      ...arrival,
+      arrivalTime: convertToLocalTime(arrival.arrivalTime),
+      calledInTime: arrival.calledInTime
+        ? convertToLocalTime(arrival.calledInTime)
+        : null,
+      dob: convertToLocalTime(arrival.dob),
+      endTime: arrival.endTime ? convertToLocalTime(arrival.endTime) : null,
+      startTime: arrival.startTime
+        ? convertToLocalTime(arrival.startTime)
+        : null,
+    }));
   } catch (error) {
     console.error("Error fetching all arrivals:", error);
     throw error;
   }
 };
 
+// Add arrival with UTC conversion
 export const addArrival = async (clinicId, arrivalData) => {
   try {
+    // Convert the date fields to UTC
+    const arrivalDataWithUTC = {
+      ...arrivalData,
+      arrivalTime: convertToUTC(arrivalData.arrivalTime),
+      dob: convertToUTC(arrivalData.dob),
+    };
+
     const response = await fetch(`${API_URL}/${clinicId}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(arrivalData),
+      body: JSON.stringify(arrivalDataWithUTC),
     });
     if (!response.ok) {
       throw new Error("Error adding arrival");
@@ -52,6 +89,7 @@ export const addArrival = async (clinicId, arrivalData) => {
   }
 };
 
+// Update arrival with UTC conversion
 export const updateArrivalAskedToWait = async (
   clinicId,
   arrivalId,
@@ -78,6 +116,7 @@ export const updateArrivalAskedToWait = async (
   }
 };
 
+// Update arrival with UTC conversion
 export const updateArrivalMarkExit = async (
   clinicId,
   arrivalId,
@@ -91,7 +130,10 @@ export const updateArrivalMarkExit = async (
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(arrivalData),
+        body: JSON.stringify({
+          ...arrivalData,
+          endTime: convertToUTC(arrivalData.endTime),
+        }),
       }
     );
     if (!response.ok) {
@@ -104,6 +146,7 @@ export const updateArrivalMarkExit = async (
   }
 };
 
+// Update arrival with UTC conversion
 export const updateArrivalInProgress = async (
   clinicId,
   arrivalId,
@@ -117,7 +160,10 @@ export const updateArrivalInProgress = async (
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(arrivalData),
+        body: JSON.stringify({
+          ...arrivalData,
+          startTime: convertToUTC(arrivalData.startTime),
+        }),
       }
     );
     if (!response.ok) {
@@ -130,6 +176,7 @@ export const updateArrivalInProgress = async (
   }
 };
 
+// Update arrival with UTC conversion
 export const updateArrivalCalledInside = async (
   clinicId,
   arrivalId,
@@ -143,7 +190,10 @@ export const updateArrivalCalledInside = async (
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(arrivalData),
+        body: JSON.stringify({
+          ...arrivalData,
+          calledInTime: convertToUTC(arrivalData.calledInTime),
+        }),
       }
     );
     if (!response.ok) {
