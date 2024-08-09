@@ -14,6 +14,7 @@ import {
   DialogContent,
   DialogActions,
   IconButton,
+  CircularProgress,
 } from "@mui/material";
 import FaceIcon from "@mui/icons-material/Face";
 import ArrivalIcon from "@mui/icons-material/EmojiPeople";
@@ -48,6 +49,7 @@ export default function PatientArrival() {
   const [showPopup, setShowPopup] = useState(false);
   const [callStack, setCallStack] = useState([]);
   const [token, setToken] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const navigate = useNavigate();
 
@@ -165,6 +167,7 @@ export default function PatientArrival() {
     if (firstName && lastName && dob && selectedDoctor) {
       try {
         const { token, lastUpdated } = await addTokenForClinic(clinicId);
+        setIsSubmitting(true);
         setToken(token);
         const arrivalData = {
           arrivalTime: Date.now(),
@@ -219,6 +222,7 @@ export default function PatientArrival() {
             setOpenDialog(false);
             handleDialogClose();
           }, 7000);
+          setIsSubmitting(false);
         } else {
           console.error("Error submitting arrival data:", response.statusText);
         }
@@ -463,8 +467,22 @@ export default function PatientArrival() {
                     marginTop: 0,
                   },
                 }}
+                disabled={isSubmitting}
               >
-                Submit
+                {isSubmitting ? (
+                  <>
+                    <CircularProgress
+                      size={20}
+                      sx={{
+                        color: "white",
+                        marginRight: 1,
+                      }}
+                    />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit"
+                )}
               </Button>
             </Box>
           </Box>
