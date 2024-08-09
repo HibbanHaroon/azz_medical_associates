@@ -41,6 +41,7 @@ import { fetchDoctors } from "../../services/doctorService";
 import { fetchAdmins } from "../../services/adminService";
 import { fetchModerators } from "../../services/moderatorService";
 import { fetchNurses } from "../../services/nurseService";
+import { ArrowBack } from "@mui/icons-material";
 
 const drawerWidth = 240;
 
@@ -205,6 +206,10 @@ export default function IndividualClinicScreen() {
       default:
         break;
     }
+  };
+
+  const handleBack = () => {
+    window.history.back();
   };
 
   const handleSubmit = async (formData) => {
@@ -393,6 +398,15 @@ export default function IndividualClinicScreen() {
         </Box>
         <Box sx={{ height: "1rem", marginTop: 2 }}></Box>
         <Box sx={{ p: 3, m: 3, borderRadius: 3, boxShadow: 2 }}>
+          <Box sx={{ display: "flex", mb: 2 }}>
+            <Button
+              onClick={handleBack}
+              startIcon={<ArrowBack />}
+              style={{ textTransform: "none" }}
+            >
+              Back
+            </Button>
+          </Box>
           <Box
             sx={{
               display: "flex",

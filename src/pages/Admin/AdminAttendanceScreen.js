@@ -79,8 +79,8 @@ const generateDateRange = (filter) => {
 };
 
 const AdminAttendanceScreen = () => {
-  const [sortColumn, setSortColumn] = useState("date"); // Default sort by date
-  const [sortDirection, setSortDirection] = useState("desc"); // Default sort direction
+const [sortColumn, setSortColumn] = useState("date"); // Default sort by date
+const [sortDirection, setSortDirection] = useState("desc"); // Default sort direction
   const dropdownItems = [
     { item: "Today" },
     { item: "Weekly" },
@@ -106,14 +106,14 @@ const AdminAttendanceScreen = () => {
       fetchNurses(clinicId),
       fetchAttendance(clinicId),
     ]);
-
+  
     const dateRange = generateDateRange(filter);
     const groupedRows = {};
-
+  
     nurses.forEach((nurse) => {
       dateRange.forEach((date) => {
         const record = attendanceRecords.find((rec) => rec.id === nurse.id);
-
+  
         if (record) {
           const dayRecord = record.pastThirtyDays.find((day) => {
             const recordDate = parse(
@@ -138,6 +138,7 @@ const AdminAttendanceScreen = () => {
             timeSpent = calculateTimeSpent(checkIn, endTime);
           }
 
+
           const row = {
             name: nurse.name,
             date: format(date, "M/d/yyyy"),
@@ -157,6 +158,7 @@ const AdminAttendanceScreen = () => {
                 : `${timeSpent.hours}h ${timeSpent.minutes}m`,
           };
 
+
           if (!groupedRows[row.date]) {
             groupedRows[row.date] = [];
           }
@@ -170,6 +172,7 @@ const AdminAttendanceScreen = () => {
             hoursSpent: "0h 0m",
           };
 
+
           if (!groupedRows[row.date]) {
             groupedRows[row.date] = [];
           }
@@ -177,6 +180,7 @@ const AdminAttendanceScreen = () => {
         }
       });
     });
+
 
     // Sort dates in descending order and flatten the grouped data
     const sortedDates = Object.keys(groupedRows).sort(
