@@ -1,3 +1,5 @@
+import { convertToLocalTime, convertToUTC } from "../utils/dateUtils";
+
 const BASE_API_URL = "https://az-medical-p9w9.onrender.com/api";
 const TOKEN_API_URL = `${BASE_API_URL}/tokens`;
 
@@ -7,7 +9,14 @@ export const getTokenForClinic = async (clinicId) => {
     if (!response.ok) {
       throw new Error("Error fetching token");
     }
-    return response.json();
+    const tokenData = await response.json();
+
+    // Convert lastUpdated to local time
+    if (tokenData.lastUpdated) {
+      tokenData.lastUpdated = convertToLocalTime(tokenData.lastUpdated);
+    }
+
+    return tokenData;
   } catch (error) {
     console.error("Error fetching token:", error);
     throw error;
@@ -23,9 +32,9 @@ export const addTokenForClinic = async (clinicId) => {
 
     // If token doesn't exist, start with token: 1
     if (!tokenData) {
-      tokenData = { token: 1, lastUpdated: new Date().toISOString() };
+      tokenData = { token: 1, lastUpdated: convertToUTC(new Date()) };
     } else {
-      const lastUpdatedDate = tokenData.lastUpdated.split("T")[0];
+      const lastUpdatedDate = tokenData.lastUpdated.split(" ")[0];
 
       // If the token is not of the current day, reset it to 1
       if (lastUpdatedDate !== currentDate) {
@@ -34,7 +43,7 @@ export const addTokenForClinic = async (clinicId) => {
         // If the token is of the current day, increment it
         tokenData.token += 1;
       }
-      tokenData.lastUpdated = new Date().toISOString();
+      tokenData.lastUpdated = convertToUTC(new Date());
     }
 
     const response = await fetch(`${TOKEN_API_URL}/${clinicId}`, {
@@ -57,7 +66,10 @@ export const addTokenForClinic = async (clinicId) => {
 
 export const updateTokenForClinic = async (clinicId, newToken) => {
   try {
-    const tokenData = { token: newToken, lastUpdated: new Date().toISOString() };
+    const tokenData = {
+      token: newToken,
+      lastUpdated: convertToUTC(new Date()),
+    };
 
     const response = await fetch(`${TOKEN_API_URL}/${clinicId}`, {
       method: "POST",

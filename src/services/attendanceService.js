@@ -1,4 +1,5 @@
-// const API_URL = "https://az-medical-p9w9.onrender.com/api/attendance";
+import { convertToLocalTime, convertToUTC } from "../utils/dateUtils";
+
 const API_URL = "https://az-medical-p9w9.onrender.com/api/attendance";
 
 // Fetch all attendance records for a specific clinic
@@ -9,6 +10,23 @@ export const fetchAttendance = async (clinicId) => {
       throw new Error("Error fetching attendance records");
     }
     const data = await response.json();
+
+    // Convert datetime, checkInTime, and checkOutTime to local time
+    data.forEach((record) => {
+      record.pastThirtyDays = record.pastThirtyDays.map((day) => {
+        if (day.datetime) {
+          day.datetime = convertToLocalTime(day.datetime);
+        }
+        if (day.checkInTime) {
+          day.checkInTime = convertToLocalTime(day.checkInTime);
+        }
+        if (day.checkOutTime) {
+          day.checkOutTime = convertToLocalTime(day.checkOutTime);
+        }
+        return day;
+      });
+    });
+
     return data;
   } catch (error) {
     console.error("Error fetching attendance records:", error);
@@ -30,7 +48,9 @@ export const addOrUpdateAttendance = async (clinicId, attendanceData) => {
       initializePastThirtyDays(currentDate);
 
     const lastRecordedDate = new Date(pastThirtyDays[0]?.datetime);
-    const daysSkipped = Math.floor(
+
+    // Using ceil instead of floor, cause there was a bug where the date was being skipped
+    const daysSkipped = Math.ceil(
       (currentDate - lastRecordedDate) / (1000 * 60 * 60 * 24)
     );
 
@@ -40,19 +60,19 @@ export const addOrUpdateAttendance = async (clinicId, attendanceData) => {
           checkInTime: null,
           checkOutTime: null,
           status: "absent",
-          datetime: new Date(
-            lastRecordedDate.setDate(lastRecordedDate.getDate() + 1)
-          ).toISOString(),
+          datetime: convertToUTC(
+            new Date(lastRecordedDate.setDate(lastRecordedDate.getDate() + 1))
+          ),
         });
       }
       pastThirtyDays = pastThirtyDays.slice(0, 30);
     }
 
     pastThirtyDays[0] = {
-      checkInTime,
-      checkOutTime,
+      checkInTime: checkInTime ? convertToUTC(checkInTime) : null,
+      checkOutTime: checkOutTime ? convertToUTC(checkOutTime) : null,
       status,
-      datetime: currentDate.toISOString(),
+      datetime: convertToUTC(currentDate),
     };
 
     const updatedAttendance = { nurseName, pastThirtyDays };
@@ -77,11 +97,12 @@ const initializePastThirtyDays = (currentDate) => {
       checkInTime: null,
       checkOutTime: null,
       status: "absent",
-      datetime: date.toISOString(),
+      datetime: convertToUTC(date),
     });
   }
   return pastThirtyDays;
 };
+
 // Fetch a specific attendance record by ID
 const fetchAttendanceById = async (clinicId, id) => {
   try {
@@ -95,6 +116,21 @@ const fetchAttendanceById = async (clinicId, id) => {
       );
     }
     const data = await response.json();
+
+    // Convert datetime, checkInTime, and checkOutTime to local time
+    data.pastThirtyDays = data.pastThirtyDays.map((day) => {
+      if (day.datetime) {
+        day.datetime = convertToLocalTime(day.datetime);
+      }
+      if (day.checkInTime) {
+        day.checkInTime = convertToLocalTime(day.checkInTime);
+      }
+      if (day.checkOutTime) {
+        day.checkOutTime = convertToLocalTime(day.checkOutTime);
+      }
+      return day;
+    });
+
     return data;
   } catch (error) {
     console.error("Error fetching attendance record:", error);
@@ -106,6 +142,16 @@ const fetchAttendanceById = async (clinicId, id) => {
 
 export const addAttendance = async (clinicId, attendanceData) => {
   try {
+    // Convert dates to UTC before saving
+    attendanceData.pastThirtyDays = attendanceData.pastThirtyDays.map((day) => {
+      return {
+        ...day,
+        datetime: convertToUTC(day.datetime),
+        checkInTime: day.checkInTime ? convertToUTC(day.checkInTime) : null,
+        checkOutTime: day.checkOutTime ? convertToUTC(day.checkOutTime) : null,
+      };
+    });
+
     const response = await fetch(`${API_URL}/${clinicId}`, {
       method: "POST",
       headers: {
@@ -126,6 +172,16 @@ export const addAttendance = async (clinicId, attendanceData) => {
 
 export const updateAttendance = async (clinicId, id, attendanceData) => {
   try {
+    // Convert dates to UTC before updating
+    attendanceData.pastThirtyDays = attendanceData.pastThirtyDays.map((day) => {
+      return {
+        ...day,
+        datetime: convertToUTC(day.datetime),
+        checkInTime: day.checkInTime ? convertToUTC(day.checkInTime) : null,
+        checkOutTime: day.checkOutTime ? convertToUTC(day.checkOutTime) : null,
+      };
+    });
+
     const response = await fetch(`${API_URL}/${clinicId}/${id}`, {
       method: "PUT",
       headers: {
