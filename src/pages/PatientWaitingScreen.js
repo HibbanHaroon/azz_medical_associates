@@ -19,7 +19,6 @@ export default function PatientWaitingScreen(props) {
   const [callStack, setCallStack] = useState([]);
   const sliderRef = useRef(null); // Add useRef for the slider
 
-
   useEffect(() => {
     const socket = io("https://az-medical-p9w9.onrender.com");
     // const socket = io("http://localhost:3001");
@@ -119,6 +118,25 @@ export default function PatientWaitingScreen(props) {
     try {
       const arrivals = await fetchArrivals(clinicId, id);
 
+      let tempArrivalTime = new Date();
+      const today = new Date();
+      const todayStart = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate(),
+        0,
+        0,
+        0
+      );
+      const todayEnd = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate(),
+        23,
+        59,
+        59
+      );
+
       const formattedArrivals = arrivals.map((arrival) => {
         const dob = new Date(arrival.dob).toISOString().split("T")[0];
         const arrivalTime = new Date(arrival.arrivalTime).toLocaleString(
@@ -152,9 +170,17 @@ export default function PatientWaitingScreen(props) {
         };
       });
 
-      const filteredArrivals = formattedArrivals.filter(
-        (arrival) => !arrival.markExit
-      );
+      const filteredArrivals = formattedArrivals.filter((arrival) => {
+        tempArrivalTime = new Date(arrival.arrivalTime);
+
+        const meetsCondition =
+          !arrival.markExit &&
+          tempArrivalTime >= todayStart &&
+          tempArrivalTime <= todayEnd;
+
+        return meetsCondition;
+      });
+
       const sortedArrivals = filteredArrivals
         .sort((a, b) => {
           if (a.inProgress !== b.inProgress) {
@@ -200,7 +226,7 @@ export default function PatientWaitingScreen(props) {
     infinite: false,
     speed: 500,
     slidesToShow: doctors.length >= 3 ? 3 : doctors.length,
-    slidesToScroll: 3,  // Always scroll 3 for consistent behavior
+    slidesToScroll: 3, // Always scroll 3 for consistent behavior
     autoplay: true,
     autoplaySpeed: 10000, // 10 seconds
     afterChange: (current) => {
@@ -211,9 +237,9 @@ export default function PatientWaitingScreen(props) {
           }
         }, 10000); // Delay before returning to the first slide
       }
-    }
+    },
   };
-  
+
   useEffect(() => {
     const interval = setInterval(() => {
       if (sliderRef.current) {
@@ -225,10 +251,10 @@ export default function PatientWaitingScreen(props) {
         }
       }
     }, 10000); // Move every 10 seconds
-  
+
     return () => clearInterval(interval); // Clear interval on unmount
   }, [doctors.length]);
-  
+
   return (
     <div
       style={{
@@ -245,13 +271,13 @@ export default function PatientWaitingScreen(props) {
         justifyContent: "center",
       }}
     >
-    <Box
-  sx={{
-    width: doctors.length < 3 ? `${doctors.length * 33.33}%` : '90%',  // Adjust the width based on number of doctors
-    margin: '0 auto',  // Center the carousel
-  }}
->
-<Slider ref={sliderRef} {...settings}>
+      <Box
+        sx={{
+          width: doctors.length < 3 ? `${doctors.length * 33.33}%` : "90%", // Adjust the width based on number of doctors
+          margin: "0 auto", // Center the carousel
+        }}
+      >
+        <Slider ref={sliderRef} {...settings}>
           {doctors
             .sort((a, b) => a.roomNumber - b.roomNumber)
             .map((doctor) => (

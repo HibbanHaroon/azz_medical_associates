@@ -25,7 +25,11 @@ export const getTokenForClinic = async (clinicId) => {
 
 export const addTokenForClinic = async (clinicId) => {
   try {
-    const currentDate = new Date().toISOString().split("T")[0];
+    let currentDate = new Date().toISOString();
+
+    const localDate = convertToLocalTime(currentDate);
+
+    currentDate = localDate.split(" ")[0];
 
     // Check if the token exists
     let tokenData = await getTokenForClinic(clinicId).catch(() => null);

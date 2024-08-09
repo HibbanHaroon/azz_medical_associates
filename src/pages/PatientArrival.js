@@ -166,8 +166,8 @@ export default function PatientArrival() {
   const handleArrival = async () => {
     if (firstName && lastName && dob && selectedDoctor) {
       try {
-        const { token, lastUpdated } = await addTokenForClinic(clinicId);
         setIsSubmitting(true);
+        const { token, lastUpdated } = await addTokenForClinic(clinicId);
         setToken(token);
         const arrivalData = {
           arrivalTime: Date.now(),
