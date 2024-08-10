@@ -26,6 +26,7 @@ export default function DoctorScreen(props) {
   const { clinicId, doctorId } = state;
   console.log(clinicId);
   console.log(doctorId);
+  const [doctorName, setDoctorName] = useState(""); // Added state for doctor name
   const [searchQuery, setSearchQuery] = useState("");
   const [patients, setPatients] = useState([]);
   const [roomNumber, setRoomNumber] = useState("");
@@ -59,6 +60,8 @@ export default function DoctorScreen(props) {
       const doctor = doctors.find((doc) => doc.id === doctorId);
       if (doctor) {
         setRoomNumber(doctor.roomNumber);
+        setDoctorName(doctor.name);
+
       }
     } catch (error) {
       console.error("Error fetching doctor details:", error);
@@ -133,9 +136,15 @@ export default function DoctorScreen(props) {
   const currentTime = new Date();
   const cutoffTime = new Date(currentTime.getTime() - 24 * 60 * 60 * 1000); // 24 hours ago
 
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
+  
   const recentPatients = sortedPatients.filter((patient) => {
     const patientArrivalTime = new Date(patient.arrivalTime);
-    return patientArrivalTime >= cutoffTime;
+    return patientArrivalTime >= todayStart && patientArrivalTime <= todayEnd;
   });
 
   const handleCallInside = async (id) => {
@@ -376,7 +385,7 @@ export default function DoctorScreen(props) {
             <GroupIcon />
           </Avatar>
           <Typography component="h1" variant="h5">
-            Patients
+          Provider: {doctorName}          
           </Typography>
           <TextField
             variant="outlined"
@@ -417,6 +426,8 @@ export default function DoctorScreen(props) {
                   <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
                     {patient.firstName + " " + patient.lastName}
                   </Typography>
+                  <Typography variant="body2">Token: {patient.token}</Typography>
+
                   <Typography variant="body2">DOB: {patient.dob}</Typography>
                   <Typography variant="body2">
                     Arrival Time: {patient.arrivalTime}

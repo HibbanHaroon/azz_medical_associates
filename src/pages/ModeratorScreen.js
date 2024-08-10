@@ -28,6 +28,7 @@ export default function ModeratorScreen(props) {
   const [doctors, setDoctors] = useState([]);
   const [patientsByDoctor, setPatientsByDoctor] = useState({});
   const [selectedDoctor, setSelectedDoctor] = useState("");
+  const [selectedTimeframe, setSelectedTimeframe] = useState("Today");
 
   useEffect(() => {
     const socket = io("https://az-medical-p9w9.onrender.com");
@@ -40,6 +41,24 @@ export default function ModeratorScreen(props) {
     });
   }, []);
 
+  const filterByTimeframe = (arrivals) => {
+    const now = new Date();
+    let startDate;
+  
+    if (selectedTimeframe === "Today") {
+      startDate = new Date(now.setHours(0, 0, 0, 0));
+    } else if (selectedTimeframe === "Weekly") {
+      startDate = new Date(now.setDate(now.getDate() - 7));
+    } else if (selectedTimeframe === "Monthly") {
+      startDate = new Date(now.setDate(now.getDate() - 30));
+    }
+  
+    return arrivals.filter((patient) => {
+      const arrivalDate = new Date(patient.arrivalTime);
+      return arrivalDate >= startDate;
+    });
+  };
+  
   const fetchArrivalsById = async (id) => {
     try {
       const arrivals = await fetchArrivals(clinicId, id);
@@ -61,6 +80,8 @@ export default function ModeratorScreen(props) {
 
         return {
           id: arrival.id,
+          token: arrival.token,
+
           calledInTime: arrival.calledInTime,
           firstName: arrival.firstName,
           lastName: arrival.lastName,
@@ -112,7 +133,9 @@ export default function ModeratorScreen(props) {
     ? filteredArrivals.filter((patient) => patient.doctorId === selectedDoctor)
     : filteredArrivals;
 
-  const sortedArrivals = filteredByDoctor.sort((a, b) => {
+  // const sortedArrivals = filteredByDoctor.sort((a, b) => {
+    const sortedArrivals = filterByTimeframe(filteredByDoctor).sort((a, b) => {
+
     const statusOrder = (patient) => {
       if (patient.markExit) return 5; // Exited
       if (patient.inProgress) return 1; // In Progress
@@ -181,13 +204,16 @@ export default function ModeratorScreen(props) {
       doc.text(dateTimeStr, 20, 70);
       doc.text(durationStr, 130, 70);
 
-      const arrivals = getTodaysArrivals();
+      // const arrivals = getTodaysArrivals();
+      const arrivals = filterByTimeframe(filteredArrivals);
+      
       const tableColumn = [
         "Patient Name",
         "Provider",
         "Arrival Time",
         "Meeting Time",
         "Waiting Time",
+        "Token",
       ];
       const tableRows = [];
 
@@ -222,6 +248,8 @@ export default function ModeratorScreen(props) {
         waitingTime = waitingTime.trim();
 
         const rowData = [
+          arrival.tokenNumber || "N/A",       // Add token number to row data
+
           `${arrival.firstName} ${arrival.lastName}`,
           providerName,
           arrivalTime.toLocaleString("en-US", {
@@ -342,6 +370,20 @@ export default function ModeratorScreen(props) {
               ))}
             </Select>
           </FormControl>
+          <FormControl fullWidth sx={{ mb: 2 }}>
+  <InputLabel id="timeframe-select-label">Timeframe</InputLabel>
+  <Select
+    labelId="timeframe-select-label"
+    id="timeframe-select"
+    value={selectedTimeframe}
+    label="Timeframe"
+    onChange={(e) => setSelectedTimeframe(e.target.value)}
+  >
+    <MenuItem value="Today">Today</MenuItem>
+    <MenuItem value="Weekly">Weekly</MenuItem>
+    <MenuItem value="Monthly">Monthly</MenuItem>
+  </Select>
+</FormControl>
           <Box sx={{ maxHeight: "50vh", overflowY: "auto", width: "100%" }}>
             {sortedArrivals.length > 0 ? (
               sortedArrivals.map((patient) => (
@@ -363,6 +405,8 @@ export default function ModeratorScreen(props) {
                     <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
                       {patient.firstName + " " + patient.lastName}
                     </Typography>
+                    <Typography variant="body2">Token: {patient.token}</Typography> 
+
                     <Typography variant="body2">DOB: {patient.dob}</Typography>
                     <Typography variant="body2">
                       Arrival Time: {patient.arrivalTime}
