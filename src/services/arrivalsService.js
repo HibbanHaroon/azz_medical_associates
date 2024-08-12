@@ -44,7 +44,7 @@ export const fetchAllArrivals = async (clinicId) => {
     const data = await response.json();
 
     // Convert the date fields to local time
-    return data.arrivals.map((arrival) => ({
+    return data.map((arrival) => ({
       ...arrival,
       arrivalTime: convertToLocalTime(arrival.arrivalTime),
       calledInTime: arrival.calledInTime
