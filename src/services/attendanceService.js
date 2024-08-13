@@ -1,4 +1,4 @@
-import { convertToLocalTime, convertToUTC } from "../utils/dateUtils";
+import { convertToLocalTime } from "../utils/dateUtils";
 
 const API_URL = "https://az-medical-p9w9.onrender.com/api/attendance";
 
@@ -60,7 +60,7 @@ export const addOrUpdateAttendance = async (clinicId, attendanceData) => {
           checkInTime: null,
           checkOutTime: null,
           status: "absent",
-          datetime: convertToUTC(
+          datetime: convertToLocalTime(
             new Date(lastRecordedDate.setDate(lastRecordedDate.getDate() + 1))
           ),
         });
@@ -69,10 +69,10 @@ export const addOrUpdateAttendance = async (clinicId, attendanceData) => {
     }
 
     pastThirtyDays[0] = {
-      checkInTime: checkInTime ? convertToUTC(checkInTime) : null,
-      checkOutTime: checkOutTime ? convertToUTC(checkOutTime) : null,
+      checkInTime: checkInTime ? convertToLocalTime(checkInTime) : null,
+      checkOutTime: checkOutTime ? convertToLocalTime(checkOutTime) : null,
       status,
-      datetime: convertToUTC(currentDate),
+      datetime: convertToLocalTime(currentDate),
     };
 
     const updatedAttendance = { nurseName, pastThirtyDays };
@@ -97,7 +97,7 @@ const initializePastThirtyDays = (currentDate) => {
       checkInTime: null,
       checkOutTime: null,
       status: "absent",
-      datetime: convertToUTC(date),
+      datetime: convertToLocalTime(date),
     });
   }
   return pastThirtyDays;
@@ -146,9 +146,13 @@ export const addAttendance = async (clinicId, attendanceData) => {
     attendanceData.pastThirtyDays = attendanceData.pastThirtyDays.map((day) => {
       return {
         ...day,
-        datetime: convertToUTC(day.datetime),
-        checkInTime: day.checkInTime ? convertToUTC(day.checkInTime) : null,
-        checkOutTime: day.checkOutTime ? convertToUTC(day.checkOutTime) : null,
+        datetime: convertToLocalTime(day.datetime),
+        checkInTime: day.checkInTime
+          ? convertToLocalTime(day.checkInTime)
+          : null,
+        checkOutTime: day.checkOutTime
+          ? convertToLocalTime(day.checkOutTime)
+          : null,
       };
     });
 
@@ -176,9 +180,13 @@ export const updateAttendance = async (clinicId, id, attendanceData) => {
     attendanceData.pastThirtyDays = attendanceData.pastThirtyDays.map((day) => {
       return {
         ...day,
-        datetime: convertToUTC(day.datetime),
-        checkInTime: day.checkInTime ? convertToUTC(day.checkInTime) : null,
-        checkOutTime: day.checkOutTime ? convertToUTC(day.checkOutTime) : null,
+        datetime: convertToLocalTime(day.datetime),
+        checkInTime: day.checkInTime
+          ? convertToLocalTime(day.checkInTime)
+          : null,
+        checkOutTime: day.checkOutTime
+          ? convertToLocalTime(day.checkOutTime)
+          : null,
       };
     });
 

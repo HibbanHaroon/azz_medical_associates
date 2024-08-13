@@ -1,7 +1,3 @@
-export const convertToUTC = (date) => {
-  return new Date(date).toISOString();
-};
-
 export const convertToLocalTime = (date) => {
   const localDate = new Date(date);
   const offset = localDate.getTimezoneOffset();

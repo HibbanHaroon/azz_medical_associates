@@ -1,6 +1,6 @@
 // services/arrivalsService.js
 
-import { convertToLocalTime, convertToUTC } from "../utils/dateUtils";
+import { convertToLocalTime } from "../utils/dateUtils";
 
 // const API_URL = "http://localhost:3001/api/arrivals";
 const BASE_API_URL = "https://az-medical-p9w9.onrender.com/api";
@@ -68,8 +68,8 @@ export const addArrival = async (clinicId, arrivalData) => {
     // Convert the date fields to UTC
     const arrivalDataWithUTC = {
       ...arrivalData,
-      arrivalTime: convertToUTC(arrivalData.arrivalTime),
-      dob: convertToUTC(arrivalData.dob),
+      arrivalTime: convertToLocalTime(arrivalData.arrivalTime),
+      dob: convertToLocalTime(arrivalData.dob),
     };
 
     const response = await fetch(`${API_URL}/${clinicId}`, {
@@ -132,7 +132,7 @@ export const updateArrivalMarkExit = async (
         },
         body: JSON.stringify({
           ...arrivalData,
-          endTime: convertToUTC(arrivalData.endTime),
+          endTime: convertToLocalTime(arrivalData.endTime),
         }),
       }
     );
@@ -162,7 +162,7 @@ export const updateArrivalInProgress = async (
         },
         body: JSON.stringify({
           ...arrivalData,
-          startTime: convertToUTC(arrivalData.startTime),
+          startTime: convertToLocalTime(arrivalData.startTime),
         }),
       }
     );
@@ -192,7 +192,7 @@ export const updateArrivalCalledInside = async (
         },
         body: JSON.stringify({
           ...arrivalData,
-          calledInTime: convertToUTC(arrivalData.calledInTime),
+          calledInTime: convertToLocalTime(arrivalData.calledInTime),
         }),
       }
     );

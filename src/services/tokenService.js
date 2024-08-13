@@ -1,4 +1,4 @@
-import { convertToLocalTime, convertToUTC } from "../utils/dateUtils";
+import { convertToLocalTime } from "../utils/dateUtils";
 
 const BASE_API_URL = "https://az-medical-p9w9.onrender.com/api";
 const TOKEN_API_URL = `${BASE_API_URL}/tokens`;
@@ -36,7 +36,7 @@ export const addTokenForClinic = async (clinicId) => {
 
     // If token doesn't exist, start with token: 1
     if (!tokenData) {
-      tokenData = { token: 1, lastUpdated: convertToUTC(new Date()) };
+      tokenData = { token: 1, lastUpdated: convertToLocalTime(new Date()) };
     } else {
       const lastUpdatedDate = tokenData.lastUpdated.split(" ")[0];
 
@@ -47,7 +47,7 @@ export const addTokenForClinic = async (clinicId) => {
         // If the token is of the current day, increment it
         tokenData.token += 1;
       }
-      tokenData.lastUpdated = convertToUTC(new Date());
+      tokenData.lastUpdated = convertToLocalTime(new Date());
     }
 
     const response = await fetch(`${TOKEN_API_URL}/${clinicId}`, {
@@ -72,7 +72,7 @@ export const updateTokenForClinic = async (clinicId, newToken) => {
   try {
     const tokenData = {
       token: newToken,
-      lastUpdated: convertToUTC(new Date()),
+      lastUpdated: convertToLocalTime(new Date()),
     };
 
     const response = await fetch(`${TOKEN_API_URL}/${clinicId}`, {
