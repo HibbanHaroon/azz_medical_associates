@@ -141,9 +141,6 @@ export default function NurseAttendance() {
 
   const handleConfirmationClose = () => {
     setShowConfirmation(false);
-    navigate("/arrival", {
-      state: { clinicId: clinicId },
-    });
   };
 
   const handleCheckIn = async () => {
@@ -332,6 +329,12 @@ export default function NurseAttendance() {
 
       setCheckOutLoading(false);
       setShowCheckOutButton(false);
+      // Basically Navigate to arrivals page after 3 seconds
+      setTimeout(() => {
+        navigate("/arrival", {
+          state: { clinicId: clinicId },
+        });
+      }, 3000);
     } catch (error) {
       console.error("Error updating check-out time:", error);
       showErrorToast("Error updating check-out time. Please try again.");
