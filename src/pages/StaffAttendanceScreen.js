@@ -75,6 +75,7 @@ const StaffAttendanceScreen = () => {
   const [downloading, setDownloading] = useState(false);
   const location = useLocation();
   const { clinicId, clinicName, staffId } = location.state;
+  console.log("staffId", staffId);
 
   const updateCurrentDropdownItem = async (item) => {
     setCurrentDropdownItem(item);
@@ -90,9 +91,17 @@ const StaffAttendanceScreen = () => {
     const dateRange = generateDateRange(filter);
     const groupedRows = {};
 
-    nurses.forEach((nurse) => {
+    // Filter the nurses and attendance records based on the staffId
+    const filteredNurses = nurses.filter((nurse) => nurse.id === staffId);
+    const filteredAttendanceRecords = attendanceRecords.filter(
+      (record) => record.id === staffId
+    );
+
+    filteredNurses.forEach((nurse) => {
       dateRange.forEach((date) => {
-        const record = attendanceRecords.find((rec) => rec.id === nurse.id);
+        const record = filteredAttendanceRecords.find(
+          (rec) => rec.id === nurse.id
+        );
 
         if (record) {
           const dayRecord = record.pastThirtyDays.find((day) => {
