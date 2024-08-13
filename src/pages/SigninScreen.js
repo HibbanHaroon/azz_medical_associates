@@ -20,7 +20,7 @@ import { auth } from "../firebase";
 import { useNavigate } from "react-router-dom";
 import { fetchAdmins } from "../services/adminService";
 import { fetchDoctors } from "../services/doctorService";
-// import { fetchNurses } from "../services/nurseService";
+import { fetchNurses } from "../services/nurseService";
 import { fetchModerators } from "../services/moderatorService";
 import { fetchSuperAdmins } from "../services/superAdminService";
 import ForgotPasswordModal from "../components/ForgotPasswordModal";
@@ -65,9 +65,9 @@ const SigninScreen = () => {
         case "Provider":
           users = await fetchDoctors(selectedClinic);
           break;
-        // case "Nurse":
-        //   users = await fetchNurses(selectedClinic);
-        //   break;
+        case "Nurse":
+          users = await fetchNurses(selectedClinic);
+          break;
         case "Moderator":
           users = await fetchModerators(selectedClinic);
           break;
@@ -137,13 +137,15 @@ const SigninScreen = () => {
             },
           });
           break;
-        // case "Nurse":
-        //   navigate(`/attendance`, {
-        //     state: {
-        //       clinicId: selectedClinic,
-        //     },
-        //   });
-        //   break;
+        case "Nurse":
+          navigate(`/staffAttendance`, {
+            state: {
+              clinicId: selectedClinic,
+              clinicName: selectedClinicName,
+              staffId: userId,
+            },
+          });
+          break;
         case "Moderator":
           navigate(`/moderator`, {
             state: {

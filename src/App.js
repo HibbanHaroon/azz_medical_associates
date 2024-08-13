@@ -26,6 +26,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./utils/ProtectedRoute";
 import CEODashboard from "./pages/CEO/CEO_Dashboard";
 import CEOClinics from "./pages/CEO/CEO_Clinics";
+import StaffAttendanceScreen from "./pages/StaffAttendanceScreen";
 
 function App() {
   return (
@@ -107,6 +108,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AdminAttendanceScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/staffAttendance"
+              element={
+                <ProtectedRoute>
+                  <StaffAttendanceScreen />
                 </ProtectedRoute>
               }
             />
