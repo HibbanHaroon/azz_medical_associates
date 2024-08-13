@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
   Container,
+  CircularProgress,
   CssBaseline,
   Box,
   MenuItem,
@@ -31,7 +32,7 @@ import { useNavigate } from "react-router-dom";
 export default function NurseAttendance() {
   const { state } = useLocation();
   const { clinicId } = state;
-const navigate = useNavigate();
+  const navigate = useNavigate();
   const [attendance, setAttendance] = useState([]);
   const [nurses, setNurses] = useState([]);
   const [selectedNurse, setSelectedNurse] = useState("");
@@ -40,6 +41,8 @@ const navigate = useNavigate();
   const [showCamera, setShowCamera] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [nurseName, setNurseName] = useState("");
+  const [checkInLoading, setCheckInLoading] = useState(false);
+  const [checkOutLoading, setCheckOutLoading] = useState(false);
 
   useEffect(() => {
     const fetchNursesData = async () => {
@@ -144,6 +147,7 @@ const navigate = useNavigate();
   };
 
   const handleCheckIn = async () => {
+    setCheckInLoading(true);
     const today = new Date();
     const nurseAttendance = attendance.find(
       (record) =>
@@ -163,6 +167,7 @@ const navigate = useNavigate();
     if (todayAttendance && todayAttendance.checkInTime !== null) {
       showInfoToast("Check-in already done.");
       setShowCheckInButton(false);
+      setCheckInLoading(false);
       return;
     }
 
@@ -190,7 +195,6 @@ const navigate = useNavigate();
             `${nurseName}, your check-in for the day has been marked successfully!`
           );
         }, 4000);
-        
 
         setAttendance((prevAttendance) => {
           const existingRecordIndex = prevAttendance.findIndex(
@@ -222,8 +226,8 @@ const navigate = useNavigate();
             ];
           }
         });
-        
 
+        setCheckInLoading(false);
         setShowCheckInButton(false);
       } catch (error) {
         console.error("Error creating attendance record:", error);
@@ -233,6 +237,7 @@ const navigate = useNavigate();
   };
 
   const handleCheckOut = async () => {
+    setCheckOutLoading(true);
     setShowCamera(true);
     const today = new Date();
     const nurseAttendance = attendance.find(
@@ -250,6 +255,7 @@ const navigate = useNavigate();
       : null;
 
     if (!todayAttendance || todayAttendance.checkInTime === null) {
+      setCheckOutLoading(false);
       showErrorToast("Please check in first for the day.");
       return;
     }
@@ -257,6 +263,7 @@ const navigate = useNavigate();
     if (todayAttendance.checkOutTime !== null) {
       showInfoToast("Check-out already done.");
       setShowCheckOutButton(false);
+      setCheckOutLoading(false);
       return;
     }
 
@@ -323,6 +330,7 @@ const navigate = useNavigate();
         }
       });
 
+      setCheckOutLoading(false);
       setShowCheckOutButton(false);
     } catch (error) {
       console.error("Error updating check-out time:", error);
@@ -443,14 +451,24 @@ const navigate = useNavigate();
                 onClick={handleCheckIn}
                 variant="outlined"
                 sx={{ mr: 2 }}
-                disabled={attendance.some(
-                  (record) =>
-                    isSameDay(new Date(record.datetime), new Date()) &&
-                    record.id === selectedNurse.id &&
-                    record.checkInTime !== null
-                )}
+                disabled={
+                  checkInLoading ||
+                  attendance.some(
+                    (record) =>
+                      isSameDay(new Date(record.datetime), new Date()) &&
+                      record.id === selectedNurse.id &&
+                      record.checkInTime !== null
+                  )
+                }
               >
-                Check In
+                {checkInLoading ? (
+                  <>
+                    <CircularProgress size={16} sx={{ mr: 1 }} />
+                    Checking In...
+                  </>
+                ) : (
+                  "Check In"
+                )}
               </Button>
             )}
             {showCheckOutButton && (
@@ -458,14 +476,24 @@ const navigate = useNavigate();
                 onClick={handleCheckOut}
                 variant="outlined"
                 sx={{ mr: 2 }}
-                disabled={attendance.some(
-                  (record) =>
-                    isSameDay(new Date(record.datetime), new Date()) &&
-                    record.id === selectedNurse.id &&
-                    record.checkOutTime !== null
-                )}
+                disabled={
+                  checkOutLoading ||
+                  attendance.some(
+                    (record) =>
+                      isSameDay(new Date(record.datetime), new Date()) &&
+                      record.id === selectedNurse.id &&
+                      record.checkOutTime !== null
+                  )
+                }
               >
-                Check Out
+                {checkOutLoading ? (
+                  <>
+                    <CircularProgress size={16} sx={{ mr: 1 }} />
+                    Checking Out...
+                  </>
+                ) : (
+                  "Check Out"
+                )}
               </Button>
             )}
           </Box>
