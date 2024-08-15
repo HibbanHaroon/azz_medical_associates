@@ -79,8 +79,11 @@ const generateDateRange = (filter) => {
 };
 
 const AdminAttendanceScreen = () => {
-const [sortColumn, setSortColumn] = useState("date"); // Default sort by date
-const [sortDirection, setSortDirection] = useState("desc"); // Default sort direction
+  const [sortColumn, setSortColumn] = useState("date"); // Default sort by date
+  const [sortDirection, setSortDirection] = useState("desc"); // Default sort direction
+  const [selectedNurse, setSelectedNurse] = useState("All Staff"); // Default to All Staff
+  const [nurses, setNurses] = useState([]);
+
   const dropdownItems = [
     { item: "Today" },
     { item: "Weekly" },
@@ -101,19 +104,27 @@ const [sortDirection, setSortDirection] = useState("desc"); // Default sort dire
     await getStaffHours(item);
   };
 
-  const getStaffHours = async (filter) => {
+  const getStaffHours = async (filter, nurseName) => {
     const [nurses, attendanceRecords] = await Promise.all([
       fetchNurses(clinicId),
       fetchAttendance(clinicId),
     ]);
-  
+
+    setNurses(nurses);
+
     const dateRange = generateDateRange(filter);
     const groupedRows = {};
-  
-    nurses.forEach((nurse) => {
+
+    // Filter nurses based on the selected nurse
+    const filteredNurses =
+      nurseName && nurseName !== "All Staff"
+        ? nurses.filter((nurse) => nurse.name === nurseName)
+        : nurses;
+
+    filteredNurses.forEach((nurse) => {
       dateRange.forEach((date) => {
         const record = attendanceRecords.find((rec) => rec.id === nurse.id);
-  
+
         if (record) {
           const dayRecord = record.pastThirtyDays.find((day) => {
             const recordDate = parse(
@@ -138,7 +149,6 @@ const [sortDirection, setSortDirection] = useState("desc"); // Default sort dire
             timeSpent = calculateTimeSpent(checkIn, endTime);
           }
 
-
           const row = {
             name: nurse.name,
             date: format(date, "M/d/yyyy"),
@@ -158,7 +168,6 @@ const [sortDirection, setSortDirection] = useState("desc"); // Default sort dire
                 : `${timeSpent.hours}h ${timeSpent.minutes}m`,
           };
 
-
           if (!groupedRows[row.date]) {
             groupedRows[row.date] = [];
           }
@@ -172,7 +181,6 @@ const [sortDirection, setSortDirection] = useState("desc"); // Default sort dire
             hoursSpent: "0h 0m",
           };
 
-
           if (!groupedRows[row.date]) {
             groupedRows[row.date] = [];
           }
@@ -180,7 +188,6 @@ const [sortDirection, setSortDirection] = useState("desc"); // Default sort dire
         }
       });
     });
-
 
     // Sort dates in descending order and flatten the grouped data
     const sortedDates = Object.keys(groupedRows).sort(
@@ -276,8 +283,8 @@ const [sortDirection, setSortDirection] = useState("desc"); // Default sort dire
   };
 
   useEffect(() => {
-    getStaffHours(currentDropdownItem);
-  }, []);
+    getStaffHours(currentDropdownItem, selectedNurse);
+  }, [currentDropdownItem, selectedNurse]);
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -344,19 +351,37 @@ const [sortDirection, setSortDirection] = useState("desc"); // Default sort dire
                 marginBottom: "1rem",
               }}
             >
-              <Select
-                value={currentDropdownItem}
-                onChange={async (e) => {
-                  const selectedItem = e.target.value;
-                  updateCurrentDropdownItem(selectedItem);
-                }}
-              >
-                {dropdownItems.map((i) => (
-                  <MenuItem key={i.item} value={i.item}>
-                    {i.item}
-                  </MenuItem>
-                ))}
-              </Select>
+              <Box sx={{ display: "flex", flexDirection: "row" }}>
+                <Select
+                  value={currentDropdownItem}
+                  onChange={async (e) => {
+                    const selectedItem = e.target.value;
+                    updateCurrentDropdownItem(selectedItem);
+                  }}
+                >
+                  {dropdownItems.map((i) => (
+                    <MenuItem key={i.item} value={i.item}>
+                      {i.item}
+                    </MenuItem>
+                  ))}
+                </Select>
+                <Box sx={{ ml: 2 }}> </Box>
+                <Select
+                  value={selectedNurse}
+                  onChange={async (e) => {
+                    const selected = e.target.value;
+                    setSelectedNurse(selected);
+                    await getStaffHours(currentDropdownItem, selected);
+                  }}
+                >
+                  <MenuItem value="All Staff">All Staff</MenuItem>
+                  {nurses.map((nurse) => (
+                    <MenuItem key={nurse.id} value={nurse.name}>
+                      {nurse.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </Box>
 
               <Button
                 variant="outlined"
