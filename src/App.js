@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import SigninScreen from "./pages/SigninScreen";
 import HomeScreen from "./pages/HomeScreen";
-import PatientArrival from "./pages/PatientArrival";
+import PatientArrival from "./pages/PatientArrival/PatientArrival";
 import DoctorScreen from "./pages/DoctorScreen";
 import ModeratorScreen from "./pages/ModeratorScreen";
 import AdminScreen from "./pages/Admin/AdminScreen";
