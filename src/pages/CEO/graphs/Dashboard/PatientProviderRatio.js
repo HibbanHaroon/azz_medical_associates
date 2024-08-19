@@ -1,14 +1,20 @@
 import React, { useEffect, useState } from "react";
+import { Box, Grid, Typography } from "@mui/material";
 import { Bar } from "react-chartjs-2";
 import "chart.js/auto";
 import { useTheme } from "@mui/material/styles";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import { Chart } from "chart.js";
 
-// Register the plugin globally
 Chart.register(ChartDataLabels);
 
-const ClinicRatioChart = ({ clinicNames, ratios }) => {
+function PatientProviderRatio({
+  clinics,
+  arrivals,
+  doctors,
+  patientProviderRatioRef,
+  onDataProcessed,
+}) {
   const [chartData, setChartData] = useState({ datasets: [] });
   const theme = useTheme();
 
@@ -17,9 +23,9 @@ const ClinicRatioChart = ({ clinicNames, ratios }) => {
     maintainAspectRatio: false,
     scales: {
       x: {
-        display: false, // Hide x-axis labels
+        display: false,
         grid: {
-          display: false, // Disable vertical grid lines
+          display: false,
         },
       },
       y: {
@@ -58,7 +64,7 @@ const ClinicRatioChart = ({ clinicNames, ratios }) => {
         align: "start",
         formatter: (value, context) => {
           if (value === 0) {
-            return ""; // Do not display label for zero values
+            return "";
           }
           return context.chart.data.labels[context.dataIndex];
         },
@@ -66,8 +72,8 @@ const ClinicRatioChart = ({ clinicNames, ratios }) => {
           size: 10,
         },
         color: theme.palette.text.primary,
-        rotation: 0, // Ensure labels are horizontal
-        offset: -15, // Adjust the offset to position labels above the bar
+        rotation: 0,
+        offset: -15,
       },
     },
     elements: {
@@ -78,8 +84,33 @@ const ClinicRatioChart = ({ clinicNames, ratios }) => {
   };
 
   useEffect(() => {
+    const getClinicRatios = () => {
+      const names = [];
+      const ratios = [];
+
+      for (const clinic of clinics) {
+        const clinicArrivals = arrivals.filter(
+          (arrival) => arrival.clinicId === clinic.id
+        );
+        const clinicDoctors = doctors.filter(
+          (doctor) => doctor.clinicId === clinic.id
+        );
+
+        let ratio = 0;
+        if (clinicDoctors.length > 0) {
+          ratio = clinicArrivals.length / clinicDoctors.length;
+        }
+        names.push(clinic.name);
+        ratios.push(parseInt(ratio, 10));
+      }
+
+      return { names, ratios };
+    };
+
+    const { names, ratios } = getClinicRatios();
+
     const data = {
-      labels: clinicNames,
+      labels: names,
       datasets: [
         {
           label: "Arrivals to Providers Ratio",
@@ -96,13 +127,35 @@ const ClinicRatioChart = ({ clinicNames, ratios }) => {
     };
 
     setChartData(data);
-  }, [clinicNames, ratios]);
+    onDataProcessed();
+  }, [
+    clinics,
+    arrivals,
+    doctors,
+    theme.palette.primary.main,
+    theme.palette.primary.dark,
+    onDataProcessed,
+  ]);
 
   return (
-    <div style={{ width: "100%", height: "95%" }}>
-      <Bar data={chartData} options={options} />
-    </div>
+    <Grid item xs={12} md={6}>
+      <Box
+        sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}
+        ref={patientProviderRatioRef}
+      >
+        <Typography
+          variant="h6"
+          fontWeight="bold"
+          sx={{ marginBottom: 0, marginTop: 0 }}
+        >
+          Patient Provider Ratio
+        </Typography>
+        <div style={{ width: "100%", height: "95%" }}>
+          <Bar data={chartData} options={options} />
+        </div>
+      </Box>
+    </Grid>
   );
-};
+}
 
-export default ClinicRatioChart;
+export default PatientProviderRatio;

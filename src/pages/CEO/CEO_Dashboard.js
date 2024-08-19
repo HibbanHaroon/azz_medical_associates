@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import {
   Box,
@@ -21,7 +21,6 @@ import { fetchArrivals } from "../../services/arrivalsService";
 import { fetchAllArrivals } from "../../services/arrivalsService";
 import MonthlyArrivalsChart from "../../components/MonthlyArrivalsChart";
 import { CircularProgress } from "@mui/material";
-import ClinicRatioChart from "../../components/ClinicRatioChart";
 import AverageTimeChart from "../../components/AverageTimeChart";
 import AgeChart from "../../components/AgeChart";
 import { jsPDF } from "jspdf";
@@ -30,11 +29,10 @@ import "jspdf-autotable";
 import DownloadIcon from "@mui/icons-material/Download";
 import CEOLayout from "./components/CEOLayout";
 import PatientsPerDay from "./graphs/Dashboard/PatientsPerDay";
+import PatientProviderRatio from "./graphs/Dashboard/PatientProviderRatio";
 
 export default function CEODashboard() {
   const [clinics, setClinics] = useState([]);
-  const [clinicRatios, setClinicRatios] = useState([]);
-  const [clinicNames, setClinicNames] = useState([]);
 
   const [totalClinics, setTotalClinics] = useState(0);
   const [totalDoctors, setTotalDoctors] = useState(0);
@@ -81,9 +79,19 @@ export default function CEODashboard() {
     setLoadingGraph((prevMap) => ({ ...prevMap, [graphKey]: isLoading }));
   };
 
-  const handleDataProcessed = useCallback(() => {
-    updateLoadingGraph("patientsPerDayGraph", false);
+  const handleDataProcessed = useCallback((graphKey) => {
+    updateLoadingGraph(graphKey, false);
   }, []);
+
+  const dataProcessedHandlers = useMemo(
+    () => ({
+      patientsPerDay: () => handleDataProcessed("patientsPerDayGraph"),
+      patientProviderRatio: () =>
+        handleDataProcessed("patientProviderRatioGraph"),
+    }),
+    [handleDataProcessed]
+  );
+
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -128,31 +136,6 @@ export default function CEODashboard() {
   }, []);
 
   useEffect(() => {
-    const getClinicRatios = () => {
-      var names = [];
-      var ratios = [];
-
-      for (const clinic of clinics) {
-        const arrivals = allArrivals.filter(
-          (arrival) => arrival.clinicId === clinic.id
-        );
-        const doctors = allDoctors.filter(
-          (doctor) => doctor.clinicId === clinic.id
-        );
-
-        let ratio = 0;
-        if (doctors.length > 0) {
-          ratio = arrivals.length / doctors.length;
-        }
-        names.push(clinic.name);
-        ratios.push(parseInt(ratio, 10));
-      }
-
-      setClinicRatios(ratios);
-      setClinicNames(names);
-      console.log("as", names, ratios);
-    };
-
     const getAgeDemographics = async () => {
       // Fetch all doctors and arrivals for all clinics in parallel
       const clinicDataPromises = clinics.map(async (clinic) => {
@@ -245,7 +228,6 @@ export default function CEODashboard() {
     };
 
     const fetchData = async () => {
-      getClinicRatios();
       const data = await getAgeDemographics();
       setAgeData(data);
       const monthlyArrivalsData = await fetchMonthlyArrivals();
@@ -611,40 +593,16 @@ export default function CEODashboard() {
               doctors={allDoctors}
               arrivals={allArrivals}
               patientsPerDayRef={patientsPerDayRef}
-              onDataProcessed={handleDataProcessed}
+              onDataProcessed={dataProcessedHandlers.patientsPerDay}
             />
-            <Grid item xs={12} md={6}>
-              <Box
-                sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}
-                ref={patientProviderRatioRef}
-              >
-                <Typography
-                  variant="h6"
-                  fontWeight="bold"
-                  sx={{ marginBottom: 0, marginTop: 0 }}
-                >
-                  Patient Provider Ratio
-                </Typography>
-                <ClinicRatioChart
-                  clinicNames={clinicNames}
-                  ratios={clinicRatios}
-                />
-              </Box>
-            </Grid>
-            {/* <Grid item xs={12} md={6}>
-              <Box
-                sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}
-              >
-                <Typography
-                  variant="h6"
-                  fontWeight="bold"
-                  sx={{ marginBottom: 0, marginTop: 0 }}
-                >
-                  No Of Providers
-                </Typography>
-                <BarcharttotalProvidersPerClinic data={clinicDataBC} />
-              </Box>
-            </Grid> */}
+
+            <PatientProviderRatio
+              clinics={clinics}
+              arrivals={allArrivals}
+              doctors={allDoctors}
+              patientProviderRatioRef={patientProviderRatioRef}
+              onDataProcessed={dataProcessedHandlers.patientProviderRatio}
+            />
             <Grid item xs={12} md={6}>
               <Card
                 sx={{
