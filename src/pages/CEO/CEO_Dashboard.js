@@ -1,24 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
-import { styled, useTheme } from "@mui/material/styles";
-import Drawer from "@mui/material/Drawer";
-import AppBar from "@mui/material/AppBar";
-import Toolbar from "@mui/material/Toolbar";
-import List from "@mui/material/List";
-import CssBaseline from "@mui/material/CssBaseline";
-import Divider from "@mui/material/Divider";
-import IconButton from "@mui/material/IconButton";
-import MenuIcon from "@mui/icons-material/Menu";
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import ListItem from "@mui/material/ListItem";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
-import DashboardIcon from "@mui/icons-material/Dashboard";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
-import BarChartIcon from "@mui/icons-material/BarChart";
-import DescriptionIcon from "@mui/icons-material/Description";
 import {
   Box,
   Card,
@@ -38,10 +19,7 @@ import { fetchModerators } from "../../services/moderatorService";
 import { fetchNurses } from "../../services/nurseService";
 import { fetchArrivals } from "../../services/arrivalsService";
 import { fetchAllArrivals } from "../../services/arrivalsService";
-import BarcharttotalProvidersPerClinic from "../../components/BarcharttotalProvidersPerClinic";
-import HorizontalBarOneMonthArrivals from "../../components/HorizontalBarOneMonthArrivals ";
 import MonthlyArrivalsChart from "../../components/MonthlyArrivalsChart";
-import ShimmerLoader from "../../components/ShimmerLoader"; // Import the ShimmerLoader component
 import { CircularProgress } from "@mui/material";
 import ClinicRatioChart from "../../components/ClinicRatioChart";
 import AverageTimeChart from "../../components/AverageTimeChart";
@@ -50,45 +28,21 @@ import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import "jspdf-autotable";
 import DownloadIcon from "@mui/icons-material/Download";
+import CEOLayout from "./components/CEOLayout";
+import PatientsPerDay from "./graphs/Dashboard/PatientsPerDay";
 
-const drawerWidth = 300;
-
-const placeholderData = [
-  { month: "Jan", count: 0 },
-  { month: "Feb", count: 0 },
-  { month: "Mar", count: 0 },
-  { month: "Apr", count: 0 },
-  { month: "May", count: 0 },
-  { month: "Jun", count: 0 },
-  { month: "Jul", count: 0 },
-  { month: "Aug", count: 0 },
-  { month: "Sep", count: 0 },
-  { month: "Oct", count: 0 },
-  { month: "Nov", count: 0 },
-  { month: "Dec", count: 0 },
-];
 export default function CEODashboard() {
-  const theme = useTheme();
-  const [open, setOpen] = useState(false);
   const [clinics, setClinics] = useState([]);
-  const [clinicsDetailed, setClinicsDetailed] = useState([]);
   const [clinicRatios, setClinicRatios] = useState([]);
   const [clinicNames, setClinicNames] = useState([]);
 
   const [totalClinics, setTotalClinics] = useState(0);
   const [totalDoctors, setTotalDoctors] = useState(0);
   const [totalNurses, setTotalNurses] = useState(0);
-  const [totalAdmins, setTotalAdmins] = useState(0);
   const [loading, setLoading] = useState(true);
   const [totalModerators, setTotalModerators] = useState(0);
-  const [dataForOneMonthArrivals, setDataForOneMonthArrivals] = useState(null);
   const [DataForMonthlyArrivals, setDataForMonthlyArrivals] = useState(null);
-  const placeholder = "Loading data...";
-  const placeholderDataBC = [{ name: "Loading...", providers: 0 }];
-  const [clinicDataBC, setClinicDataBC] = useState(placeholderDataBC);
   const [ageData, setAgeData] = useState([]);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [isClosing, setIsClosing] = useState(false);
 
   const [topDoctorsMeeting, setTopDoctorsMeeting] = useState([]);
   const [maxAverageTimeMeeting, setMaxAverageTimeMeeting] = useState(0);
@@ -127,104 +81,9 @@ export default function CEODashboard() {
     setLoadingGraph((prevMap) => ({ ...prevMap, [graphKey]: isLoading }));
   };
 
-  const handleDrawerClose = () => {
-    setIsClosing(true);
-    setMobileOpen(false);
-  };
-
-  const handleDrawerTransitionEnd = () => {
-    setIsClosing(false);
-  };
-
-  const handleDrawerToggle = () => {
-    if (!isClosing) {
-      setMobileOpen(!mobileOpen);
-    }
-  };
-
-  useEffect(() => {
-    if (
-      dataForOneMonthArrivals !== null &&
-      clinicNames.length > 0 &&
-      clinicRatios.length > 0 &&
-      ageData.length > 0 &&
-      DataForMonthlyArrivals !== null &&
-      topDoctorsMeeting.length > 0 &&
-      topDoctorsWaiting.length > 0
-    ) {
-      updateLoadingGraph("patientsPerDayGraph", false);
-      updateLoadingGraph("patientProviderRatioGraph", false);
-      updateLoadingGraph("patientWaitingTimeGraph", false);
-      updateLoadingGraph("patientMeetingTimeGraph", false);
-      updateLoadingGraph("ageDemographicsGraph", false);
-      updateLoadingGraph("monthlyArrivalsGraph", false);
-    }
-  }, [
-    dataForOneMonthArrivals,
-    clinicNames,
-    clinicRatios,
-    ageData,
-    DataForMonthlyArrivals,
-    topDoctorsMeeting,
-    topDoctorsWaiting,
-  ]);
-
-  const drawer = (
-    <div>
-      <Toolbar>
-        <Typography
-          component="h1"
-          variant="h5"
-          noWrap
-          sx={{ marginLeft: 2, color: "white", fontWeight: "bold" }}
-        >
-          CEO Dashboard
-        </Typography>
-      </Toolbar>
-      <Divider />
-      <List>
-        {[
-          {
-            text: "Home",
-            icon: <DashboardIcon />,
-            path: "/ceo",
-          },
-          {
-            text: "Clinics",
-            icon: <LocalHospitalIcon />,
-            path: "/ceo-clinics",
-          },
-        ].map((item, index) => (
-          <ListItem key={item.text} disablePadding sx={{ display: "block" }}>
-            <ListItemButton
-              component={Link}
-              to={item.path}
-              sx={{
-                minHeight: 48,
-                justifyContent: open ? "initial" : "center",
-                px: 2.5,
-              }}
-            >
-              <ListItemIcon
-                sx={{
-                  minWidth: 0,
-                  mr: open ? 3 : "auto",
-                  justifyContent: "cente  r",
-                  color: "white",
-                }}
-              >
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText
-                primary={item.text}
-                sx={{ ml: 2, color: "white" }}
-              />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
-    </div>
-  );
+  const handleDataProcessed = useCallback(() => {
+    updateLoadingGraph("patientsPerDayGraph", false);
+  }, []);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -396,86 +255,10 @@ export default function CEODashboard() {
     fetchData();
   }, [clinics, allArrivals, allDoctors]);
 
-  const fetchAllDataForClinicArrivals = async () => {
-    try {
-      // Fetch all doctors and arrivals for all clinics in parallel
-      const clinicDataPromises = clinics.map(async (clinic) => {
-        const doctors = await fetchDoctors(clinic.id);
-
-        // Prepare to fetch arrivals in parallel
-        const doctorPromises = doctors.map(async (doctor) => {
-          const arrivals = await fetchArrivals(clinic.id, doctor.id);
-
-          // Filter arrivals for today
-          const today = new Date();
-          const todayArrivals = arrivals.filter((arrival) => {
-            const arrivalDate = new Date(arrival.arrivalTime);
-            return (
-              arrivalDate.getDate() === today.getDate() &&
-              arrivalDate.getMonth() === today.getMonth() &&
-              arrivalDate.getFullYear() === today.getFullYear()
-            );
-          });
-
-          return todayArrivals.length;
-        });
-
-        // Sum up arrivals counts for the clinic
-        const todayArrivalsCount = (await Promise.all(doctorPromises)).reduce(
-          (acc, count) => acc + count,
-          0
-        );
-
-        return {
-          clinicName: clinic.name,
-          todayArrivalsCount,
-        };
-      });
-
-      // Wait for all clinic data to be processed
-      const todayArrivalsPerClinic = await Promise.all(clinicDataPromises);
-
-      // Sort by todayArrivalsCount in descending order
-      todayArrivalsPerClinic.sort(
-        (a, b) => b.todayArrivalsCount - a.todayArrivalsCount
-      );
-
-      return todayArrivalsPerClinic;
-    } catch (error) {
-      console.error("Error in fetching data:", error);
-      throw error;
-    }
-  };
-
-  const fetchClinicsBC = async () => {
-    try {
-      // Fetch doctors count for all clinics in parallel
-      const clinicDetails = await Promise.all(
-        clinics.map(async (clinic) => {
-          const doctors = await fetchDoctors(clinic.id);
-          return {
-            name: clinic.name,
-            providers: doctors.length,
-          };
-        })
-      );
-
-      // Update state or perform further operations with clinicDetails
-      setClinicDataBC(clinicDetails);
-    } catch (error) {
-      console.error("Failed to fetch clinics", error);
-    }
-  };
-
   useEffect(() => {
     const fetchData = async () => {
       try {
         await fetchClinics();
-        await fetchClinicsBC();
-
-        const arrivalsData = await fetchAllDataForClinicArrivals();
-        console.log(arrivalsData);
-        setDataForOneMonthArrivals(arrivalsData);
 
         setLoading(false); // Set loading to false when all data is fetched
       } catch (error) {
@@ -504,16 +287,12 @@ export default function CEODashboard() {
           };
         })
       );
-      setClinicsDetailed(clinicDetails);
       setTotalClinics(clinicDetails.length);
       setTotalDoctors(
         clinicDetails.reduce((acc, clinic) => acc + clinic.totalDoctors, 0)
       );
       setTotalNurses(
         clinicDetails.reduce((acc, clinic) => acc + clinic.totalNurses, 0)
-      );
-      setTotalAdmins(
-        clinicDetails.reduce((acc, clinic) => acc + clinic.totalAdmins, 0)
       );
       setTotalModerators(
         clinicDetails.reduce((acc, clinic) => acc + clinic.totalModerators, 0)
@@ -535,7 +314,6 @@ export default function CEODashboard() {
       diffMs = Date.now() - arrivalTime;
     }
 
-    const diffHrs = Math.floor(diffMs / 3600000);
     const diffMins = Math.floor((diffMs % 3600000) / 60000);
 
     return diffMins;
@@ -676,7 +454,6 @@ export default function CEODashboard() {
           const imgData = canvas.toDataURL("image/png");
 
           const pageWidth = doc.internal.pageSize.getWidth();
-          const pageHeight = doc.internal.pageSize.getHeight();
           const imgWidth = (pageWidth - 40) / 2;
           const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
@@ -726,80 +503,8 @@ export default function CEODashboard() {
   ];
 
   return (
-    <Box sx={{ display: "flex" }}>
-      <CssBaseline />
-      <AppBar
-        position="fixed"
-        sx={{
-          backgroundColor: "white",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
-        }}
-      >
-        <Toolbar>
-          <Box
-            sx={{
-              width: "95%",
-              margin: "1rem",
-            }}
-          >
-            <img
-              src="/assets/logos/logoHAUTO.png"
-              alt="AZZ Medical Associates Logo"
-              style={{ maxWidth: "60%", height: "60%", paddingLeft: 40 }}
-            />
-          </Box>
-        </Toolbar>
-      </AppBar>
-      <Box
-        component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-        aria-label="mailbox folders"
-      >
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onTransitionEnd={handleDrawerTransitionEnd}
-          onClose={handleDrawerClose}
-          ModalProps={{
-            keepMounted: true,
-          }}
-          sx={{
-            display: { xs: "block", sm: "none" },
-            "& .MuiDrawer-paper": {
-              boxSizing: "border-box",
-              width: drawerWidth,
-            },
-          }}
-        >
-          {drawer}
-        </Drawer>
-        <Drawer
-          variant="permanent"
-          sx={{
-            display: { xs: "none", sm: "block" },
-            "& .MuiDrawer-paper": {
-              boxSizing: "border-box",
-              width: drawerWidth,
-            },
-          }}
-          open
-        >
-          {drawer}
-        </Drawer>
-      </Box>
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          mt: 8,
-          p: 3,
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-        }}
-      >
+    <CEOLayout>
+      <Box>
         <Box
           sx={{
             width: "100%",
@@ -901,21 +606,13 @@ export default function CEODashboard() {
           </Box>
         ) : (
           <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
-              <Box
-                sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}
-                ref={patientsPerDayRef}
-              >
-                <Typography
-                  variant="h6"
-                  fontWeight="bold"
-                  sx={{ marginBottom: 0, marginTop: 0 }}
-                >
-                  Patients Per Day
-                </Typography>
-                <HorizontalBarOneMonthArrivals data={dataForOneMonthArrivals} />
-              </Box>
-            </Grid>
+            <PatientsPerDay
+              clinics={clinics}
+              doctors={allDoctors}
+              arrivals={allArrivals}
+              patientsPerDayRef={patientsPerDayRef}
+              onDataProcessed={handleDataProcessed}
+            />
             <Grid item xs={12} md={6}>
               <Box
                 sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}
@@ -1051,6 +748,6 @@ export default function CEODashboard() {
           </Grid>
         )}
       </Box>
-    </Box>
+    </CEOLayout>
   );
 }
