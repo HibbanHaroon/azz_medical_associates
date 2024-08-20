@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import {
   Box,
   CssBaseline,
@@ -9,6 +9,7 @@ import {
   MenuItem,
   Button,
   CircularProgress,
+  TextField,
 } from "@mui/material";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
@@ -17,30 +18,15 @@ import { fetchAttendance } from "../../services/attendanceService";
 import { fetchNurses } from "../../services/nurseService";
 import DownloadIcon from "@mui/icons-material/Download";
 import { parse, format } from "date-fns";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 const calculateTimeSpent = (checkIn, checkOut) => {
   const diffMs = checkOut - checkIn;
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
   return { hours: diffHours, minutes: diffMinutes };
-};
-
-const filterAttendanceRecords = (records, filter) => {
-  const now = new Date();
-  let startDate;
-
-  if (filter === "Today") {
-    startDate = new Date(now.setHours(0, 0, 0, 0));
-  } else if (filter === "Weekly") {
-    startDate = new Date(now.setDate(now.getDate() - 7));
-  } else if (filter === "Monthly") {
-    startDate = new Date(now.setDate(now.getDate() - 30));
-  }
-
-  return records.filter((record) => {
-    const recordDate = new Date(record.datetime);
-    return recordDate >= startDate;
-  });
 };
 
 const generateDateRange = (filter) => {
@@ -79,10 +65,15 @@ const generateDateRange = (filter) => {
 };
 
 const AdminAttendanceScreen = () => {
-  const [sortColumn, setSortColumn] = useState("date"); // Default sort by date
-  const [sortDirection, setSortDirection] = useState("desc"); // Default sort direction
-  const [selectedNurse, setSelectedNurse] = useState("All Staff"); // Default to All Staff
+  const [selectedNurse, setSelectedNurse] = useState("All Staff");
   const [nurses, setNurses] = useState([]);
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+  const [rows, setRows] = useState([]);
+  const [columns, setColumns] = useState([]);
+  const [downloading, setDownloading] = useState(false);
+  const location = useLocation();
+  const { clinicId, clinicName } = location.state;
 
   const dropdownItems = [
     { item: "Today" },
@@ -93,18 +84,13 @@ const AdminAttendanceScreen = () => {
   const [currentDropdownItem, setCurrentDropdownItem] = useState(
     dropdownItems[0].item
   );
-  const [rows, setRows] = useState([]);
-  const [columns, setColumns] = useState([]);
-  const [downloading, setDownloading] = useState(false);
-  const location = useLocation();
-  const { clinicId, clinicName } = location.state;
 
   const updateCurrentDropdownItem = async (item) => {
     setCurrentDropdownItem(item);
-    await getStaffHours(item);
+    await getStaffHours(item, selectedNurse);
   };
 
-  const getStaffHours = async (filter, nurseName) => {
+  const getStaffHours = async (filter, nurseName, start = null, end = null) => {
     const [nurses, attendanceRecords] = await Promise.all([
       fetchNurses(clinicId),
       fetchAttendance(clinicId),
@@ -112,10 +98,23 @@ const AdminAttendanceScreen = () => {
 
     setNurses(nurses);
 
-    const dateRange = generateDateRange(filter);
+    let dateRange = [];
+
+    if (start && end) {
+      let currentDate = new Date(start);
+      while (currentDate <= end) {
+        dateRange.push(new Date(currentDate));
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      dateRange.sort((a, b) => a - b);
+    } else if (start && !end) {
+      dateRange = [new Date(start)];
+    } else {
+      dateRange = generateDateRange(filter);
+    }
+
     const groupedRows = {};
 
-    // Filter nurses based on the selected nurse
     const filteredNurses =
       nurseName && nurseName !== "All Staff"
         ? nurses.filter((nurse) => nurse.name === nurseName)
@@ -188,17 +187,18 @@ const AdminAttendanceScreen = () => {
         }
       });
     });
+    const sortedDates = Object.keys(groupedRows).sort((a, b) => {
+      const dateA = new Date(a);
+      const dateB = new Date(b);
+      return start ? dateA - dateB : dateB - dateA;
+    });
 
-    // Sort dates in descending order and flatten the grouped data
-    const sortedDates = Object.keys(groupedRows).sort(
-      (a, b) => new Date(b) - new Date(a)
-    );
     const newRows = sortedDates.flatMap((date) => groupedRows[date]);
 
     setRows(newRows);
     setColumns((prevColumns) => [
       { id: "name", label: "Staff Name" },
-      ...(filter !== "Today"
+      ...((filter !== "Today" && filter) || start
         ? [{ id: "date", label: "Date", align: "right" }]
         : []),
       { id: "checkIn", label: "Check In Time", align: "right" },
@@ -273,18 +273,18 @@ const AdminAttendanceScreen = () => {
           doc.internal.pageSize.height - 10
         );
 
-        doc.save("staff_attendance_report.pdf");
+        doc.save("Staff_Attendance_Report.pdf");
       };
     } catch (error) {
-      console.error("Error downloading report:", error);
+      console.error("Error generating PDF:", error);
     } finally {
       setDownloading(false);
     }
   };
 
   useEffect(() => {
-    getStaffHours(currentDropdownItem, selectedNurse);
-  }, [currentDropdownItem, selectedNurse]);
+    getStaffHours("Today", selectedNurse);
+  }, []);
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -353,15 +353,22 @@ const AdminAttendanceScreen = () => {
             >
               <Box sx={{ display: "flex", flexDirection: "row" }}>
                 <Select
-                  value={currentDropdownItem}
-                  onChange={async (e) => {
-                    const selectedItem = e.target.value;
-                    updateCurrentDropdownItem(selectedItem);
+                  value={currentDropdownItem || "Select the time period"}
+                  onChange={(e) => {
+                    setStartDate(null);
+                    setEndDate(null);
+                    updateCurrentDropdownItem(e.target.value);
                   }}
                 >
-                  {dropdownItems.map((i) => (
-                    <MenuItem key={i.item} value={i.item}>
-                      {i.item}
+                  <MenuItem
+                    value={"Today"}
+                    disabled={currentDropdownItem == null}
+                  >
+                    Select the time period
+                  </MenuItem>
+                  {dropdownItems.map(({ item }) => (
+                    <MenuItem key={item} value={item}>
+                      {item}
                     </MenuItem>
                   ))}
                 </Select>
@@ -371,7 +378,12 @@ const AdminAttendanceScreen = () => {
                   onChange={async (e) => {
                     const selected = e.target.value;
                     setSelectedNurse(selected);
-                    await getStaffHours(currentDropdownItem, selected);
+                    await getStaffHours(
+                      currentDropdownItem,
+                      selected,
+                      startDate,
+                      endDate
+                    );
                   }}
                 >
                   <MenuItem value="All Staff">All Staff</MenuItem>
@@ -381,6 +393,38 @@ const AdminAttendanceScreen = () => {
                     </MenuItem>
                   ))}
                 </Select>
+                <Box sx={{ ml: 2 }}> </Box>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DateTimePicker
+                    label="Start Date"
+                    value={startDate}
+                    onChange={(date) => {
+                      const todaysDate = new Date();
+                      setStartDate(date);
+                      setCurrentDropdownItem(null);
+                      getStaffHours(null, selectedNurse, date, todaysDate);
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        sx={{ marginRight: 2, minWidth: 220 }}
+                      />
+                    )}
+                  />
+                  <Box sx={{ ml: 2 }}> </Box>
+                  <DateTimePicker
+                    label="End Date"
+                    value={endDate}
+                    onChange={(date) => {
+                      setEndDate(date);
+                      setCurrentDropdownItem(null);
+                      getStaffHours(null, selectedNurse, startDate, date);
+                    }}
+                    renderInput={(params) => (
+                      <TextField {...params} sx={{ minWidth: 220 }} />
+                    )}
+                  />
+                </LocalizationProvider>
               </Box>
 
               <Button

@@ -9,6 +9,7 @@ import {
   MenuItem,
   Button,
   CircularProgress,
+  TextField,
 } from "@mui/material";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
@@ -17,6 +18,9 @@ import { fetchAttendance } from "../services/attendanceService";
 import { fetchNurses } from "../services/nurseService";
 import DownloadIcon from "@mui/icons-material/Download";
 import { parse, format } from "date-fns";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 const calculateTimeSpent = (checkIn, checkOut) => {
   const diffMs = checkOut - checkIn;
@@ -70,25 +74,39 @@ const StaffAttendanceScreen = () => {
   const [currentDropdownItem, setCurrentDropdownItem] = useState(
     dropdownItems[0].item
   );
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
   const [rows, setRows] = useState([]);
   const [columns, setColumns] = useState([]);
   const [downloading, setDownloading] = useState(false);
   const location = useLocation();
   const { clinicId, clinicName, staffId } = location.state;
-  console.log("staffId", staffId);
 
   const updateCurrentDropdownItem = async (item) => {
     setCurrentDropdownItem(item);
     await getStaffHours(item);
   };
 
-  const getStaffHours = async (filter) => {
+  const getStaffHours = async (filter, start = null, end = null) => {
     const [nurses, attendanceRecords] = await Promise.all([
       fetchNurses(clinicId),
       fetchAttendance(clinicId),
     ]);
 
-    const dateRange = generateDateRange(filter);
+    let dateRange = [];
+
+    if (start && end) {
+      let currentDate = new Date(start);
+      while (currentDate <= end) {
+        dateRange.push(new Date(currentDate));
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      dateRange.sort((a, b) => a - b);
+    } else if (start && !end) {
+      dateRange = [new Date(start)];
+    } else {
+      dateRange = generateDateRange(filter);
+    }
     const groupedRows = {};
 
     // Filter the nurses and attendance records based on the staffId
@@ -168,15 +186,17 @@ const StaffAttendanceScreen = () => {
     });
 
     // Sort dates in descending order and flatten the grouped data
-    const sortedDates = Object.keys(groupedRows).sort(
-      (a, b) => new Date(b) - new Date(a)
-    );
+    const sortedDates = Object.keys(groupedRows).sort((a, b) => {
+      const dateA = new Date(a);
+      const dateB = new Date(b);
+      return start ? dateA - dateB : dateB - dateA;
+    });
     const newRows = sortedDates.flatMap((date) => groupedRows[date]);
 
     setRows(newRows);
     setColumns((prevColumns) => [
       { id: "name", label: "Staff Name" },
-      ...(filter !== "Today"
+      ...(filter !== "Today" || start
         ? [{ id: "date", label: "Date", align: "right" }]
         : []),
       { id: "checkIn", label: "Check In Time", align: "right" },
@@ -251,10 +271,10 @@ const StaffAttendanceScreen = () => {
           doc.internal.pageSize.height - 10
         );
 
-        doc.save("staff_attendance_report.pdf");
+        doc.save("Staff_Attendance_Report.pdf");
       };
     } catch (error) {
-      console.error("Error downloading report:", error);
+      console.error("Error generating PDF:", error);
     } finally {
       setDownloading(false);
     }
@@ -329,19 +349,61 @@ const StaffAttendanceScreen = () => {
                 marginBottom: "1rem",
               }}
             >
-              <Select
-                value={currentDropdownItem}
-                onChange={async (e) => {
-                  const selectedItem = e.target.value;
-                  updateCurrentDropdownItem(selectedItem);
-                }}
-              >
-                {dropdownItems.map((i) => (
-                  <MenuItem key={i.item} value={i.item}>
-                    {i.item}
+              <Box sx={{ display: "flex" }}>
+                <Select
+                  value={currentDropdownItem || "Select the time period"}
+                  onChange={async (e) => {
+                    setStartDate(null);
+                    setEndDate(null);
+                    const selectedItem = e.target.value;
+                    updateCurrentDropdownItem(selectedItem);
+                  }}
+                >
+                  <MenuItem
+                    value={"Today"}
+                    disabled={currentDropdownItem == null}
+                  >
+                    Select the time period
                   </MenuItem>
-                ))}
-              </Select>
+                  {dropdownItems.map((i) => (
+                    <MenuItem key={i.item} value={i.item}>
+                      {i.item}
+                    </MenuItem>
+                  ))}
+                </Select>
+                <Box sx={{ ml: 2 }}> </Box>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DateTimePicker
+                    label="Start Date"
+                    value={startDate}
+                    onChange={(date) => {
+                      const todaysDate = new Date();
+                      setStartDate(date);
+                      setCurrentDropdownItem(null);
+                      getStaffHours(null, date, todaysDate);
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        sx={{ marginRight: 2, minWidth: 220 }}
+                      />
+                    )}
+                  />
+                  <Box sx={{ ml: 2 }}> </Box>
+                  <DateTimePicker
+                    label="End Date"
+                    value={endDate}
+                    onChange={(date) => {
+                      setEndDate(date);
+                      setCurrentDropdownItem(null);
+                      getStaffHours(null, startDate, date);
+                    }}
+                    renderInput={(params) => (
+                      <TextField {...params} sx={{ minWidth: 220 }} />
+                    )}
+                  />
+                </LocalizationProvider>
+              </Box>
 
               <Button
                 variant="outlined"

@@ -28,6 +28,7 @@ import {
   FormControl,
   InputLabel,
   CircularProgress,
+  TextField,
 } from "@mui/material";
 import { TabContext, TabList, TabPanel } from "@mui/lab";
 import TableComponent from "../../components/TableComponent";
@@ -66,6 +67,9 @@ import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import "jspdf-autotable";
 import { ArrowBack } from "@mui/icons-material";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 const drawerWidth = 300;
 
@@ -252,6 +256,9 @@ export default function CEOClinics() {
   const [isAllClinics, setIsAllClinics] = useState(true);
   const [dropdownClinicId, setDropdownClinicId] = useState(null);
 
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+
   // useRefs for the Graphs to display in the Analytics Report
   const attendanceRef = useRef();
   const providerOfTheMonthRef = useRef();
@@ -349,7 +356,9 @@ export default function CEOClinics() {
   const getStaffHours = async (
     showAttendanceRows = false,
     showAllClinics = true,
-    individualClinicId = null
+    individualClinicId = null,
+    startDate = null,
+    endDate = null
   ) => {
     const labels = [];
     const values = [];
@@ -363,6 +372,14 @@ export default function CEOClinics() {
       return (checkOut - checkIn) / (1000 * 60); // Convert milliseconds to minutes
     };
 
+    const isWithinRange = (date, start, end) => {
+      const checkDate = new Date(date);
+      return (
+        (!start || checkDate >= new Date(start)) &&
+        (!end || checkDate <= new Date(end))
+      );
+    };
+
     const calculateAverageTimeSpent = async (clinicId) => {
       const [nurses, attendanceRecords] = await Promise.all([
         fetchNurses(clinicId),
@@ -373,19 +390,22 @@ export default function CEOClinics() {
 
       attendanceRecords.forEach((nurse) => {
         nurse.pastThirtyDays.forEach((record) => {
-          if (record.checkInTime && record.checkOutTime !== null) {
-            const timeSpent = calculateTimeSpent(
-              record.checkInTime,
-              record.checkOutTime
-            );
+          if (record.checkInTime && record.checkOutTime) {
+            const recordDate = new Date(record.checkInTime);
+            if (isWithinRange(recordDate, startDate, endDate)) {
+              const timeSpent = calculateTimeSpent(
+                record.checkInTime,
+                record.checkOutTime
+              );
 
-            if (!nurseTimeMap.has(nurse.id)) {
-              nurseTimeMap.set(nurse.id, { total: 0, count: 0 });
+              if (!nurseTimeMap.has(nurse.id)) {
+                nurseTimeMap.set(nurse.id, { total: 0, count: 0 });
+              }
+
+              const nurseData = nurseTimeMap.get(nurse.id);
+              nurseData.total += timeSpent;
+              nurseData.count += 1;
             }
-
-            const nurseData = nurseTimeMap.get(nurse.id);
-            nurseData.total += timeSpent;
-            nurseData.count += 1;
           }
         });
       });
@@ -450,20 +470,26 @@ export default function CEOClinics() {
         let nursePresentDays = 0;
         nurse.pastThirtyDays.forEach((record) => {
           if (record.checkInTime && record.checkOutTime) {
-            const timeSpent = calculateTimeSpent(
-              record.checkInTime,
-              record.checkOutTime
-            );
+            const recordDate = new Date(record.checkInTime);
+            if (isWithinRange(recordDate, startDate, endDate)) {
+              const timeSpent = calculateTimeSpent(
+                record.checkInTime,
+                record.checkOutTime
+              );
 
-            if (!nurseTimeMap.has(nurse.id)) {
-              nurseTimeMap.set(nurse.id, { total: 0, count: 0 });
+              if (!nurseTimeMap.has(nurse.id)) {
+                nurseTimeMap.set(nurse.id, { total: 0, count: 0 });
+              }
+
+              const nurseData = nurseTimeMap.get(nurse.id);
+              nurseData.total += timeSpent;
+              nurseData.count += 1;
             }
-
-            const nurseData = nurseTimeMap.get(nurse.id);
-            nurseData.total += timeSpent;
-            nurseData.count += 1;
           }
-          if (record.status === "present") {
+          if (
+            record.status === "present" &&
+            isWithinRange(record.checkInTime, startDate, endDate)
+          ) {
             nursePresentDays += 1;
           }
         });
@@ -1583,6 +1609,8 @@ export default function CEOClinics() {
                 <Select
                   value={currentDropdownItem}
                   onChange={async (e) => {
+                    setStartDate(null);
+                    setEndDate(null);
                     const selectedItem = e.target.value;
                     if (currentTable === 2) {
                       updateCurrentDropdownItem(
@@ -1653,18 +1681,53 @@ export default function CEOClinics() {
                     </FormControl>
                   )}
                 {currentTable === 0 && currentDropdownItem === "Attendance" && (
-                  <Button
-                    variant="outlined"
-                    startIcon={!downloading && <DownloadIcon />}
-                    onClick={handleDownloadReport}
-                    disabled={downloading}
-                  >
-                    {downloading ? (
-                      <CircularProgress size={24} />
-                    ) : (
-                      "Download Report"
-                    )}
-                  </Button>
+                  <>
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                      <Box sx={{ ml: 2 }}> </Box>
+                      <DateTimePicker
+                        label="Start Date"
+                        value={startDate}
+                        onChange={(date) => {
+                          const todaysDate = new Date();
+                          setStartDate(date);
+                          getStaffHours(true, true, null, date, todaysDate);
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            sx={{ marginRight: 2, minWidth: 220 }}
+                          />
+                        )}
+                      />
+                      <Box sx={{ ml: 2 }}> </Box>
+                      <DateTimePicker
+                        label="End Date"
+                        value={endDate}
+                        onChange={(date) => {
+                          setEndDate(date);
+                          getStaffHours(true, true, null, startDate, date);
+                        }}
+                        renderInput={(params) => (
+                          <TextField {...params} sx={{ minWidth: 220 }} />
+                        )}
+                      />
+
+                      <Box sx={{ ml: 2 }}> </Box>
+                    </LocalizationProvider>
+
+                    <Button
+                      variant="outlined"
+                      startIcon={!downloading && <DownloadIcon />}
+                      onClick={handleDownloadReport}
+                      disabled={downloading}
+                    >
+                      {downloading ? (
+                        <CircularProgress size={24} />
+                      ) : (
+                        "Download Report"
+                      )}
+                    </Button>
+                  </>
                 )}
                 {/* Search field */}
               </Box>
