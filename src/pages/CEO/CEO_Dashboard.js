@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import {
   Box,
@@ -21,7 +27,6 @@ import { fetchArrivals } from "../../services/arrivalsService";
 import { fetchAllArrivals } from "../../services/arrivalsService";
 import MonthlyArrivalsChart from "../../components/MonthlyArrivalsChart";
 import { CircularProgress } from "@mui/material";
-import AverageTimeChart from "../../components/AverageTimeChart";
 import AgeChart from "../../components/AgeChart";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
@@ -30,6 +35,7 @@ import DownloadIcon from "@mui/icons-material/Download";
 import CEOLayout from "./components/CEOLayout";
 import PatientsPerDay from "./graphs/Dashboard/PatientsPerDay";
 import PatientProviderRatio from "./graphs/Dashboard/PatientProviderRatio";
+import PatientTime from "./graphs/Dashboard/PatientTime";
 
 export default function CEODashboard() {
   const [clinics, setClinics] = useState([]);
@@ -41,11 +47,6 @@ export default function CEODashboard() {
   const [totalModerators, setTotalModerators] = useState(0);
   const [DataForMonthlyArrivals, setDataForMonthlyArrivals] = useState(null);
   const [ageData, setAgeData] = useState([]);
-
-  const [topDoctorsMeeting, setTopDoctorsMeeting] = useState([]);
-  const [maxAverageTimeMeeting, setMaxAverageTimeMeeting] = useState(0);
-  const [topDoctorsWaiting, setTopDoctorsWaiting] = useState([]);
-  const [maxAverageTimeWaiting, setMaxAverageTimeWaiting] = useState(0);
 
   const [allArrivals, setAllArrivals] = useState([]);
   const [allDoctors, setAllDoctors] = useState([]);
@@ -88,10 +89,11 @@ export default function CEODashboard() {
       patientsPerDay: () => handleDataProcessed("patientsPerDayGraph"),
       patientProviderRatio: () =>
         handleDataProcessed("patientProviderRatioGraph"),
+      patientWaitingTime: () => handleDataProcessed("patientWaitingTimeGraph"),
+      patientMeetingTime: () => handleDataProcessed("patientMeetingTimeGraph"),
     }),
     [handleDataProcessed]
   );
-
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -198,10 +200,6 @@ export default function CEODashboard() {
 
             arrivals.forEach((arrival) => {
               const arrivalDate = new Date(arrival.arrivalTime);
-              const monthYear = arrivalDate.toLocaleString("default", {
-                month: "short",
-                year: "numeric",
-              });
 
               const monthIndex = monthlyArrivals.findIndex(
                 (ma) =>
@@ -283,99 +281,6 @@ export default function CEODashboard() {
       console.error("Failed to fetch clinics", error);
     }
   };
-
-  function calculateMeetingTime(calledInTime, endTime) {
-    return endTime !== 0 ? (endTime - calledInTime) / (1000 * 60) : 0;
-  }
-
-  function calculateWaitingTime(calledInTime, arrivalTime) {
-    let diffMs = 0;
-    if (calledInTime !== 0) {
-      diffMs = calledInTime - arrivalTime;
-    } else {
-      diffMs = Date.now() - arrivalTime;
-    }
-
-    const diffMins = Math.floor((diffMs % 3600000) / 60000);
-
-    return diffMins;
-  }
-
-  useEffect(() => {
-    const fetchData = async () => {
-      let clinics = [];
-      clinics = await getAllClinics();
-
-      const calculateDoctorTimes = (type) => {
-        const doctorTimes = {};
-
-        for (const clinic of clinics) {
-          const arrivals = allArrivals.filter(
-            (arrival) => arrival.clinicId === clinic.id
-          );
-          const clinicDoctors = allDoctors.filter(
-            (doctor) => doctor.clinicId === clinic.id
-          );
-
-          for (const doctor of clinicDoctors) {
-            if (!doctorTimes[doctor.name]) {
-              doctorTimes[doctor.name] = { totalTime: 0, count: 0 };
-            }
-
-            const doctorArrivals = arrivals.filter(
-              (arrival) => arrival.doctorID === doctor.id
-            );
-
-            for (const arrival of doctorArrivals) {
-              const calledInTime = new Date(arrival.calledInTime).getTime();
-              const arrivalTime = new Date(arrival.arrivalTime).getTime();
-              const endTime = new Date(arrival.endTime).getTime();
-              const time =
-                type === "meeting"
-                  ? calculateMeetingTime(calledInTime, endTime)
-                  : calculateWaitingTime(calledInTime, arrivalTime);
-
-              doctorTimes[doctor.name].totalTime += time;
-              doctorTimes[doctor.name].count += 1;
-            }
-          }
-        }
-
-        const doctorNames = Object.keys(doctorTimes);
-        const averageTimes = doctorNames.map((name) => ({
-          name,
-          averageTime:
-            doctorTimes[name].count !== 0
-              ? Math.round(
-                  doctorTimes[name].totalTime / doctorTimes[name].count
-                )
-              : 0,
-        }));
-
-        const topDoctors = averageTimes
-          .sort((a, b) => b.averageTime - a.averageTime)
-          .slice(0, 6);
-
-        return topDoctors;
-      };
-
-      const topDoctorsMeeting = calculateDoctorTimes("meeting");
-      const maxAverageTimeMeeting = Math.max(
-        ...topDoctorsMeeting.map((doctor) => doctor.averageTime)
-      );
-      setTopDoctorsMeeting(topDoctorsMeeting);
-      setMaxAverageTimeMeeting(maxAverageTimeMeeting);
-
-      const topDoctorsWaiting = calculateDoctorTimes("waiting");
-      const maxAverageTimeWaiting = Math.max(
-        ...topDoctorsWaiting.map((doctor) => doctor.averageTime)
-      );
-      setTopDoctorsWaiting(topDoctorsWaiting);
-      setMaxAverageTimeWaiting(maxAverageTimeWaiting);
-    };
-
-    fetchData();
-  }, [allArrivals, allDoctors]);
 
   const handleDownloadAnalyticsReport = async () => {
     setDownloading(true);
@@ -603,66 +508,24 @@ export default function CEODashboard() {
               patientProviderRatioRef={patientProviderRatioRef}
               onDataProcessed={dataProcessedHandlers.patientProviderRatio}
             />
-            <Grid item xs={12} md={6}>
-              <Card
-                sx={{
-                  p: 3,
-                  m: 1,
-                  borderRadius: 3,
-                  boxShadow: 2,
-                  height: 300,
-                }}
-                ref={patientMeetingTimeRef}
-              >
-                <CardContent sx={{ p: 2, height: "100%" }}>
-                  <Typography
-                    variant="h6"
-                    fontWeight="bold"
-                    sx={{ mb: 2, mt: 0, textAlign: "left" }}
-                  >
-                    Patient Meeting Time
-                  </Typography>
-                  <Box sx={{ width: "100%" }}>
-                    <AverageTimeChart
-                      height={{ height: "200px" }}
-                      chartType={"meeting"}
-                      topDoctors={topDoctorsMeeting}
-                      maxAverageTime={maxAverageTimeMeeting}
-                    />
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Card
-                sx={{
-                  p: 3,
-                  m: 1,
-                  borderRadius: 3,
-                  boxShadow: 2,
-                  height: 300,
-                }}
-                ref={patientWaitingTimeRef}
-              >
-                <CardContent sx={{ p: 2, height: "100%" }}>
-                  <Typography
-                    variant="h6"
-                    fontWeight="bold"
-                    sx={{ mb: 2, mt: 0, textAlign: "left" }}
-                  >
-                    Patient Waiting Time
-                  </Typography>
-                  <Box sx={{ width: "100%" }}>
-                    <AverageTimeChart
-                      height={{ height: "200px" }}
-                      topDoctors={topDoctorsWaiting}
-                      chartType={"waiting"}
-                      maxAverageTime={maxAverageTimeWaiting}
-                    />
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
+            <PatientTime
+              title="Average Meeting Time"
+              ref={patientMeetingTimeRef}
+              chartType={"meeting"}
+              clinics={clinics}
+              arrivals={allArrivals}
+              doctors={allDoctors}
+              onDataProcessed={dataProcessedHandlers.patientMeetingTime}
+            />
+            <PatientTime
+              title="Patient Waiting Time"
+              ref={patientWaitingTimeRef}
+              chartType={"waiting"}
+              clinics={clinics}
+              arrivals={allArrivals}
+              doctors={allDoctors}
+              onDataProcessed={dataProcessedHandlers.patientWaitingTime}
+            />
             <Grid item xs={12} md={6}>
               <Card
                 sx={{

@@ -61,7 +61,6 @@ import { fetchAttendance } from "../../services/attendanceService";
 import { fetchAllArrivals } from "../../services/arrivalsService";
 import AttendanceDataChart from "../../components/AttendanceDataChart";
 import StaffHoursChart from "../../components/StaffHoursChart";
-import AverageTimeChart from "../../components/AverageTimeChart";
 import DownloadIcon from "@mui/icons-material/Download";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
@@ -1448,7 +1447,7 @@ export default function CEOClinics() {
                 </Grid>
               )} */}
 
-              <Grid item xs={12} md={6}>
+              {/* <Grid item xs={12} md={6}>
                 <Card
                   sx={{
                     p: 3,
@@ -1507,7 +1506,7 @@ export default function CEOClinics() {
                     </Box>
                   </CardContent>
                 </Card>
-              </Grid>
+              </Grid> */}
               <Grid item xs={12} md={6}>
                 <Card
                   sx={{
