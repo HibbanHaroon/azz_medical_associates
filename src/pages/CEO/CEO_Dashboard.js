@@ -23,11 +23,8 @@ import { fetchDoctors } from "../../services/doctorService";
 import { fetchAdmins } from "../../services/adminService";
 import { fetchModerators } from "../../services/moderatorService";
 import { fetchNurses } from "../../services/nurseService";
-import { fetchArrivals } from "../../services/arrivalsService";
 import { fetchAllArrivals } from "../../services/arrivalsService";
-import MonthlyArrivalsChart from "../../components/MonthlyArrivalsChart";
 import { CircularProgress } from "@mui/material";
-import AgeChart from "../../components/AgeChart";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import "jspdf-autotable";
@@ -36,6 +33,8 @@ import CEOLayout from "./components/CEOLayout";
 import PatientsPerDay from "./graphs/Dashboard/PatientsPerDay";
 import PatientProviderRatio from "./graphs/Dashboard/PatientProviderRatio";
 import PatientTime from "./graphs/Dashboard/PatientTime";
+import AgeDemographics from "./graphs/Dashboard/AgeDemographics";
+import MonthlyArrivals from "./graphs/Dashboard/MonthlyArrivals";
 
 export default function CEODashboard() {
   const [clinics, setClinics] = useState([]);
@@ -45,8 +44,6 @@ export default function CEODashboard() {
   const [totalNurses, setTotalNurses] = useState(0);
   const [loading, setLoading] = useState(true);
   const [totalModerators, setTotalModerators] = useState(0);
-  const [DataForMonthlyArrivals, setDataForMonthlyArrivals] = useState(null);
-  const [ageData, setAgeData] = useState([]);
 
   const [allArrivals, setAllArrivals] = useState([]);
   const [allDoctors, setAllDoctors] = useState([]);
@@ -91,6 +88,8 @@ export default function CEODashboard() {
         handleDataProcessed("patientProviderRatioGraph"),
       patientWaitingTime: () => handleDataProcessed("patientWaitingTimeGraph"),
       patientMeetingTime: () => handleDataProcessed("patientMeetingTimeGraph"),
+      ageDemographics: () => handleDataProcessed("ageDemographicsGraph"),
+      monthlyArrivals: () => handleDataProcessed("monthlyArrivalsGraph"),
     }),
     [handleDataProcessed]
   );
@@ -136,104 +135,6 @@ export default function CEODashboard() {
     fetchInitialData();
     setLoading(false);
   }, []);
-
-  useEffect(() => {
-    const getAgeDemographics = async () => {
-      // Fetch all doctors and arrivals for all clinics in parallel
-      const clinicDataPromises = clinics.map(async (clinic) => {
-        const arrivals = await fetchAllArrivals(clinic.id);
-        return arrivals;
-      });
-
-      const newAllArrivals = await Promise.all(clinicDataPromises);
-      const flattenedArrivals = newAllArrivals.flat();
-
-      // Calculate age demographics
-      const ageDemographics = {
-        "0-5": 0,
-        "6-18": 0,
-        "19-35": 0,
-        "36-50": 0,
-        "51-65": 0,
-        "66+": 0,
-      };
-
-      const currentYear = new Date().getFullYear();
-
-      flattenedArrivals.forEach((arrival) => {
-        const birthYear = new Date(arrival.dob).getFullYear();
-        const age = currentYear - birthYear;
-
-        if (age >= 0 && age <= 5) ageDemographics["0-5"]++;
-        else if (age >= 6 && age <= 18) ageDemographics["6-18"]++;
-        else if (age >= 19 && age <= 35) ageDemographics["19-35"]++;
-        else if (age >= 36 && age <= 50) ageDemographics["36-50"]++;
-        else if (age >= 51 && age <= 65) ageDemographics["51-65"]++;
-        else if (age >= 66) ageDemographics["66+"]++;
-      });
-
-      const data = Object.entries(ageDemographics).map(([ageRange, count]) => ({
-        ageRange,
-        count,
-      }));
-      console.log(data);
-      return data;
-    };
-
-    // Fetch arrivals for the past 12 months
-    const fetchMonthlyArrivals = async () => {
-      try {
-        const currentDate = new Date();
-        const monthlyArrivals = Array.from({ length: 6 }, (_, i) => ({
-          month: new Date(
-            currentDate.getFullYear(),
-            currentDate.getMonth() - i,
-            1
-          ).toLocaleString("default", { month: "short" }),
-          count: 0,
-        })).reverse();
-
-        const clinicDataPromises = clinics.map(async (clinic) => {
-          const doctors = await fetchDoctors(clinic.id);
-          const doctorPromises = doctors.map(async (doctor) => {
-            const arrivals = await fetchArrivals(clinic.id, doctor.id);
-
-            arrivals.forEach((arrival) => {
-              const arrivalDate = new Date(arrival.arrivalTime);
-
-              const monthIndex = monthlyArrivals.findIndex(
-                (ma) =>
-                  ma.month ===
-                  arrivalDate.toLocaleString("default", { month: "short" })
-              );
-
-              if (monthIndex >= 0) {
-                monthlyArrivals[monthIndex].count += 1;
-              }
-            });
-          });
-
-          await Promise.all(doctorPromises);
-          return monthlyArrivals;
-        });
-
-        await Promise.all(clinicDataPromises);
-        return monthlyArrivals;
-      } catch (error) {
-        console.error("Error in fetching data:", error);
-        throw error;
-      }
-    };
-
-    const fetchData = async () => {
-      const data = await getAgeDemographics();
-      setAgeData(data);
-      const monthlyArrivalsData = await fetchMonthlyArrivals();
-      setDataForMonthlyArrivals(monthlyArrivalsData);
-    };
-
-    fetchData();
-  }, [clinics, allArrivals, allDoctors]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -526,46 +427,19 @@ export default function CEODashboard() {
               doctors={allDoctors}
               onDataProcessed={dataProcessedHandlers.patientWaitingTime}
             />
-            <Grid item xs={12} md={6}>
-              <Card
-                sx={{
-                  p: 3,
-                  m: 1,
-                  borderRadius: 3,
-                  boxShadow: 2,
-                  height: 300,
-                }}
-                ref={ageDemographicsRef}
-              >
-                <CardContent sx={{ p: 2, height: "100%" }}>
-                  <Typography
-                    variant="h6"
-                    fontWeight="bold"
-                    sx={{ mb: 2, mt: 0, textAlign: "left" }}
-                  >
-                    Age demographics
-                  </Typography>
-                  <Box sx={{ width: "100%", height: "100%", marginTop: -5 }}>
-                    <AgeChart data={ageData} />
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Box
-                sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}
-                ref={monthlyArrivalsRef}
-              >
-                <Typography
-                  variant="h6"
-                  fontWeight="bold"
-                  sx={{ marginBottom: 0, marginTop: 0 }}
-                >
-                  Monthly Arrivals
-                </Typography>
-                <MonthlyArrivalsChart data={DataForMonthlyArrivals} />
-              </Box>
-            </Grid>
+            <AgeDemographics
+              ref={ageDemographicsRef}
+              clinics={clinics}
+              arrivals={allArrivals}
+              doctors={allDoctors}
+              onDataProcessed={dataProcessedHandlers.ageDemographics}
+            />
+            <MonthlyArrivals
+              ref={monthlyArrivalsRef}
+              clinics={clinics}
+              doctors={allDoctors}
+              onDataProcessed={dataProcessedHandlers.monthlyArrivals}
+            />
           </Grid>
         )}
       </Box>
