@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { Box, Card, CardContent, Grid, Typography } from "@mui/material";
+import {
+  Box,
+  Card,
+  CardContent,
+  Grid,
+  Typography,
+  Skeleton,
+} from "@mui/material";
 import {
   PieChart,
   Pie,
@@ -24,6 +31,7 @@ const COLORS = [
 
 const AgeDemographics = React.forwardRef(
   ({ clinics, arrivals, doctors, onDataProcessed }, ref) => {
+    const [loading, setLoading] = useState(true);
     const [ageData, setAgeData] = useState([]);
 
     useEffect(() => {
@@ -59,9 +67,14 @@ const AgeDemographics = React.forwardRef(
 
       const data = getAgeDemographics();
       setAgeData(data);
+    }, [clinics, arrivals, doctors]);
 
-      onDataProcessed();
-    }, [clinics, arrivals, doctors, onDataProcessed]);
+    useEffect(() => {
+      if (ageData.length > 0) {
+        setLoading(false);
+        onDataProcessed();
+      }
+    }, [ageData, onDataProcessed]);
 
     return (
       <Grid item xs={12} md={6}>
@@ -75,52 +88,56 @@ const AgeDemographics = React.forwardRef(
           }}
           ref={ref}
         >
-          <CardContent sx={{ p: 2, height: "100%" }}>
-            <Typography
-              variant="h6"
-              fontWeight="bold"
-              sx={{ mb: 2, mt: 0, textAlign: "left" }}
-            >
-              Age demographics
-            </Typography>
-            <Box sx={{ width: "100%", height: "100%", marginTop: -5 }}>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={ageData}
-                    dataKey="count"
-                    nameKey="ageRange"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={90}
-                    innerRadius={30}
-                    fill="#8884d8"
-                    animationBegin={0}
-                    animationDuration={800}
-                    legendType="circle"
-                    isAnimationActive
-                  >
-                    {ageData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value, name) => [`${value}`, `${name}`]}
-                  />
-                  <Legend
-                    layout="vertical"
-                    verticalAlign="middle"
-                    align="right"
-                    wrapperStyle={{ marginLeft: 20, marginTop: -20 }}
-                    itemStyle={{ fontSize: "8px", color: "#555" }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </Box>
-          </CardContent>
+          {loading ? (
+            <Skeleton variant="rectangular" height="100%" />
+          ) : (
+            <CardContent sx={{ p: 2, height: "100%" }}>
+              <Typography
+                variant="h6"
+                fontWeight="bold"
+                sx={{ mb: 2, mt: 0, textAlign: "left" }}
+              >
+                Age demographics
+              </Typography>
+              <Box sx={{ width: "100%", height: "100%", marginTop: -5 }}>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={ageData}
+                      dataKey="count"
+                      nameKey="ageRange"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={90}
+                      innerRadius={30}
+                      fill="#8884d8"
+                      animationBegin={0}
+                      animationDuration={800}
+                      legendType="circle"
+                      isAnimationActive
+                    >
+                      {ageData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value, name) => [`${value}`, `${name}`]}
+                    />
+                    <Legend
+                      layout="vertical"
+                      verticalAlign="middle"
+                      align="right"
+                      wrapperStyle={{ marginLeft: 20, marginTop: -20 }}
+                      itemStyle={{ fontSize: "8px", color: "#555" }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </Box>
+            </CardContent>
+          )}
         </Card>
       </Grid>
     );

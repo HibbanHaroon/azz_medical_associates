@@ -5,7 +5,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
-import { Box, Grid, Skeleton, Button } from "@mui/material";
+import { Box, Grid, Button } from "@mui/material";
 import { getAllClinics } from "../../services/clinicService";
 import { fetchDoctors } from "../../services/doctorService";
 import { fetchAllArrivals } from "../../services/arrivalsService";
@@ -25,8 +25,6 @@ export default function CEODashboard() {
   const [clinics, setClinics] = useState([]);
   const [allArrivals, setAllArrivals] = useState([]);
   const [allDoctors, setAllDoctors] = useState([]);
-
-  const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
 
   // useRefs for the Graphs to display in the Analytics Report
@@ -52,18 +50,11 @@ export default function CEODashboard() {
     return Object.values(loadingGraph).every((value) => value === false);
   }, [loadingGraph]);
 
-  useEffect(() => {
-    if (isAllDataLoaded()) {
-      setLoading(false);
-    }
-  }, [isAllDataLoaded]);
-
   const updateLoadingGraph = (graphKey, isLoading) => {
     setLoadingGraph((prevMap) => ({ ...prevMap, [graphKey]: isLoading }));
   };
 
   const handleDataProcessed = useCallback((graphKey) => {
-    console.log(`Data processed for: ${graphKey}`);
     updateLoadingGraph(graphKey, false);
   }, []);
 
@@ -82,8 +73,6 @@ export default function CEODashboard() {
 
   useEffect(() => {
     const fetchInitialData = async () => {
-      setLoading(true);
-
       // Clinics Data
       const clinicData = await getAllClinics();
       setClinics(clinicData);
@@ -157,111 +146,55 @@ export default function CEODashboard() {
           </Button>
         </Box>
         <Box sx={{ height: "1.5rem", marginTop: 0 }}></Box>
-        {loading ? (
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              height: "300px",
-              width: "100%",
-            }}
-          >
-            <Box
-              sx={{
-                position: "absolute",
-                top: "65%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-              }}
-            >
-              <CircularProgress size={80} />
-            </Box>
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                width: "100%",
-                mt: 30,
-              }}
-            >
-              <Skeleton
-                variant="rectangular"
-                width="100%"
-                height={100}
-                sx={{ mb: 2 }}
-              />
-              <Skeleton
-                variant="rectangular"
-                width="100%"
-                height={100}
-                sx={{ mb: 2 }}
-              />
-              <Skeleton
-                variant="rectangular"
-                width="100%"
-                height={100}
-                sx={{ mb: 2 }}
-              />
-              <Skeleton
-                variant="rectangular"
-                width="100%"
-                height={100}
-                sx={{ mb: 2 }}
-              />
-              <Skeleton variant="rectangular" width="100%" height={100} />
-            </Box>
-          </Box>
-        ) : (
-          <Grid container spacing={2}>
-            <PatientsPerDay
-              clinics={clinics}
-              doctors={allDoctors}
-              arrivals={allArrivals}
-              ref={patientsPerDayRef}
-              onDataProcessed={dataProcessedHandlers.patientsPerDay}
-            />
 
-            <PatientProviderRatio
-              clinics={clinics}
-              arrivals={allArrivals}
-              doctors={allDoctors}
-              ref={patientProviderRatioRef}
-              onDataProcessed={dataProcessedHandlers.patientProviderRatio}
-            />
-            <PatientTime
-              title="Average Meeting Time"
-              ref={patientMeetingTimeRef}
-              chartType={"meeting"}
-              clinics={clinics}
-              arrivals={allArrivals}
-              doctors={allDoctors}
-              onDataProcessed={dataProcessedHandlers.patientMeetingTime}
-            />
-            <PatientTime
-              title="Patient Waiting Time"
-              ref={patientWaitingTimeRef}
-              chartType={"waiting"}
-              clinics={clinics}
-              arrivals={allArrivals}
-              doctors={allDoctors}
-              onDataProcessed={dataProcessedHandlers.patientWaitingTime}
-            />
-            <AgeDemographics
-              ref={ageDemographicsRef}
-              clinics={clinics}
-              arrivals={allArrivals}
-              doctors={allDoctors}
-              onDataProcessed={dataProcessedHandlers.ageDemographics}
-            />
-            <MonthlyArrivals
-              ref={monthlyArrivalsRef}
-              clinics={clinics}
-              doctors={allDoctors}
-              onDataProcessed={dataProcessedHandlers.monthlyArrivals}
-            />
-          </Grid>
-        )}
+        <Grid container spacing={2}>
+          <PatientsPerDay
+            clinics={clinics}
+            doctors={allDoctors}
+            arrivals={allArrivals}
+            ref={patientsPerDayRef}
+            onDataProcessed={dataProcessedHandlers.patientsPerDay}
+          />
+
+          <PatientProviderRatio
+            clinics={clinics}
+            arrivals={allArrivals}
+            doctors={allDoctors}
+            ref={patientProviderRatioRef}
+            onDataProcessed={dataProcessedHandlers.patientProviderRatio}
+          />
+          <PatientTime
+            title="Average Meeting Time"
+            ref={patientMeetingTimeRef}
+            chartType={"meeting"}
+            clinics={clinics}
+            arrivals={allArrivals}
+            doctors={allDoctors}
+            onDataProcessed={dataProcessedHandlers.patientMeetingTime}
+          />
+          <PatientTime
+            title="Patient Waiting Time"
+            ref={patientWaitingTimeRef}
+            chartType={"waiting"}
+            clinics={clinics}
+            arrivals={allArrivals}
+            doctors={allDoctors}
+            onDataProcessed={dataProcessedHandlers.patientWaitingTime}
+          />
+          <AgeDemographics
+            ref={ageDemographicsRef}
+            clinics={clinics}
+            arrivals={allArrivals}
+            doctors={allDoctors}
+            onDataProcessed={dataProcessedHandlers.ageDemographics}
+          />
+          <MonthlyArrivals
+            ref={monthlyArrivalsRef}
+            clinics={clinics}
+            doctors={allDoctors}
+            onDataProcessed={dataProcessedHandlers.monthlyArrivals}
+          />
+        </Grid>
       </Box>
     </CEOLayout>
   );

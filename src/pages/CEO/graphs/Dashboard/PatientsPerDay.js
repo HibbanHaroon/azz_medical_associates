@@ -1,5 +1,5 @@
 import React, { useEffect, useState, forwardRef } from "react";
-import { Box, Grid, Typography } from "@mui/material";
+import { Box, Grid, Typography, Skeleton } from "@mui/material";
 import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -24,7 +24,8 @@ ChartJS.register(
 const PatientsPerDay = forwardRef(
   ({ clinics, doctors, arrivals, onDataProcessed }, ref) => {
     const theme = useTheme();
-    const [dataForOneMonthArrivals, setDataForOneMonthArrivals] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [data, setData] = useState([]);
 
     useEffect(() => {
       const processData = () => {
@@ -57,8 +58,7 @@ const PatientsPerDay = forwardRef(
           .sort((a, b) => b.todayArrivalsCount - a.todayArrivalsCount)
           .slice(0, 6);
 
-        setDataForOneMonthArrivals(sortedData);
-        onDataProcessed();
+        setData(sortedData);
       };
 
       // Helper function to check if a date is today
@@ -73,16 +73,23 @@ const PatientsPerDay = forwardRef(
       };
 
       processData();
-    }, [clinics, doctors, arrivals, onDataProcessed]);
+    }, [clinics, doctors, arrivals]);
 
-    const highestValue = dataForOneMonthArrivals[0]?.todayArrivalsCount;
+    useEffect(() => {
+      if (data.length > 0) {
+        setLoading(false);
+        onDataProcessed();
+      }
+    }, [data, onDataProcessed]);
+
+    const highestValue = data[0]?.todayArrivalsCount;
 
     const chartData = {
-      labels: dataForOneMonthArrivals.map((item) => item.clinicName),
+      labels: data.map((item) => item.clinicName),
       datasets: [
         {
-          data: dataForOneMonthArrivals.map((item) => item.todayArrivalsCount),
-          backgroundColor: dataForOneMonthArrivals.map((item) =>
+          data: data.map((item) => item.todayArrivalsCount),
+          backgroundColor: data.map((item) =>
             item.todayArrivalsCount === highestValue
               ? "#36A2EB"
               : theme.palette.primary.main
@@ -150,16 +157,22 @@ const PatientsPerDay = forwardRef(
           sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}
           ref={ref}
         >
-          <Typography
-            variant="h6"
-            fontWeight="bold"
-            sx={{ marginBottom: 0, marginTop: 0 }}
-          >
-            Patients Per Day
-          </Typography>
-          <Box sx={{ width: "100%", height: "240px" }}>
-            <Bar data={chartData} options={options} />
-          </Box>
+          {loading ? (
+            <Skeleton variant="rectangular" height="100%" />
+          ) : (
+            <>
+              <Typography
+                variant="h6"
+                fontWeight="bold"
+                sx={{ marginBottom: 0, marginTop: 0 }}
+              >
+                Patients Per Day
+              </Typography>
+              <Box sx={{ width: "100%", height: "240px" }}>
+                <Bar data={chartData} options={options} />
+              </Box>
+            </>
+          )}
         </Box>
       </Grid>
     );

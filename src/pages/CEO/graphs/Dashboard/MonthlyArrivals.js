@@ -1,5 +1,5 @@
-import { Box, Grid, Typography } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
+import { Box, Grid, Typography, Skeleton } from "@mui/material";
 import { Bar } from "react-chartjs-2";
 import { useTheme } from "@mui/material/styles";
 import {
@@ -15,10 +15,12 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
 
 const MonthlyArrivals = React.forwardRef(
   ({ clinics, doctors, onDataProcessed }, ref) => {
+    const [loading, setLoading] = useState(true);
     const [data, setData] = useState([]);
 
-    useEffect(() => {
-      const fetchMonthlyArrivals = async () => {
+    const fetchMonthlyArrivals = useCallback(async () => {
+      try {
+        setLoading(true);
         const currentDate = new Date();
         const monthlyArrivals = Array.from({ length: 6 }, (_, i) => ({
           month: new Date(
@@ -29,34 +31,46 @@ const MonthlyArrivals = React.forwardRef(
           count: 0,
         })).reverse();
 
+        const promises = [];
+
         for (const clinic of clinics) {
           for (const doctor of doctors.filter(
             (doctor) => doctor.clinicId === clinic.id
           )) {
-            const arrivals = await fetchArrivals(clinic.id, doctor.id);
+            promises.push(
+              fetchArrivals(clinic.id, doctor.id).then((arrivals) => {
+                arrivals.forEach((arrival) => {
+                  const arrivalDate = new Date(arrival.arrivalTime);
 
-            arrivals.forEach((arrival) => {
-              const arrivalDate = new Date(arrival.arrivalTime);
+                  const monthIndex = monthlyArrivals.findIndex(
+                    (ma) =>
+                      ma.month ===
+                      arrivalDate.toLocaleString("default", { month: "short" })
+                  );
 
-              const monthIndex = monthlyArrivals.findIndex(
-                (ma) =>
-                  ma.month ===
-                  arrivalDate.toLocaleString("default", { month: "short" })
-              );
-
-              if (monthIndex >= 0) {
-                monthlyArrivals[monthIndex].count += 1;
-              }
-            });
+                  if (monthIndex >= 0) {
+                    monthlyArrivals[monthIndex].count += 1;
+                  }
+                });
+              })
+            );
           }
         }
 
-        setData(monthlyArrivals);
-        onDataProcessed();
-      };
+        await Promise.all(promises);
 
-      fetchMonthlyArrivals();
+        setData(monthlyArrivals);
+      } catch (error) {
+        console.error("Error fetching monthly arrivals:", error);
+      } finally {
+        onDataProcessed();
+        setLoading(false);
+      }
     }, [clinics, doctors, onDataProcessed]);
+
+    useEffect(() => {
+      fetchMonthlyArrivals();
+    }, [fetchMonthlyArrivals]);
 
     const theme = useTheme();
 
@@ -124,16 +138,22 @@ const MonthlyArrivals = React.forwardRef(
           sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}
           ref={ref}
         >
-          <Typography
-            variant="h6"
-            fontWeight="bold"
-            sx={{ marginBottom: 0, marginTop: 0 }}
-          >
-            Monthly Arrivals
-          </Typography>
-          <div style={{ width: "100%", height: "90%" }}>
-            <Bar data={chartData} options={options} />
-          </div>
+          {loading ? (
+            <Skeleton variant="rectangular" height="100%" />
+          ) : (
+            <>
+              <Typography
+                variant="h6"
+                fontWeight="bold"
+                sx={{ marginBottom: 0, marginTop: 0 }}
+              >
+                Monthly Arrivals
+              </Typography>
+              <div style={{ width: "100%", height: "90%" }}>
+                <Bar data={chartData} options={options} />
+              </div>
+            </>
+          )}
         </Box>
       </Grid>
     );

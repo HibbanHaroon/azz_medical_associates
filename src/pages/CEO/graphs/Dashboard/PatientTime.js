@@ -1,5 +1,12 @@
 import React, { useEffect, useMemo, useState, forwardRef } from "react";
-import { Grid, Card, CardContent, Typography, Box } from "@mui/material";
+import {
+  Grid,
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  Skeleton,
+} from "@mui/material";
 import { Bar } from "react-chartjs-2";
 import "chart.js/auto";
 import { useTheme } from "@mui/material/styles";
@@ -7,6 +14,7 @@ import { useTheme } from "@mui/material/styles";
 const PatientTime = forwardRef(
   ({ title, chartType, clinics, doctors, arrivals, onDataProcessed }, ref) => {
     const theme = useTheme();
+    const [loading, setLoading] = useState(true);
     const [topDoctors, setTopDoctors] = useState([]);
     const [maxAverageTime, setMaxAverageTime] = useState(0);
 
@@ -70,8 +78,14 @@ const PatientTime = forwardRef(
       );
       setTopDoctors(topDoctors);
       setMaxAverageTime(maxAverageTime);
-      onDataProcessed();
-    }, [clinics, doctors, arrivals, chartType, onDataProcessed]);
+    }, [clinics, doctors, arrivals, chartType]);
+
+    useEffect(() => {
+      if (topDoctors.length > 0) {
+        setLoading(false);
+        onDataProcessed();
+      }
+    }, [topDoctors, onDataProcessed]);
 
     const calculateMeetingTime = (calledInTime, endTime) => {
       return endTime !== 0 ? (endTime - calledInTime) / (1000 * 60) : 0;
@@ -181,20 +195,24 @@ const PatientTime = forwardRef(
           }}
           ref={ref}
         >
-          <CardContent sx={{ p: 2, height: "100%" }}>
-            <Typography
-              variant="h6"
-              fontWeight="bold"
-              sx={{ mb: 2, mt: 0, textAlign: "left" }}
-            >
-              {title}
-            </Typography>
-            <Box sx={{ width: "100%" }}>
-              <div style={{ height: "200px" }}>
-                <Bar data={data} options={options} />
-              </div>
-            </Box>
-          </CardContent>
+          {loading ? (
+            <Skeleton variant="rectangular" height="100%" />
+          ) : (
+            <CardContent sx={{ p: 2, height: "100%" }}>
+              <Typography
+                variant="h6"
+                fontWeight="bold"
+                sx={{ mb: 2, mt: 0, textAlign: "left" }}
+              >
+                {title}
+              </Typography>
+              <Box sx={{ width: "100%" }}>
+                <div style={{ height: "200px" }}>
+                  <Bar data={data} options={options} />
+                </div>
+              </Box>
+            </CardContent>
+          )}
         </Card>
       </Grid>
     );

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, forwardRef } from "react";
-import { Box, Grid, Typography } from "@mui/material";
+import { Box, Grid, Typography, Skeleton } from "@mui/material";
 import { Bar } from "react-chartjs-2";
 import "chart.js/auto";
 import { useTheme } from "@mui/material/styles";
@@ -10,7 +10,11 @@ Chart.register(ChartDataLabels);
 
 const PatientProviderRatio = forwardRef(
   ({ clinics, arrivals, doctors, onDataProcessed }, ref) => {
-    const [chartData, setChartData] = useState({ datasets: [] });
+    const [chartData, setChartData] = useState({
+      labels: [],
+      datasets: [{ data: [] }],
+    });
+    const [loading, setLoading] = useState(true);
     const theme = useTheme();
 
     const options = {
@@ -122,15 +126,20 @@ const PatientProviderRatio = forwardRef(
       };
 
       setChartData(data);
-      onDataProcessed();
     }, [
       clinics,
       arrivals,
       doctors,
       theme.palette.primary.main,
       theme.palette.primary.dark,
-      onDataProcessed,
     ]);
+
+    useEffect(() => {
+      if (chartData.datasets && chartData.datasets[0].data.length > 0) {
+        setLoading(false);
+        onDataProcessed();
+      }
+    }, [chartData, onDataProcessed]);
 
     return (
       <Grid item xs={12} md={6}>
@@ -138,16 +147,22 @@ const PatientProviderRatio = forwardRef(
           sx={{ p: 3, m: 1, borderRadius: 3, boxShadow: 2, height: 300 }}
           ref={ref}
         >
-          <Typography
-            variant="h6"
-            fontWeight="bold"
-            sx={{ marginBottom: 0, marginTop: 0 }}
-          >
-            Patient Provider Ratio
-          </Typography>
-          <div style={{ width: "100%", height: "95%" }}>
-            <Bar data={chartData} options={options} />
-          </div>
+          {loading ? (
+            <Skeleton variant="rectangular" height="100%" />
+          ) : (
+            <>
+              <Typography
+                variant="h6"
+                fontWeight="bold"
+                sx={{ marginBottom: 0, marginTop: 0 }}
+              >
+                Patient Provider Ratio
+              </Typography>
+              <div style={{ width: "100%", height: "95%" }}>
+                <Bar data={chartData} options={options} />
+              </div>
+            </>
+          )}
         </Box>
       </Grid>
     );
