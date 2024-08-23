@@ -1,32 +1,24 @@
-import React, { useEffect } from "react";
-import SigninScreen from "./pages/SigninScreen";
+import React from "react";
 import HomeScreen from "./pages/HomeScreen";
 import PatientArrival from "./pages/PatientArrival/PatientArrival";
 import DoctorScreen from "./pages/DoctorScreen";
 import ModeratorScreen from "./pages/ModeratorScreen";
-import AdminScreen from "./pages/Admin/AdminScreen";
-import AdminAttendanceScreen from "./pages/Admin/AdminAttendanceScreen";
+import AdminScreen from "./pages/AdminScreen";
+import AttendanceScreen from "./pages/AttendanceScreen";
 import NurseAttendance from "./pages/NurseAttendance";
 import PatientWaitingScreen from "./pages/PatientWaitingScreen";
 import { ThemeProvider } from "@mui/material/styles";
 import theme from "./constants/theme";
 import SigninScreenWithLogout from "./components/SigninScreenWithLogout";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  useNavigate,
-  useLocation,
-} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ClinicsScreen from "./pages/SuperAdmin/ClinicsScreen";
 import IndividualClinicScreen from "./pages/SuperAdmin/IndividualClinicScreen";
 import UserTypeScreen from "./pages/SuperAdmin/UserTypeScreen";
 import { Toaster } from "react-hot-toast";
-import { AuthProvider, useAuth } from "./context/AuthContext";
+import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./utils/ProtectedRoute";
 import CEODashboard from "./pages/CEO/CEO_Dashboard";
 import CEOClinics from "./pages/CEO/CEO_Clinics";
-import StaffAttendanceScreen from "./pages/StaffAttendanceScreen";
 
 function App() {
   return (
@@ -104,23 +96,15 @@ function App() {
               }
             />
             <Route
-              path="/adminAttendance"
-              element={
-                <ProtectedRoute>
-                  <AdminAttendanceScreen />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/staffAttendance"
-              element={
-                <ProtectedRoute>
-                  <StaffAttendanceScreen />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/attendance"
+              element={
+                <ProtectedRoute>
+                  <AttendanceScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/nurse"
               element={
                 <ProtectedRoute>
                   <NurseAttendance />

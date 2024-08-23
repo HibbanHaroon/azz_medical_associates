@@ -108,7 +108,7 @@ export default function PatientArrival() {
   }, [clinicId, fetchCalls]);
 
   const handleAttendance = useCallback(() => {
-    navigate("/attendance", {
+    navigate("/nurse", {
       state: { clinicId: clinicId },
     });
   }, [navigate, clinicId]);

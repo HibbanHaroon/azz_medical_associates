@@ -9,7 +9,7 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
-import { fetchDoctors } from "../../services/doctorService";
+import { fetchDoctors } from "../services/doctorService";
 import {
   CartesianGrid,
   XAxis,
@@ -19,7 +19,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell } from "recharts";
-import { fetchAllArrivals } from "../../services/arrivalsService";
+import { fetchAllArrivals } from "../services/arrivalsService";
 // import { Doughnut } from "react-chartjs-2";
 // Define an array of colors for the pie chart segments
 const COLORS = [

@@ -457,7 +457,7 @@ const HomeScreen = () => {
   };
 
   const handleAdminAttendanceScreenNavigation = () => {
-    navigate(`/adminAttendance`, {
+    navigate(`/attendance`, {
       state: {
         clinicId: clinicId,
         clinicName: clinicName,

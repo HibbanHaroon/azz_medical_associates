@@ -138,7 +138,7 @@ const SigninScreen = () => {
           });
           break;
         case "Nurse":
-          navigate(`/staffAttendance`, {
+          navigate(`/attendance`, {
             state: {
               clinicId: selectedClinic,
               clinicName: selectedClinicName,
