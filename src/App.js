@@ -5,7 +5,7 @@ import DoctorScreen from "./pages/DoctorScreen";
 import ModeratorScreen from "./pages/ModeratorScreen";
 import AdminScreen from "./pages/AdminScreen";
 import AttendanceScreen from "./pages/AttendanceScreen";
-import NurseAttendance from "./pages/NurseAttendance";
+import NurseAttendance from "./pages/Nurse//NurseAttendance";
 import PatientWaitingScreen from "./pages/PatientWaitingScreen";
 import { ThemeProvider } from "@mui/material/styles";
 import theme from "./constants/theme";
