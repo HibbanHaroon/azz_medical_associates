@@ -10,14 +10,15 @@ import { getAllClinics } from "../../services/clinicService";
 import { fetchDoctors } from "../../services/doctorService";
 import { fetchAllArrivals } from "../../services/arrivalsService";
 import { CircularProgress } from "@mui/material";
-import "jspdf-autotable";
 import DownloadIcon from "@mui/icons-material/Download";
 import CEOLayout from "./components/CEOLayout";
-import PatientsPerDay from "./graphs/Dashboard/PatientsPerDay";
-import PatientProviderRatio from "./graphs/Dashboard/PatientProviderRatio";
-import PatientTime from "./graphs/Dashboard/PatientTime";
-import AgeDemographics from "./graphs/Dashboard/AgeDemographics";
-import MonthlyArrivals from "./graphs/Dashboard/MonthlyArrivals";
+import {
+  PatientsPerDay,
+  PatientProviderRatio,
+  PatientTime,
+  AgeDemographics,
+  MonthlyArrivals,
+} from "./graphs/Dashboard";
 import DashboardInfoSection from "./components/DashboardInfoSection";
 import { downloadReport } from "../../utils/downloadReportUtils";
 

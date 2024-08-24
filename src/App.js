@@ -17,8 +17,8 @@ import UserTypeScreen from "./pages/SuperAdmin/UserTypeScreen";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./utils/ProtectedRoute";
-import CEODashboard from "./pages/CEO/CEO_Dashboard";
-import CEOClinics from "./pages/CEO/CEO_Clinics";
+import CEODashboard from "./pages/CEO/CEODashboard";
+import CEOClinics from "./pages/CEO/CEOClinics";
 
 function App() {
   return (
