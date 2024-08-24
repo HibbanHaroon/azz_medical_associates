@@ -70,6 +70,7 @@ export const useAttendance = (clinicId) => {
           "present",
           null,
           setLoading,
+          null,
           isCheckIn
         );
       }
@@ -95,7 +96,8 @@ export const useAttendance = (clinicId) => {
         todayAttendance,
         setLoading,
         navigate,
-        isCheckIn
+        isCheckIn,
+        nurseAttendance
       );
     }
   };
@@ -108,19 +110,38 @@ export const useAttendance = (clinicId) => {
     todayAttendance,
     setLoading,
     navigate = null,
-    isCheckIn
+    isCheckIn,
+    nurseAttendance = null
   ) => {
     try {
-      const attendanceData = {
-        id: selectedNurse,
-        datetime: today.toISOString(),
-        status: status,
-        nurseName: nurseName,
-        checkInTime: todayAttendance
-          ? todayAttendance.checkInTime
-          : today.toISOString(),
-        checkOutTime: todayAttendance ? today.toISOString() : null,
-      };
+      let attendanceData;
+
+      if (isCheckIn) {
+        attendanceData = {
+          id: selectedNurse,
+          datetime: today.toISOString(),
+          status: status,
+          nurseName: nurseName,
+          checkInTime: todayAttendance
+            ? todayAttendance.checkInTime
+            : today.toISOString(),
+          checkOutTime: todayAttendance ? today.toISOString() : null,
+        };
+      } else {
+        todayAttendance.checkOutTime = new Date().toISOString();
+
+        const updatedPastThirtyDays = nurseAttendance.pastThirtyDays.map(
+          (day) =>
+            isSameDay(new Date(day.datetime), today) ? todayAttendance : day
+        );
+
+        const updatedAttendanceData = {
+          ...nurseAttendance,
+          pastThirtyDays: updatedPastThirtyDays,
+        };
+
+        attendanceData = updatedAttendanceData;
+      }
 
       const response = todayAttendance
         ? await updateAttendance(clinicId, selectedNurse, attendanceData)
