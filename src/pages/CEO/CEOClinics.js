@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import RushHoursChart from "../../components/RushHourChart";
 import ValuableProvidersPieChart from "../../components/ValuableProvidersPieChart";
 import {
   Box,
@@ -56,35 +55,8 @@ import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import CEOLayout from "./components/CEOLayout";
 import StaffHours from "./graphs/Clinics/StaffHours";
+import BusyHours from "./graphs/Clinics/BusyHours";
 
-const calculateRushHours = (allArrivals, clinicId = null) => {
-  const currentHour = new Date().getHours();
-  const rushHoursData = Array.from({ length: 12 }, (_, i) => {
-    const hour = (currentHour - i + 24) % 24;
-    return {
-      hour: `${hour % 12 || 12} ${hour < 12 ? "am" : "pm"}`,
-      count: 0,
-    };
-  }).reverse();
-
-  const filteredArrivals = clinicId
-    ? allArrivals.filter((arrival) => arrival.clinicId === clinicId)
-    : allArrivals;
-
-  filteredArrivals.forEach((arrival) => {
-    const arrivalHour = new Date(arrival.arrivalTime).getHours();
-    const hourIndex = rushHoursData.findIndex(
-      (data) =>
-        data.hour ===
-        `${arrivalHour % 12 || 12} ${arrivalHour < 12 ? "am" : "pm"}`
-    );
-    if (hourIndex !== -1) {
-      rushHoursData[hourIndex].count += 1;
-    }
-  });
-
-  return rushHoursData;
-};
 const calculateValuableProviders = (
   allArrivals,
   allDoctors,
@@ -209,7 +181,6 @@ export default function CEOClinics() {
   const [clinicsDetails, setClinicsDetails] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [value, setValue] = React.useState("1");
-  const [rushHoursData, setRushHoursData] = useState([]);
   const [allArrivals, setAllArrivals] = useState([]);
   const [arrivalsAllGet, setArrivalsAllGet] = useState([]);
   const [valuableProvidersData, setValuableProvidersData] = useState([]); // New state
@@ -654,8 +625,6 @@ export default function CEOClinics() {
       setIsAllClinics(false);
     }
     setSelectedClinic(selectedClinicName);
-    const rushHours = calculateRushHours(allArrivals, clinicId);
-    setRushHoursData(rushHours);
 
     updateLoadingGraph("busyHoursGraph", false);
 
@@ -676,11 +645,6 @@ export default function CEOClinics() {
   useEffect(() => {
     const fetchClinicsAndArrivals = async () => {
       try {
-        const rushHours = calculateRushHours(allArrivals);
-        setRushHoursData(rushHours);
-
-        updateLoadingGraph("busyHoursGraph", false);
-
         const valuableProviders = calculateValuableProviders(
           allArrivals,
           doctors
@@ -1392,31 +1356,12 @@ export default function CEOClinics() {
                   </CardContent>
                 </Card>
               </Grid> */}
-            <Grid item xs={12} md={6}>
-              <Card
-                sx={{
-                  p: 3,
-                  m: 1,
-                  borderRadius: 3,
-                  boxShadow: 2,
-                  height: 300,
-                }}
-                ref={busyHoursRef}
-              >
-                <CardContent sx={{ p: 2, height: "100%" }}>
-                  <Typography
-                    variant="h6"
-                    fontWeight="bold"
-                    sx={{ mb: 2, mt: 0, textAlign: "left" }}
-                  >
-                    Busy Hours
-                  </Typography>
-                  <Box sx={{ height: "100%", width: "100%" }}>
-                    <RushHoursChart data={rushHoursData} />
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
+            <BusyHours
+              key={dropdownClinicId}
+              clinicId={dropdownClinicId}
+              allArrivals={allArrivals}
+              ref={busyHoursRef}
+            />
             <StaffHours
               clinics={clinics}
               nurses={nurses}
