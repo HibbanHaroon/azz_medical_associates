@@ -67,8 +67,7 @@ import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import "jspdf-autotable";
 import { ArrowBack } from "@mui/icons-material";
-import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 const drawerWidth = 300;
@@ -1684,7 +1683,7 @@ export default function CEOClinics() {
                   <>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                       <Box sx={{ ml: 2 }}> </Box>
-                      <DateTimePicker
+                      <DatePicker
                         label="Start Date"
                         value={startDate}
                         onChange={(date) => {
@@ -1700,7 +1699,7 @@ export default function CEOClinics() {
                         )}
                       />
                       <Box sx={{ ml: 2 }}> </Box>
-                      <DateTimePicker
+                      <DatePicker
                         label="End Date"
                         value={endDate}
                         onChange={(date) => {

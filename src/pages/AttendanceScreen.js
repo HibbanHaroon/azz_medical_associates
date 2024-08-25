@@ -16,8 +16,10 @@ import { fetchAttendance } from "../services/attendanceService";
 import { fetchNurses } from "../services/nurseService";
 import DownloadIcon from "@mui/icons-material/Download";
 import { parse, format } from "date-fns";
-import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import {
+  DatePicker,
+  LocalizationProvider,
+} from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { downloadReport } from "../utils/downloadReportUtils";
 
@@ -363,7 +365,7 @@ const AttendanceScreen = () => {
                 <Box sx={{ ml: 2 }}> </Box>
                 {/* Start & End Date Dropdown */}
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <DateTimePicker
+                  <DatePicker
                     label="Start Date"
                     value={startDate}
                     onChange={(date) => {
@@ -380,7 +382,7 @@ const AttendanceScreen = () => {
                     )}
                   />
                   <Box sx={{ ml: 2 }}> </Box>
-                  <DateTimePicker
+                  <DatePicker
                     label="End Date"
                     value={endDate}
                     onChange={(date) => {
