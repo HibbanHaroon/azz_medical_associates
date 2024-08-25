@@ -1,18 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { useTheme } from "@mui/material/styles";
-import Drawer from "@mui/material/Drawer";
-import AppBar from "@mui/material/AppBar";
-import Toolbar from "@mui/material/Toolbar";
-import List from "@mui/material/List";
-import CssBaseline from "@mui/material/CssBaseline";
-import Divider from "@mui/material/Divider";
-import ListItem from "@mui/material/ListItem";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
-import DashboardIcon from "@mui/icons-material/Dashboard";
-import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import RushHoursChart from "../../components/RushHourChart";
 import ValuableProvidersPieChart from "../../components/ValuableProvidersPieChart";
 import {
@@ -61,7 +47,6 @@ import {
 import { fetchAttendance } from "../../services/attendanceService";
 import { fetchAllArrivals } from "../../services/arrivalsService";
 import AttendanceDataChart from "../../components/AttendanceDataChart";
-import StaffHoursChart from "../../components/StaffHoursChart";
 import DownloadIcon from "@mui/icons-material/Download";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
@@ -69,8 +54,8 @@ import "jspdf-autotable";
 import { ArrowBack } from "@mui/icons-material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-
-const drawerWidth = 300;
+import CEOLayout from "./components/CEOLayout";
+import StaffHours from "./graphs/Clinics/StaffHours";
 
 const calculateRushHours = (allArrivals, clinicId = null) => {
   const currentHour = new Date().getHours();
@@ -216,10 +201,11 @@ const getAllArrivals = async () => {
 };
 
 export default function CEOClinics() {
-  const [open] = useState(false);
   const [data, setData] = useState([]);
   const [selectedClinic, setSelectedClinic] = useState("All Clinics");
   const [clinics, setClinics] = useState([]);
+  const [nurses, setNurses] = useState([]);
+  const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [clinicsDetails, setClinicsDetails] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [value, setValue] = React.useState("1");
@@ -228,18 +214,11 @@ export default function CEOClinics() {
   const [arrivalsAllGet, setArrivalsAllGet] = useState([]);
   const [valuableProvidersData, setValuableProvidersData] = useState([]); // New state
   const [loading, setLoading] = useState(true);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [isClosing, setIsClosing] = useState(false);
   const [currentTable, setCurrentTable] = useState(0);
   const [rows, setRows] = useState([]);
   const [columns, setColumns] = useState([]);
   const [recentClinic, setRecentClinic] = useState([]);
   const [downloading, setDownloading] = useState(false);
-
-  // For Staff Hours Chart
-  const [xAxisLabels, setXAxisLabels] = useState([]);
-  const [yAxisUnit, setYAxisUnit] = useState([]);
-  const [staffChartValues, setStaffChartValues] = useState([]);
 
   const [topDoctorsMeeting, setTopDoctorsMeeting] = useState([]);
   const [maxAverageTimeMeeting, setMaxAverageTimeMeeting] = useState(0);
@@ -289,42 +268,77 @@ export default function CEOClinics() {
     const fetchInitialData = async () => {
       setLoading(true);
 
-      // Clinics Data
-      const clinicData = await getAllClinics();
-      setClinics(clinicData);
+      try {
+        // Fetch Clinics Data
+        const clinicData = await getAllClinics();
+        setClinics(clinicData);
 
-      // Arrivals Data
-      const arrivalsData = await Promise.all(
-        clinicData.map(async (clinic) => {
-          const arrivals = await fetchAllArrivals(clinic.id);
-          return arrivals.map((arrival) => ({
-            ...arrival,
-            clinicId: clinic.id,
-            arrivalTime: new Date(arrival.arrivalTime),
-          }));
-        })
-      );
+        // Fetch Arrivals Data
+        const arrivalsData = await Promise.all(
+          clinicData.map(async (clinic) => {
+            const arrivals = await fetchAllArrivals(clinic.id);
+            return arrivals.map((arrival) => ({
+              ...arrival,
+              clinicId: clinic.id,
+              arrivalTime: new Date(arrival.arrivalTime),
+            }));
+          })
+        );
 
-      const allArrivals = arrivalsData.flat();
-      setAllArrivals(allArrivals);
+        const allArrivals = arrivalsData.flat();
+        setAllArrivals(allArrivals);
 
-      // Doctors Data
-      const doctorsData = await Promise.all(
-        clinicData.map(async (clinic) => {
-          const doctors = await fetchDoctors(clinic.id);
-          return doctors.map((doctor) => ({
-            ...doctor,
-            clinicId: clinic.id,
-          }));
-        })
-      );
+        // Fetch Doctors Data
+        const doctorsData = await Promise.all(
+          clinicData.map(async (clinic) => {
+            const doctors = await fetchDoctors(clinic.id);
+            return doctors.map((doctor) => ({
+              ...doctor,
+              clinicId: clinic.id,
+            }));
+          })
+        );
 
-      const allDoctors = doctorsData.flat();
-      setDoctors(allDoctors);
+        const allDoctors = doctorsData.flat();
+        setDoctors(allDoctors);
+
+        const nursesData = [];
+        const attendanceData = [];
+
+        await Promise.all(
+          clinicData.map(async (clinic) => {
+            const [nurses, attendanceRecords] = await Promise.all([
+              fetchNurses(clinic.id),
+              fetchAttendance(clinic.id),
+            ]);
+
+            const formattedNurses = nurses.map((nurse) => ({
+              ...nurse,
+              clinicId: clinic.id,
+            }));
+
+            const formattedAttendanceRecords = attendanceRecords.map(
+              (record) => ({
+                ...record,
+                clinicId: clinic.id,
+              })
+            );
+
+            nursesData.push(...formattedNurses);
+            attendanceData.push(...formattedAttendanceRecords);
+          })
+        );
+
+        setNurses(nursesData);
+        setAttendanceRecords(attendanceData);
+      } catch (error) {
+        console.error("Error fetching initial data:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchInitialData();
-    setLoading(false);
   }, []);
 
   const fetchClinics = async () => {
@@ -525,17 +539,6 @@ export default function CEOClinics() {
 
     // Determine the unit for the y-axis labels
     const yAxisUnit = maxValue >= 60 ? "h" : "m";
-    const formattedValues = values.map((value) =>
-      yAxisUnit === "h" ? value / 60 : value
-    );
-
-    setXAxisLabels(labels);
-    setStaffChartValues(formattedValues);
-    setYAxisUnit(yAxisUnit);
-
-    // console.log("xaxis", labels);
-    // console.log("values", formattedValues);
-    // console.log("yaxis", yAxisUnit);
 
     if (currentTable === 0 && showAttendanceRows) {
       const rows = Object.keys(attendanceData).map((id) => ({
@@ -620,15 +623,6 @@ export default function CEOClinics() {
   );
   const [currentUserRole, setCurrentUserRole] = useState(dropdownItems[2][0]);
 
-  const handleDrawerClose = () => {
-    setIsClosing(true);
-    setMobileOpen(false);
-  };
-
-  const handleDrawerTransitionEnd = () => {
-    setIsClosing(false);
-  };
-
   const handleOpenAddModal = (mode, user = null) => {
     setModalMode(mode);
     setSelectedUser(user);
@@ -640,63 +634,6 @@ export default function CEOClinics() {
   };
 
   const handleSubmit = async (formData) => {};
-
-  const drawer = (
-    <div>
-      <Toolbar>
-        <Typography
-          component="h1"
-          variant="h5"
-          noWrap
-          sx={{ marginLeft: 2, color: "white", fontWeight: "bold" }}
-        >
-          CEO Dashboard
-        </Typography>
-      </Toolbar>
-      <Divider />
-      <List>
-        {[
-          {
-            text: "Home",
-            icon: <DashboardIcon />,
-            path: "/ceo",
-          },
-          {
-            text: "Clinics",
-            icon: <LocalHospitalIcon />,
-            path: "/ceo-clinics",
-          },
-        ].map((item, index) => (
-          <ListItem key={item.text} disablePadding sx={{ display: "block" }}>
-            <ListItemButton
-              component={Link}
-              to={item.path}
-              sx={{
-                minHeight: 48,
-                justifyContent: open ? "initial" : "center",
-                px: 2.5,
-              }}
-            >
-              <ListItemIcon
-                sx={{
-                  minWidth: 0,
-                  mr: open ? 3 : "auto",
-                  justifyContent: "cente  r",
-                  color: "white",
-                }}
-              >
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText
-                primary={item.text}
-                sx={{ ml: 2, color: "white" }}
-              />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
-    </div>
-  );
 
   const handleChange = (event, newValue) => {
     setValue(newValue);
@@ -1259,193 +1196,116 @@ export default function CEOClinics() {
   };
 
   return (
-    <Box sx={{ display: "flex" }}>
-      <CssBaseline />
-      <AppBar
-        position="fixed"
-        sx={{
-          backgroundColor: "white",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
-        }}
-      >
-        <Toolbar>
-          <Box
-            sx={{
-              width: "95%",
-              margin: "1rem",
-            }}
-          >
-            <img
-              src="/assets/logos/logoHAUTO.png"
-              alt="AZZ Medical Associates Logo"
-              style={{ maxWidth: "60%", height: "60%", paddingLeft: 40 }}
-            />
-          </Box>
-        </Toolbar>
-      </AppBar>
-      <Box
-        component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-        aria-label="mailbox folders"
-      >
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onTransitionEnd={handleDrawerTransitionEnd}
-          onClose={handleDrawerClose}
-          ModalProps={{
-            keepMounted: true,
-          }}
+    <CEOLayout>
+      <TabContext value={value}>
+        <Box
           sx={{
-            display: { xs: "block", sm: "none" },
-            "& .MuiDrawer-paper": {
-              boxSizing: "border-box",
-              width: drawerWidth,
-            },
+            marginTop: 3,
+            borderBottom: 1,
+            borderColor: "divider",
+            width: "100%",
           }}
         >
-          {drawer}
-        </Drawer>
-        <Drawer
-          variant="permanent"
-          sx={{
-            display: { xs: "none", sm: "block" },
-            "& .MuiDrawer-paper": {
-              boxSizing: "border-box",
-              width: drawerWidth,
-            },
-          }}
-          open
-        >
-          {drawer}
-        </Drawer>
-      </Box>
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          mt: 8,
-          p: 3,
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-        }}
-      >
-        <TabContext value={value}>
+          <TabList
+            onChange={handleChange}
+            aria-label="Tabs for CEO Dashboard"
+            sx={{ width: "100%" }}
+          >
+            <Tab label="Statistics" value="1" sx={{ width: "100%" }} />
+            <Tab label="Report" value="2" sx={{ width: "100%" }} />
+          </TabList>
+        </Box>
+        <TabPanel value="1">
           <Box
             sx={{
-              marginTop: 3,
-              borderBottom: 1,
-              borderColor: "divider",
-              width: "100%",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
             }}
           >
-            <TabList
-              onChange={handleChange}
-              aria-label="Tabs for CEO Dashboard"
-              sx={{ width: "100%" }}
-            >
-              <Tab label="Statistics" value="1" sx={{ width: "100%" }} />
-              <Tab label="Report" value="2" sx={{ width: "100%" }} />
-            </TabList>
-          </Box>
-          <TabPanel value="1">
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                mb: 2,
-              }}
-            >
-              <FormControl sx={{ minWidth: 200, ml: 2, height: "2.5rem" }}>
-                <InputLabel id="clinic-select-label">Clinic</InputLabel>
-                <Select
-                  labelId="clinic-select-label"
-                  id="clinic-select"
-                  value={selectedClinic}
-                  label="Clinic"
-                  onChange={handleClinicChange}
-                  sx={{ height: "2.5rem" }}
-                >
-                  <MenuItem value="All Clinics">All Clinics</MenuItem>
-                  {clinics.map((clinic) => (
-                    <MenuItem key={clinic.id} value={clinic.name}>
-                      {clinic.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <Button
-                variant="outlined"
-                startIcon={!downloading && <DownloadIcon />}
-                onClick={handleDownloadAnalyticsReport}
-                disabled={!isAllDataLoaded()}
+            <FormControl sx={{ minWidth: 200, ml: 2, height: "2.5rem" }}>
+              <InputLabel id="clinic-select-label">Clinic</InputLabel>
+              <Select
+                labelId="clinic-select-label"
+                id="clinic-select"
+                value={selectedClinic}
+                label="Clinic"
+                onChange={handleClinicChange}
+                sx={{ height: "2.5rem" }}
               >
-                {downloading ? (
-                  <CircularProgress size={24} />
-                ) : (
-                  "Download Report"
-                )}
-              </Button>
-            </Box>
-            {/* Loader here */}
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <Card
-                  sx={{
-                    p: 3,
-                    m: 1,
-                    borderRadius: 3,
-                    boxShadow: 2,
-                    height: 300,
-                  }}
-                  ref={attendanceRef}
-                >
-                  <CardContent sx={{ p: 2 }}>
-                    <Typography
-                      variant="h6"
-                      fontWeight="bold"
-                      sx={{ ml: -2, mt: -3, textAlign: "left" }}
-                    >
-                      Staff Attendance
-                    </Typography>
-                    <Box sx={{ height: "90%", width: "100%" }}>
-                      <AttendanceDataChart
-                        updateLoadingGraph={updateLoadingGraph}
-                      />
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Card
-                  sx={{
-                    p: 3,
-                    m: 1,
-                    borderRadius: 3,
-                    boxShadow: 2,
-                    height: 300,
-                  }}
-                  ref={providerOfTheMonthRef}
-                >
-                  <CardContent sx={{ p: 2, height: "100%" }}>
-                    <Typography
-                      variant="h6"
-                      fontWeight="bold"
-                      sx={{ mb: 2, mt: -3, textAlign: "left" }}
-                    >
-                      Provider Of The Month
-                    </Typography>
-                    <Box sx={{ height: "90%", width: "100%" }}>
-                      <ValuableProvidersPieChart data={valuableProvidersData} />
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-              {/* {isAllClinics && (
+                <MenuItem value="All Clinics">All Clinics</MenuItem>
+                {clinics.map((clinic) => (
+                  <MenuItem key={clinic.id} value={clinic.name}>
+                    {clinic.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Button
+              variant="outlined"
+              startIcon={!downloading && <DownloadIcon />}
+              onClick={handleDownloadAnalyticsReport}
+              disabled={!isAllDataLoaded()}
+            >
+              {downloading ? <CircularProgress size={24} /> : "Download Report"}
+            </Button>
+          </Box>
+          {/* Loader here */}
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
+              <Card
+                sx={{
+                  p: 3,
+                  m: 1,
+                  borderRadius: 3,
+                  boxShadow: 2,
+                  height: 300,
+                }}
+                ref={attendanceRef}
+              >
+                <CardContent sx={{ p: 2 }}>
+                  <Typography
+                    variant="h6"
+                    fontWeight="bold"
+                    sx={{ ml: -2, mt: -3, textAlign: "left" }}
+                  >
+                    Staff Attendance
+                  </Typography>
+                  <Box sx={{ height: "90%", width: "100%" }}>
+                    <AttendanceDataChart
+                      updateLoadingGraph={updateLoadingGraph}
+                    />
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Card
+                sx={{
+                  p: 3,
+                  m: 1,
+                  borderRadius: 3,
+                  boxShadow: 2,
+                  height: 300,
+                }}
+                ref={providerOfTheMonthRef}
+              >
+                <CardContent sx={{ p: 2, height: "100%" }}>
+                  <Typography
+                    variant="h6"
+                    fontWeight="bold"
+                    sx={{ mb: 2, mt: -3, textAlign: "left" }}
+                  >
+                    Provider Of The Month
+                  </Typography>
+                  <Box sx={{ height: "90%", width: "100%" }}>
+                    <ValuableProvidersPieChart data={valuableProvidersData} />
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+            {/* {isAllClinics && (
                 <Grid item xs={12}>
                   <Card
                     sx={{
@@ -1472,7 +1332,7 @@ export default function CEOClinics() {
                 </Grid>
               )} */}
 
-              {/* <Grid item xs={12} md={6}>
+            {/* <Grid item xs={12} md={6}>
                 <Card
                   sx={{
                     p: 3,
@@ -1532,224 +1392,202 @@ export default function CEOClinics() {
                   </CardContent>
                 </Card>
               </Grid> */}
-              <Grid item xs={12} md={6}>
-                <Card
-                  sx={{
-                    p: 3,
-                    m: 1,
-                    borderRadius: 3,
-                    boxShadow: 2,
-                    height: 300,
-                  }}
-                  ref={busyHoursRef}
-                >
-                  <CardContent sx={{ p: 2, height: "100%" }}>
-                    <Typography
-                      variant="h6"
-                      fontWeight="bold"
-                      sx={{ mb: 2, mt: 0, textAlign: "left" }}
-                    >
-                      Busy Hours
-                    </Typography>
-                    <Box sx={{ height: "100%", width: "100%" }}>
-                      <RushHoursChart data={rushHoursData} />
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Box
-                  sx={{
-                    p: 3,
-                    m: 1,
-                    borderRadius: 3,
-                    boxShadow: 2,
-                    height: 300,
-                  }}
-                  ref={staffHoursRef}
-                >
+            <Grid item xs={12} md={6}>
+              <Card
+                sx={{
+                  p: 3,
+                  m: 1,
+                  borderRadius: 3,
+                  boxShadow: 2,
+                  height: 300,
+                }}
+                ref={busyHoursRef}
+              >
+                <CardContent sx={{ p: 2, height: "100%" }}>
                   <Typography
                     variant="h6"
                     fontWeight="bold"
-                    sx={{ marginBottom: 0, marginTop: 0 }}
+                    sx={{ mb: 2, mt: 0, textAlign: "left" }}
                   >
-                    Staff Hours
+                    Busy Hours
                   </Typography>
-                  <StaffHoursChart
-                    xAxisLabels={xAxisLabels}
-                    yAxisUnit={yAxisUnit}
-                    values={staffChartValues}
-                  />
-                </Box>
-              </Grid>
+                  <Box sx={{ height: "100%", width: "100%" }}>
+                    <RushHoursChart data={rushHoursData} />
+                  </Box>
+                </CardContent>
+              </Card>
             </Grid>
-          </TabPanel>
-          <TabPanel value="2">
-            <Box sx={{ p: 3, m: 3, borderRadius: 3, boxShadow: 2 }}>
-              {currentTable !== 0 && (
-                <Box sx={{ display: "flex", mb: 2 }}>
-                  <Button
-                    onClick={handleBackButton}
-                    startIcon={<ArrowBack />}
-                    style={{ textTransform: "none" }}
-                  >
-                    Back
-                  </Button>
-                </Box>
-              )}
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: "1rem",
+            <StaffHours
+              clinics={clinics}
+              nurses={nurses}
+              attendanceRecords={attendanceRecords}
+              ref={staffHoursRef}
+            />
+          </Grid>
+        </TabPanel>
+        <TabPanel value="2">
+          <Box sx={{ p: 3, m: 3, borderRadius: 3, boxShadow: 2 }}>
+            {currentTable !== 0 && (
+              <Box sx={{ display: "flex", mb: 2 }}>
+                <Button
+                  onClick={handleBackButton}
+                  startIcon={<ArrowBack />}
+                  style={{ textTransform: "none" }}
+                >
+                  Back
+                </Button>
+              </Box>
+            )}
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "1rem",
+              }}
+            >
+              <Select
+                value={currentDropdownItem}
+                onChange={async (e) => {
+                  setStartDate(null);
+                  setEndDate(null);
+                  const selectedItem = e.target.value;
+                  if (currentTable === 2) {
+                    updateCurrentDropdownItem(
+                      { name: selectedItem, id: recentClinic.id },
+                      currentTable
+                    );
+                  } else {
+                    updateCurrentDropdownItem(selectedItem, currentTable);
+                  }
+                  if (currentTable === 0 && selectedItem === "Arrivals") {
+                    updateCurrentDropdownItem(selectedItem, currentTable);
+                  }
+                  if (currentTable === 0 && selectedItem === "Attendance") {
+                    updateCurrentDropdownItem(selectedItem, currentTable);
+                    // getStaffHours(true);
+                  }
                 }}
               >
-                <Select
-                  value={currentDropdownItem}
-                  onChange={async (e) => {
-                    setStartDate(null);
-                    setEndDate(null);
-                    const selectedItem = e.target.value;
-                    if (currentTable === 2) {
-                      updateCurrentDropdownItem(
-                        { name: selectedItem, id: recentClinic.id },
-                        currentTable
-                      );
-                    } else {
-                      updateCurrentDropdownItem(selectedItem, currentTable);
-                    }
-                    if (currentTable === 0 && selectedItem === "Arrivals") {
-                      updateCurrentDropdownItem(selectedItem, currentTable);
-                    }
-                    if (currentTable === 0 && selectedItem === "Attendance") {
-                      updateCurrentDropdownItem(selectedItem, currentTable);
-                      // getStaffHours(true);
-                    }
-                  }}
-                >
-                  {dropdownItems[currentTable].map((i) => (
-                    <MenuItem key={i.item} value={i.item}>
-                      {i.item}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {currentTable === 0 &&
-                  (currentDropdownItem === "Arrivals" ||
-                    currentDropdownItem === "Attendance") && (
-                    <FormControl
-                      sx={{ minWidth: 200, ml: 2, height: "2.5rem" }}
-                    >
-                      <InputLabel id="clinic-select-label">Clinic</InputLabel>
-                      <Select
-                        labelId="clinic-select-label"
-                        id="clinic-select"
-                        value={selectedClinic}
-                        label="Clinic"
-                        onChange={async (e) => {
-                          const selectedClinicName = e.target.value;
-                          const selectedClinicId =
-                            clinics.find(
-                              (clinic) => clinic.name === selectedClinicName
-                            )?.id || "all";
-                          setSelectedClinic(selectedClinicName);
-                          setSelectedClinicId(selectedClinicId);
-                          if (currentDropdownItem === "Arrivals") {
-                            await fetchArrivalsData(selectedClinicId);
+                {dropdownItems[currentTable].map((i) => (
+                  <MenuItem key={i.item} value={i.item}>
+                    {i.item}
+                  </MenuItem>
+                ))}
+              </Select>
+              {currentTable === 0 &&
+                (currentDropdownItem === "Arrivals" ||
+                  currentDropdownItem === "Attendance") && (
+                  <FormControl sx={{ minWidth: 200, ml: 2, height: "2.5rem" }}>
+                    <InputLabel id="clinic-select-label">Clinic</InputLabel>
+                    <Select
+                      labelId="clinic-select-label"
+                      id="clinic-select"
+                      value={selectedClinic}
+                      label="Clinic"
+                      onChange={async (e) => {
+                        const selectedClinicName = e.target.value;
+                        const selectedClinicId =
+                          clinics.find(
+                            (clinic) => clinic.name === selectedClinicName
+                          )?.id || "all";
+                        setSelectedClinic(selectedClinicName);
+                        setSelectedClinicId(selectedClinicId);
+                        if (currentDropdownItem === "Arrivals") {
+                          await fetchArrivalsData(selectedClinicId);
+                        }
+                        if (currentDropdownItem === "Attendance") {
+                          if (selectedClinicName === "All Clinics") {
+                            getStaffHours(true, true);
+                            // setIsAllClinics(true);
+                          } else {
+                            setDropdownClinicId(selectedClinicId);
+                            // setIsAllClinics(false);
+                            getStaffHours(true, false, selectedClinicId);
                           }
-                          if (currentDropdownItem === "Attendance") {
-                            if (selectedClinicName === "All Clinics") {
-                              getStaffHours(true, true);
-                              // setIsAllClinics(true);
-                            } else {
-                              setDropdownClinicId(selectedClinicId);
-                              // setIsAllClinics(false);
-                              getStaffHours(true, false, selectedClinicId);
-                            }
-                          }
-                        }}
-                        sx={{ height: "2.5rem" }}
-                      >
-                        <MenuItem value="All Clinics">All Clinics</MenuItem>
-                        {clinics.map((clinic) => (
-                          <MenuItem key={clinic.id} value={clinic.name}>
-                            {clinic.name}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  )}
-                {currentTable === 0 && currentDropdownItem === "Attendance" && (
-                  <>
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                      <Box sx={{ ml: 2 }}> </Box>
-                      <DatePicker
-                        label="Start Date"
-                        value={startDate}
-                        onChange={(date) => {
-                          const todaysDate = new Date();
-                          setStartDate(date);
-                          getStaffHours(true, true, null, date, todaysDate);
-                        }}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            sx={{ marginRight: 2, minWidth: 220 }}
-                          />
-                        )}
-                      />
-                      <Box sx={{ ml: 2 }}> </Box>
-                      <DatePicker
-                        label="End Date"
-                        value={endDate}
-                        onChange={(date) => {
-                          setEndDate(date);
-                          getStaffHours(true, true, null, startDate, date);
-                        }}
-                        renderInput={(params) => (
-                          <TextField {...params} sx={{ minWidth: 220 }} />
-                        )}
-                      />
-
-                      <Box sx={{ ml: 2 }}> </Box>
-                    </LocalizationProvider>
-
-                    <Button
-                      variant="outlined"
-                      startIcon={!downloading && <DownloadIcon />}
-                      onClick={handleDownloadReport}
-                      disabled={downloading}
+                        }
+                      }}
+                      sx={{ height: "2.5rem" }}
                     >
-                      {downloading ? (
-                        <CircularProgress size={24} />
-                      ) : (
-                        "Download Report"
-                      )}
-                    </Button>
-                  </>
+                      <MenuItem value="All Clinics">All Clinics</MenuItem>
+                      {clinics.map((clinic) => (
+                        <MenuItem key={clinic.id} value={clinic.name}>
+                          {clinic.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
                 )}
-                {/* Search field */}
-              </Box>
+              {currentTable === 0 && currentDropdownItem === "Attendance" && (
+                <>
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <Box sx={{ ml: 2 }}> </Box>
+                    <DatePicker
+                      label="Start Date"
+                      value={startDate}
+                      onChange={(date) => {
+                        const todaysDate = new Date();
+                        setStartDate(date);
+                        getStaffHours(true, true, null, date, todaysDate);
+                      }}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          sx={{ marginRight: 2, minWidth: 220 }}
+                        />
+                      )}
+                    />
+                    <Box sx={{ ml: 2 }}> </Box>
+                    <DatePicker
+                      label="End Date"
+                      value={endDate}
+                      onChange={(date) => {
+                        setEndDate(date);
+                        getStaffHours(true, true, null, startDate, date);
+                      }}
+                      renderInput={(params) => (
+                        <TextField {...params} sx={{ minWidth: 220 }} />
+                      )}
+                    />
 
-              {/* Clinics Table */}
-              <TableComponent
-                ariaLabel="clinic table"
-                columns={columns}
-                rows={rows}
-                onClick={handleRowClick}
-              />
-              <ModalForm
-                open={openAddModal}
-                handleClose={handleCloseAddModal}
-                mode={modalMode}
-                type={currentUserRole.type}
-                selectedUser={selectedUser}
-                onSubmit={handleSubmit}
-              />
+                    <Box sx={{ ml: 2 }}> </Box>
+                  </LocalizationProvider>
+
+                  <Button
+                    variant="outlined"
+                    startIcon={!downloading && <DownloadIcon />}
+                    onClick={handleDownloadReport}
+                    disabled={downloading}
+                  >
+                    {downloading ? (
+                      <CircularProgress size={24} />
+                    ) : (
+                      "Download Report"
+                    )}
+                  </Button>
+                </>
+              )}
+              {/* Search field */}
             </Box>
-          </TabPanel>
-        </TabContext>
-      </Box>
-    </Box>
+
+            {/* Clinics Table */}
+            <TableComponent
+              ariaLabel="clinic table"
+              columns={columns}
+              rows={rows}
+              onClick={handleRowClick}
+            />
+            <ModalForm
+              open={openAddModal}
+              handleClose={handleCloseAddModal}
+              mode={modalMode}
+              type={currentUserRole.type}
+              selectedUser={selectedUser}
+              onSubmit={handleSubmit}
+            />
+          </Box>
+        </TabPanel>
+      </TabContext>
+    </CEOLayout>
   );
 }
