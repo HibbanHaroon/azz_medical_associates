@@ -10,32 +10,23 @@ import {
   Typography,
   Paper,
 } from "@mui/material";
-import DownloadIcon from "@mui/icons-material/Download";
-import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import ListAltIcon from "@mui/icons-material/ListAlt";
-import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
 import { fetchDoctors } from "../services/doctorService";
 import { fetchArrivals } from "../services/arrivalsService";
-import { jsPDF } from "jspdf";
-import "jspdf-autotable";
-
-import { fetchAttendance } from "../services/attendanceService";
-import { fetchNurses } from "../services/nurseService";
+import { downloadReport } from "../utils/downloadReportUtils";
+import {
+  LocalHospital as LocalHospitalIcon,
+  AccessTime as AccessTimeIcon,
+  ListAlt as ListAltIcon,
+  AssignmentTurnedIn as AssignmentTurnedInIcon,
+} from "@mui/icons-material";
 
 const HomeScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { userId, userType, clinicId, clinicName } = location.state || {};
+
   const [doctors, setDoctors] = useState([]);
   const [patientsByDoctor, setPatientsByDoctor] = useState({});
-  const [selectedDoctor, setSelectedDoctor] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const [staffChartValues, setStaffChartValues] = useState([]);
-  const [rows, setRows] = useState([]);
-  const [columns, setColumns] = useState([]);
-  const [downloading, setDownloading] = useState(false);
 
   const handleSigninClick = () => {
     navigate("/signin");
@@ -50,9 +41,10 @@ const HomeScreen = () => {
       alert("Please sign in first!");
     }
   };
-  const fetchArrivalsById = async (id) => {
+
+  const fetchArrivalsById = async (doctorId) => {
     try {
-      const arrivals = await fetchArrivals(clinicId, id);
+      const arrivals = await fetchArrivals(clinicId, doctorId);
 
       const formattedArrivals = arrivals.map((arrival) => {
         const dob = new Date(arrival.dob).toISOString().split("T")[0];
@@ -82,53 +74,50 @@ const HomeScreen = () => {
           startTime: arrival.startTime,
           markExit: arrival.markExit,
           endTime: arrival.endTime,
-          doctorId: id,
+          doctorId: doctorId,
         };
       });
 
-      setPatientsByDoctor((prev) => ({ ...prev, [id]: formattedArrivals }));
+      setPatientsByDoctor((prev) => ({
+        ...prev,
+        [doctorId]: formattedArrivals,
+      }));
     } catch (error) {
       console.error("Error fetching arrivals:", error);
     }
   };
 
-  const fetchDoctorsModerator = async () => {
-    try {
-      const doctors = await fetchDoctors(clinicId);
-      setDoctors(doctors);
-
-      // Fetch arrivals for each doctor
-      doctors.forEach((doctor) => {
-        fetchArrivalsById(doctor.id);
-      });
-    } catch (error) {
-      console.error("Error fetching doctors:", error);
-    }
-  };
-
   useEffect(() => {
-    fetchDoctorsModerator();
-  }, []);
+    const getDoctors = async () => {
+      try {
+        const doctors = await fetchDoctors(clinicId);
+        setDoctors(doctors);
+
+        // Fetch arrivals for each doctor
+        doctors.forEach((doctor) => {
+          fetchArrivalsById(doctor.id);
+        });
+      } catch (error) {
+        console.error("Error fetching doctors:", error);
+      }
+    };
+
+    getDoctors();
+  }, [clinicId]);
 
   const filteredArrivals = Object.values(patientsByDoctor)
     .flat()
     .filter((patient) =>
-      `${patient.firstName} ${patient.lastName}`
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase())
+      `${patient.firstName} ${patient.lastName}`.toLowerCase()
     );
 
-  const filteredByDoctor = selectedDoctor
-    ? filteredArrivals.filter((patient) => patient.doctorId === selectedDoctor)
-    : filteredArrivals;
-
-  const sortedArrivals = filteredByDoctor.sort((a, b) => {
+  const sortedArrivals = filteredArrivals.sort((a, b) => {
     const statusOrder = (patient) => {
-      if (patient.markExit) return 5; // Exited
-      if (patient.inProgress) return 1; // In Progress
-      if (patient.calledInside) return 2; // Called Inside
-      if (patient.askedToWait) return 3; // Asked to Wait
-      return 4; // Arrived
+      if (patient.markExit) return 5;
+      if (patient.inProgress) return 1;
+      if (patient.calledInside) return 2;
+      if (patient.askedToWait) return 3;
+      return 4;
     };
 
     const statusComparison = statusOrder(a) - statusOrder(b);
@@ -149,311 +138,80 @@ const HomeScreen = () => {
     });
   };
 
-  const handleDownloadReport = () => {
-    const doc = new jsPDF();
-
-    const logo = new Image();
-    logo.src = "/assets/logos/logoHAUTO.png";
-    logo.onload = () => {
-      doc.addImage(logo, "PNG", 20, 20, 50, 10);
-
-      const pageWidth = doc.internal.pageSize.getWidth();
-
-      doc.setFontSize(22);
-      const title = "Patient List";
-      const titleWidth =
-        (doc.getStringUnitWidth(title) * doc.internal.getFontSize()) /
-        doc.internal.scaleFactor;
-      const titleX = (pageWidth - titleWidth) / 2;
-      doc.text(title, titleX, 47);
-
-      doc.setFontSize(16);
-      const subtitle = `${clinicName}`;
-      const subtitleWidth =
-        (doc.getStringUnitWidth(subtitle) * doc.internal.getFontSize()) /
-        doc.internal.scaleFactor;
-      const subtitleX = (pageWidth - subtitleWidth) / 2;
-      doc.setTextColor(128, 128, 128);
-      doc.text(subtitle, subtitleX, 56);
-
-      doc.setTextColor(0, 0, 0);
-
-      doc.setFontSize(12);
-      const currentDate = new Date();
-      const dateTimeStr = `Date and Time: ${currentDate.toLocaleString()}`;
-      const durationStr = `Duration: ${currentDate.toLocaleString("en-US", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      })}`;
-
-      doc.text(dateTimeStr, 20, 70);
-      doc.text(durationStr, 130, 70);
-
-      const arrivals = getTodaysArrivals();
-      const tableColumn = [
-        "Patient Name",
-        "Provider",
-        "Arrival Time",
-        "Meeting Time",
-        "Waiting Time",
-      ];
-      const tableRows = [];
-
-      arrivals.forEach((arrival) => {
-        const providerName =
-          doctors.find((doc) => doc.id === arrival.doctorId)?.name || "N/A";
-        const arrivalTime = new Date(arrival.arrivalTime);
-        const calledInTime = arrival.calledInTime
-          ? new Date(arrival.calledInTime)
-          : null;
-        let waitingTime = "";
-        let diffMs = "";
-
-        if (calledInTime) {
-          diffMs = calledInTime - arrivalTime;
-        } else {
-          diffMs = Date.now() - arrivalTime;
-        }
-
-        const diffHrs = Math.floor(diffMs / 3600000);
-        const diffMins = Math.floor((diffMs % 3600000) / 60000);
-        const diffSecs = Math.floor((diffMs % 60000) / 1000);
-
-        if (diffHrs > 0) {
-          waitingTime += `${diffHrs}h `;
-        }
-        if (diffMins > 0 || diffHrs > 0) {
-          waitingTime += `${diffMins}m `;
-        }
-        waitingTime += `${diffSecs}s`;
-
-        waitingTime = waitingTime.trim();
-
-        const rowData = [
-          `${arrival.firstName} ${arrival.lastName}`,
-          providerName,
-          arrivalTime.toLocaleString("en-US", {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true,
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          }),
-          calledInTime
-            ? calledInTime.toLocaleString("en-US", {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: true,
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              })
-            : "Pending",
-          calledInTime ? waitingTime : "Pending",
-        ];
-        tableRows.push(rowData);
-      });
-
-      doc.autoTable({
-        head: [tableColumn],
-        body: tableRows,
-        startY: 80,
-      });
-
-      doc.setFontSize(10);
-      doc.text(
-        "This report is system generated.",
-        20,
-        doc.internal.pageSize.height - 10
-      );
-
-      doc.save("arrivals_report.pdf");
-    };
-  };
-
-  const getStaffHours = async () => {
-    const labels = [];
-    const values = [];
-    let maxValue = 0;
-    let attendanceData = {};
-
-    const calculateTimeSpent = (checkInTime, checkOutTime) => {
-      const checkIn = new Date(checkInTime);
-      const checkOut = new Date(checkOutTime);
-      return (checkOut - checkIn) / (1000 * 60); // Convert milliseconds to minutes
-    };
-
-    let localIndividualAttendanceData = {};
-    const [nurses, attendanceRecords] = await Promise.all([
-      fetchNurses(clinicId),
-      fetchAttendance(clinicId),
-    ]);
-
-    const nurseTimeMap = new Map();
-
-    attendanceRecords.forEach((nurse) => {
-      let nursePresentDays = 0;
-      nurse.pastThirtyDays.forEach((record) => {
-        if (record.checkInTime && record.checkOutTime) {
-          const timeSpent = calculateTimeSpent(
-            record.checkInTime,
-            record.checkOutTime
-          );
-
-          if (!nurseTimeMap.has(nurse.id)) {
-            nurseTimeMap.set(nurse.id, { total: 0, count: 0 });
-          }
-
-          const nurseData = nurseTimeMap.get(nurse.id);
-          nurseData.total += timeSpent;
-          nurseData.count += 1;
-        }
-        if (record.status === "present") {
-          nursePresentDays += 1;
-        }
-      });
-      if (!localIndividualAttendanceData[nurse.id]) {
-        localIndividualAttendanceData[nurse.id] = {};
-      }
-      localIndividualAttendanceData[nurse.id].total = nursePresentDays;
-    });
-
-    nurses.forEach((nurse) => {
-      const nurseData = nurseTimeMap.get(nurse.id);
-      if (nurseData && nurseData.count > 0) {
-        const averageTimeSpent = nurseData.total / nurseData.count;
-        labels.push(nurse.name);
-        values.push(parseFloat(averageTimeSpent.toFixed(2)));
-
-        // for Attendance Table Individual Clinic
-        if (!localIndividualAttendanceData[nurse.id]) {
-          localIndividualAttendanceData[nurse.id] = {};
-        }
-        localIndividualAttendanceData[nurse.id].name = nurse.name;
-        localIndividualAttendanceData[nurse.id].average = parseFloat(
-          averageTimeSpent.toFixed(2)
-        );
-
-        if (averageTimeSpent > maxValue) {
-          maxValue = averageTimeSpent;
-        }
-      }
-    });
-
-    attendanceData = localIndividualAttendanceData;
-
-    // Determine the unit for the y-axis labels
-    const yAxisUnit = maxValue >= 60 ? "h" : "m";
-    const formattedValues = values.map((value) =>
-      yAxisUnit === "h" ? value / 60 : value
-    );
-
-    const rows = Object.keys(attendanceData).map((id) => ({
-      name: attendanceData[id].name,
-      total: attendanceData[id].total,
-      average: `${attendanceData[id].average}${yAxisUnit}`,
-    }));
-
-    const columns = [
-      { id: "name", label: "Staff Name" },
-      {
-        id: "total",
-        label: "Total Present Days",
-        align: "right",
-      },
-      {
-        id: "average",
-        label: "Average Hours/Day",
-        align: "right",
-      },
+  const handleDownloadPatientList = async () => {
+    const arrivals = getTodaysArrivals();
+    const tableColumn = [
+      "Patient Name",
+      "Provider",
+      "Arrival Time",
+      "Meeting Time",
+      "Waiting Time",
     ];
+    const tableRows = [];
 
-    handleDownloadAttendanceReport(rows, columns);
-  };
+    arrivals.forEach((arrival) => {
+      const providerName =
+        doctors.find((doc) => doc.id === arrival.doctorId)?.name || "N/A";
+      const arrivalTime = new Date(arrival.arrivalTime);
+      const calledInTime = arrival.calledInTime
+        ? new Date(arrival.calledInTime)
+        : null;
+      let waitingTime = "";
+      let diffMs = "";
 
-  const handleDownloadPatientList = () => {
-    console.log("Download Patient List clicked");
-    handleDownloadReport();
-  };
+      if (calledInTime) {
+        diffMs = calledInTime - arrivalTime;
+      } else {
+        diffMs = Date.now() - arrivalTime;
+      }
 
-  const handleDownloadAttendanceReport = (rows, columns) => {
-    setDownloading(true);
-    try {
-      const doc = new jsPDF();
+      const diffHrs = Math.floor(diffMs / 3600000);
+      const diffMins = Math.floor((diffMs % 3600000) / 60000);
+      const diffSecs = Math.floor((diffMs % 60000) / 1000);
 
-      const logo = new Image();
-      logo.src = "/assets/logos/logoHAUTO.png";
-      logo.onload = () => {
-        doc.addImage(logo, "PNG", 20, 20, 50, 10);
+      if (diffHrs > 0) {
+        waitingTime += `${diffHrs}h `;
+      }
+      if (diffMins > 0 || diffHrs > 0) {
+        waitingTime += `${diffMins}m `;
+      }
+      waitingTime += `${diffSecs}s`;
 
-        const pageWidth = doc.internal.pageSize.getWidth();
+      waitingTime = waitingTime.trim();
 
-        doc.setFontSize(22);
-        const title = "Staff Attendance";
-        const titleWidth =
-          (doc.getStringUnitWidth(title) * doc.internal.getFontSize()) /
-          doc.internal.scaleFactor;
-        const titleX = (pageWidth - titleWidth) / 2;
-        doc.text(title, titleX, 47);
-
-        doc.setFontSize(16);
-        const subtitle = `${clinicName}`;
-        const subtitleWidth =
-          (doc.getStringUnitWidth(subtitle) * doc.internal.getFontSize()) /
-          doc.internal.scaleFactor;
-        const subtitleX = (pageWidth - subtitleWidth) / 2;
-        doc.setTextColor(128, 128, 128);
-        doc.text(subtitle, subtitleX, 56);
-
-        doc.setTextColor(0, 0, 0);
-
-        doc.setFontSize(12);
-        const currentDate = new Date();
-        const dateTimeStr = `Date and Time: ${currentDate.toLocaleString()}`;
-        const durationStr = `Duration: ${currentDate.toLocaleString("en-US", {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
+      const rowData = [
+        `${arrival.firstName} ${arrival.lastName}`,
+        providerName,
+        arrivalTime.toLocaleString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+          day: "2-digit",
+          month: "short",
           year: "numeric",
-        })}`;
+        }),
+        calledInTime
+          ? calledInTime.toLocaleString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })
+          : "Pending",
+        calledInTime ? waitingTime : "Pending",
+      ];
+      tableRows.push(rowData);
+    });
 
-        doc.text(dateTimeStr, 20, 70);
-        doc.text(durationStr, 130, 70);
-
-        const tableColumn = columns.map((column) => {
-          return column.label;
-        });
-        const tableRows = [];
-
-        const rowData = rows.map((row) => {
-          return [row.name, row.total, row.average];
-        });
-
-        tableRows.push(...rowData);
-
-        doc.autoTable({
-          head: [tableColumn],
-          body: tableRows,
-          startY: 80,
-        });
-
-        doc.setFontSize(10);
-        doc.text(
-          "This report is system generated.",
-          20,
-          doc.internal.pageSize.height - 10
-        );
-
-        doc.save("staff_attendance_report.pdf");
-      };
-    } catch (error) {
-      console.error("Error downloading report:", error);
-    } finally {
-      setDownloading(false);
-    }
+    await downloadReport({
+      title: "Patient List",
+      subtitle: `${clinicName}`,
+      tableColumns: tableColumn,
+      tableRows: tableRows,
+      docName: "Arrivals_Report.pdf",
+    });
   };
 
   const handleAdminAttendanceScreenNavigation = () => {
@@ -465,7 +223,7 @@ const HomeScreen = () => {
     });
   };
 
-  const renderAdminOptions = () => (
+  const AdminOption = ({ icon: Icon, text, onClick }) => (
     <>
       <Paper
         elevation={2}
@@ -479,74 +237,39 @@ const HomeScreen = () => {
           color: "white",
           cursor: "pointer",
         }}
+        onClick={onClick}
+      >
+        <Icon sx={{ fontSize: 40, mr: 2 }} />
+        <Typography variant="h6" component="div">
+          {text}
+        </Typography>
+      </Paper>
+      <Divider sx={{ width: "100%", mb: 2 }} />
+    </>
+  );
+
+  const renderAdminOptions = () => (
+    <>
+      <AdminOption
+        icon={AccessTimeIcon}
+        text="Patient Waiting"
         onClick={() => handleNavigationClick("waiting")}
-      >
-        <AccessTimeIcon sx={{ fontSize: 40, mr: 2 }} />
-        <Typography variant="h6" component="div">
-          Patient Waiting
-        </Typography>
-      </Paper>
-      <Divider sx={{ width: "100%", mb: 2 }} />
-      <Paper
-        elevation={2}
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          mb: 2,
-          width: "100%",
-          p: 1,
-          backgroundColor: "#0D3276",
-          color: "white",
-          cursor: "pointer",
-        }}
+      />
+      <AdminOption
+        icon={LocalHospitalIcon}
+        text="Arrival"
         onClick={() => handleNavigationClick("arrival")}
-      >
-        <LocalHospitalIcon sx={{ fontSize: 40, mr: 2 }} />
-        <Typography variant="h6" component="div">
-          Arrival
-        </Typography>
-      </Paper>
-      <Divider sx={{ width: "100%", mb: 2 }} />
-      <Paper
-        elevation={2}
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          mb: 2,
-          width: "100%",
-          p: 1,
-          backgroundColor: "#0D3276",
-          color: "white",
-          cursor: "pointer",
-        }}
+      />
+      <AdminOption
+        icon={AssignmentTurnedInIcon}
+        text="View Attendance Report"
         onClick={handleAdminAttendanceScreenNavigation}
-      >
-        <AssignmentTurnedInIcon sx={{ fontSize: 40, mr: 2 }} />
-        <Typography variant="h6" component="div">
-          View Attendance Report
-        </Typography>
-      </Paper>
-      <Divider sx={{ width: "100%", mb: 2 }} />
-      <Paper
-        elevation={2}
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          mb: 2,
-          width: "100%",
-          p: 1,
-          backgroundColor: "#0D3276",
-          color: "white",
-          cursor: "pointer",
-        }}
+      />
+      <AdminOption
+        icon={ListAltIcon}
+        text="Download Patient List"
         onClick={handleDownloadPatientList}
-      >
-        <ListAltIcon sx={{ fontSize: 40, mr: 2 }} />
-        <Typography variant="h6" component="div">
-          Download Patient List
-        </Typography>
-      </Paper>
-      <Divider sx={{ width: "100%", mb: 2 }} />
+      />
     </>
   );
 
