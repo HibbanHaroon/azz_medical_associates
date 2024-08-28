@@ -61,7 +61,6 @@ export default function DoctorScreen(props) {
       if (doctor) {
         setRoomNumber(doctor.roomNumber);
         setDoctorName(doctor.name);
-
       }
     } catch (error) {
       console.error("Error fetching doctor details:", error);
@@ -84,6 +83,7 @@ export default function DoctorScreen(props) {
             minute: "2-digit",
             second: "2-digit",
             hour12: true,
+            timeZone: "UTC",
           }
         );
 
@@ -138,10 +138,10 @@ export default function DoctorScreen(props) {
 
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
-  
+
   const todayEnd = new Date();
   todayEnd.setHours(23, 59, 59, 999);
-  
+
   const recentPatients = sortedPatients.filter((patient) => {
     const patientArrivalTime = new Date(patient.arrivalTime);
     return patientArrivalTime >= todayStart && patientArrivalTime <= todayEnd;
@@ -385,7 +385,7 @@ export default function DoctorScreen(props) {
             <GroupIcon />
           </Avatar>
           <Typography component="h1" variant="h5">
-          Provider: {doctorName}          
+            Provider: {doctorName}
           </Typography>
           <TextField
             variant="outlined"
@@ -426,7 +426,9 @@ export default function DoctorScreen(props) {
                   <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
                     {patient.firstName + " " + patient.lastName}
                   </Typography>
-                  <Typography variant="body2">Token: {patient.token}</Typography>
+                  <Typography variant="body2">
+                    Token: {patient.token}
+                  </Typography>
 
                   <Typography variant="body2">DOB: {patient.dob}</Typography>
                   <Typography variant="body2">
