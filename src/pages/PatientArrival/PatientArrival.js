@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import io from "socket.io-client";
 
 // Imports for Material UI components
 import { Typography, Button, Box } from "@mui/material";
-import { Face as FaceIcon, Call as CallIcon } from "@mui/icons-material";
+import { Call as CallIcon } from "@mui/icons-material";
 
 import Popup from "../../components/Pop";
 import generateAudio from "../../utils/generateAudio";
@@ -21,7 +21,6 @@ import ArrivalForm from "./components/ArrivalForm";
 import ArrivalDialog from "./components/ArrivalDialog";
 
 export default function PatientArrival() {
-  const navigate = useNavigate();
   const { state } = useLocation();
   const { clinicId } = state;
   const [openDialog, setOpenDialog] = useState(false);
@@ -106,12 +105,6 @@ export default function PatientArrival() {
     fetchDoctorsOnce();
     fetchCalls();
   }, [clinicId, fetchCalls]);
-
-  const handleAttendance = useCallback(() => {
-    navigate("/nurse", {
-      state: { clinicId: clinicId },
-    });
-  }, [navigate, clinicId]);
 
   const handleDialogClose = () => {
     setOpenDialog(false);
@@ -236,31 +229,6 @@ export default function PatientArrival() {
         onClose={() => setShowPopup(false)}
         visible={showPopup}
       />
-      <Button
-        onClick={handleAttendance}
-        variant="contained"
-        color="primary"
-        sx={{
-          position: "fixed",
-          bottom: "2rem",
-          left: "2rem",
-          zIndex: 999,
-          padding: 1,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          "@media (max-width: 600px)": {
-            padding: "4px 8px",
-            fontSize: "large",
-            marginTop: 90,
-          },
-        }}
-      >
-        <Box display="flex" flexDirection="column" alignItems="center">
-          <FaceIcon fontSize="large" />
-          <Typography variant="body2">Attendance</Typography>
-        </Box>
-      </Button>
 
       <Button
         onClick={handleLiveCall}

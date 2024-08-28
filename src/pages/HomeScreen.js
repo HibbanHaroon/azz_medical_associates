@@ -1,6 +1,5 @@
-import React from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
 import {
   Container,
   CssBaseline,
@@ -18,6 +17,7 @@ import {
   AccessTime as AccessTimeIcon,
   ListAlt as ListAltIcon,
   AssignmentTurnedIn as AssignmentTurnedInIcon,
+  Face as FaceIcon,
 } from "@mui/icons-material";
 
 const HomeScreen = () => {
@@ -42,50 +42,53 @@ const HomeScreen = () => {
     }
   };
 
-  const fetchArrivalsById = async (doctorId) => {
-    try {
-      const arrivals = await fetchArrivals(clinicId, doctorId);
+  const fetchArrivalsById = useCallback(
+    async (doctorId) => {
+      try {
+        const arrivals = await fetchArrivals(clinicId, doctorId);
 
-      const formattedArrivals = arrivals.map((arrival) => {
-        const dob = new Date(arrival.dob).toISOString().split("T")[0];
-        const arrivalTime = new Date(arrival.arrivalTime).toLocaleString(
-          "en-US",
-          {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: true,
-          }
-        );
+        const formattedArrivals = arrivals.map((arrival) => {
+          const dob = new Date(arrival.dob).toISOString().split("T")[0];
+          const arrivalTime = new Date(arrival.arrivalTime).toLocaleString(
+            "en-US",
+            {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: true,
+            }
+          );
 
-        return {
-          id: arrival.id,
-          calledInTime: arrival.calledInTime,
-          firstName: arrival.firstName,
-          lastName: arrival.lastName,
-          dob: dob,
-          arrivalTime: arrivalTime,
-          calledInside: arrival.calledInside,
-          askedToWait: arrival.askedToWait,
-          inProgress: arrival.inProgress,
-          startTime: arrival.startTime,
-          markExit: arrival.markExit,
-          endTime: arrival.endTime,
-          doctorId: doctorId,
-        };
-      });
+          return {
+            id: arrival.id,
+            calledInTime: arrival.calledInTime,
+            firstName: arrival.firstName,
+            lastName: arrival.lastName,
+            dob: dob,
+            arrivalTime: arrivalTime,
+            calledInside: arrival.calledInside,
+            askedToWait: arrival.askedToWait,
+            inProgress: arrival.inProgress,
+            startTime: arrival.startTime,
+            markExit: arrival.markExit,
+            endTime: arrival.endTime,
+            doctorId: doctorId,
+          };
+        });
 
-      setPatientsByDoctor((prev) => ({
-        ...prev,
-        [doctorId]: formattedArrivals,
-      }));
-    } catch (error) {
-      console.error("Error fetching arrivals:", error);
-    }
-  };
+        setPatientsByDoctor((prev) => ({
+          ...prev,
+          [doctorId]: formattedArrivals,
+        }));
+      } catch (error) {
+        console.error("Error fetching arrivals:", error);
+      }
+    },
+    [clinicId]
+  );
 
   useEffect(() => {
     const getDoctors = async () => {
@@ -103,28 +106,34 @@ const HomeScreen = () => {
     };
 
     getDoctors();
-  }, [clinicId]);
+  }, [clinicId, fetchArrivalsById]);
 
-  const filteredArrivals = Object.values(patientsByDoctor)
-    .flat()
-    .filter((patient) =>
-      `${patient.firstName} ${patient.lastName}`.toLowerCase()
-    );
+  const filteredArrivals = useMemo(
+    () =>
+      Object.values(patientsByDoctor)
+        .flat()
+        .filter((patient) =>
+          `${patient.firstName} ${patient.lastName}`.toLowerCase()
+        ),
+    [patientsByDoctor]
+  );
 
-  const sortedArrivals = filteredArrivals.sort((a, b) => {
-    const statusOrder = (patient) => {
-      if (patient.markExit) return 5;
-      if (patient.inProgress) return 1;
-      if (patient.calledInside) return 2;
-      if (patient.askedToWait) return 3;
-      return 4;
-    };
+  const sortedArrivals = useMemo(() => {
+    return filteredArrivals.sort((a, b) => {
+      const statusOrder = (patient) => {
+        if (patient.markExit) return 5;
+        if (patient.inProgress) return 1;
+        if (patient.calledInside) return 2;
+        if (patient.askedToWait) return 3;
+        return 4;
+      };
 
-    const statusComparison = statusOrder(a) - statusOrder(b);
-    if (statusComparison !== 0) return statusComparison;
+      const statusComparison = statusOrder(a) - statusOrder(b);
+      if (statusComparison !== 0) return statusComparison;
 
-    return new Date(b.arrivalTime) - new Date(a.arrivalTime);
-  });
+      return new Date(b.arrivalTime) - new Date(a.arrivalTime);
+    });
+  }, [filteredArrivals]);
 
   const getTodaysArrivals = () => {
     const today = new Date();
@@ -223,6 +232,12 @@ const HomeScreen = () => {
     });
   };
 
+  const handleNurseAttendance = useCallback(() => {
+    navigate("/nurse", {
+      state: { clinicId: clinicId },
+    });
+  }, [navigate, clinicId]);
+
   const AdminOption = ({ icon: Icon, text, onClick }) => (
     <>
       <Paper
@@ -259,6 +274,11 @@ const HomeScreen = () => {
         icon={LocalHospitalIcon}
         text="Arrival"
         onClick={() => handleNavigationClick("arrival")}
+      />
+      <AdminOption
+        icon={FaceIcon}
+        text="Attendance"
+        onClick={handleNurseAttendance}
       />
       <AdminOption
         icon={AssignmentTurnedInIcon}
