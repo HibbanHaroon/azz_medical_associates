@@ -44,6 +44,8 @@ import { fetchDoctors } from "../../services/doctorService";
 import { fetchAdmins } from "../../services/adminService";
 import { fetchModerators } from "../../services/moderatorService";
 import { fetchNurses } from "../../services/nurseService";
+import { fetchHrStaff } from "../../services/hrStaffService";
+import { fetchItStaff } from "../../services/itStaffService";
 
 const drawerWidth = 240;
 
@@ -125,7 +127,6 @@ export default function ClinicsScreen() {
   const [totalClinics, setTotalClinics] = useState(0);
   const [totalDoctors, setTotalDoctors] = useState(0);
   const [totalNurses, setTotalNurses] = useState(0);
-  const [totalAdmins, setTotalAdmins] = useState(0);
   const [totalModerators, setTotalModerators] = useState(0);
 
   useEffect(() => {
@@ -141,12 +142,16 @@ export default function ClinicsScreen() {
           const nurses = await fetchNurses(clinic.id);
           const admins = await fetchAdmins(clinic.id);
           const moderators = await fetchModerators(clinic.id);
+          const hrStaff = await fetchHrStaff();
+          const itStaff = await fetchItStaff();
           return {
             ...clinic,
             totalDoctors: doctors.length,
             totalNurses: nurses.length,
             totalAdmins: admins.length,
             totalModerators: moderators.length,
+            totalHrStaff: hrStaff.length,
+            totalItStaff: itStaff.length,
           };
         })
       );
@@ -157,9 +162,6 @@ export default function ClinicsScreen() {
       );
       setTotalNurses(
         clinicDetails.reduce((acc, clinic) => acc + clinic.totalNurses, 0)
-      );
-      setTotalAdmins(
-        clinicDetails.reduce((acc, clinic) => acc + clinic.totalAdmins, 0)
       );
       setTotalModerators(
         clinicDetails.reduce((acc, clinic) => acc + clinic.totalModerators, 0)
@@ -259,8 +261,28 @@ export default function ClinicsScreen() {
     },
   ];
 
-  function createData(id, name, providers, staff, admins, moderators, action) {
-    return { id, name, providers, staff, admins, moderators, action };
+  function createData(
+    id,
+    name,
+    providers,
+    staff,
+    admins,
+    moderators,
+    hrStaff,
+    itStaff,
+    action
+  ) {
+    return {
+      id,
+      name,
+      providers,
+      staff,
+      admins,
+      moderators,
+      hrStaff,
+      itStaff,
+      action,
+    };
   }
 
   const rows = clinics.map((clinic) =>
@@ -271,6 +293,8 @@ export default function ClinicsScreen() {
       clinic.totalNurses,
       clinic.totalAdmins,
       clinic.totalModerators,
+      clinic.totalHrStaff,
+      clinic.totalItStaff,
       null
     )
   );
@@ -281,6 +305,8 @@ export default function ClinicsScreen() {
     { id: "staff", label: "Staff", align: "right" },
     { id: "admins", label: "Admins", align: "right" },
     { id: "moderators", label: "Moderators", align: "right" },
+    { id: "hrStaff", label: "HR Staff", align: "right" },
+    { id: "itStaff", label: "IT Staff", align: "right" },
     { id: "action", label: "Action", align: "center" },
   ];
 
@@ -403,7 +429,7 @@ export default function ClinicsScreen() {
             sx={{ position: "absolute", top: 45, padding: "1.5rem" }}
           >
             {cardsData.map((card, index) => (
-              <Grid item xs={12} sm={6} md={3}  key={index}>
+              <Grid item xs={12} sm={6} md={3} key={index}>
                 <Card
                   sx={{
                     display: "flex",
@@ -422,7 +448,7 @@ export default function ClinicsScreen() {
             ))}
           </Grid>
         </Box>
-        <Box sx={{ height: "1rem", marginTop:2 }}></Box>
+        <Box sx={{ height: "1rem", marginTop: 2 }}></Box>
         <Box sx={{ p: 3, m: 3, borderRadius: 3, boxShadow: 2 }}>
           <Box
             sx={{

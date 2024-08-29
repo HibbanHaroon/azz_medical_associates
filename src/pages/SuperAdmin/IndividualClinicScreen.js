@@ -41,6 +41,8 @@ import { fetchDoctors } from "../../services/doctorService";
 import { fetchAdmins } from "../../services/adminService";
 import { fetchModerators } from "../../services/moderatorService";
 import { fetchNurses } from "../../services/nurseService";
+import { fetchHrStaff } from "../../services/hrStaffService";
+import { fetchItStaff } from "../../services/itStaffService";
 import { ArrowBack } from "@mui/icons-material";
 
 const drawerWidth = 240;
@@ -203,6 +205,30 @@ export default function IndividualClinicScreen() {
           },
         });
         break;
+      case "HR Staff":
+        // Fetch data for HR Staff
+        const hrStaffData = await fetchHrStaff();
+        navigate(`/user-type-clinic`, {
+          state: {
+            clinicId: clinicRoles.id,
+            label: "HR Staff",
+            role: "HR Staff",
+            data: hrStaffData,
+          },
+        });
+        break;
+      case "IT Staff":
+        // Fetch data for HR Staff
+        const itStaffData = await fetchItStaff();
+        navigate(`/user-type-clinic`, {
+          state: {
+            clinicId: clinicRoles.id,
+            label: "IT Staff",
+            role: "IT Staff",
+            data: itStaffData,
+          },
+        });
+        break;
       default:
         break;
     }
@@ -269,6 +295,8 @@ export default function IndividualClinicScreen() {
     { id: clinic.id, roles: "Staff", members: clinic.staff },
     { id: clinic.id, roles: "Moderators", members: clinic.moderators },
     { id: clinic.id, roles: "Admins", members: clinic.admins },
+    { id: clinic.id, roles: "HR Staff", members: clinic.hrStaff },
+    { id: clinic.id, roles: "IT Staff", members: clinic.itStaff },
   ];
 
   const columns = [
