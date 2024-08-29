@@ -17,6 +17,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAttendance } from "../../hooks/useAttendance";
 import isSameDay from "../../utils/isSameDay";
 import AttendanceMarkedDialog from "./components/AttendanceMarkedDialog";
+import { Face as FaceIcon } from "@mui/icons-material";
 
 export default function StaffAttendance() {
   const { state } = useLocation();
@@ -266,6 +267,31 @@ export default function StaffAttendance() {
           nurseName={nurseName}
         />
       </Container>
+      <Button
+        onClick={() => {}}
+        variant="contained"
+        color="primary"
+        sx={{
+          position: "fixed",
+          bottom: "2rem",
+          left: "2rem",
+          zIndex: 999,
+          padding: 1,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          "@media (max-width: 600px)": {
+            padding: "4px 8px",
+            fontSize: "large",
+            marginTop: 90,
+          },
+        }}
+      >
+        <Box display="flex" flexDirection="column" alignItems="center">
+          <FaceIcon fontSize="large" />
+          <Typography variant="body2">IT Staff Attendance</Typography>
+        </Box>
+      </Button>
     </div>
   );
 }
