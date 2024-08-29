@@ -5,7 +5,7 @@ import DoctorScreen from "./pages/DoctorScreen";
 import ModeratorScreen from "./pages/ModeratorScreen";
 import AdminScreen from "./pages/AdminScreen";
 import AttendanceScreen from "./pages/AttendanceScreen";
-import NurseAttendance from "./pages/Nurse//NurseAttendance";
+import StaffAttendance from "./pages/Staff//StaffAttendance";
 import PatientWaitingScreen from "./pages/PatientWaitingScreen";
 import { ThemeProvider } from "@mui/material/styles";
 import theme from "./constants/theme";
@@ -107,7 +107,7 @@ function App() {
               path="/nurse"
               element={
                 <ProtectedRoute>
-                  <NurseAttendance />
+                  <StaffAttendance />
                 </ProtectedRoute>
               }
             />

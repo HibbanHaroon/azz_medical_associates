@@ -18,7 +18,7 @@ import { useAttendance } from "../../hooks/useAttendance";
 import isSameDay from "../../utils/isSameDay";
 import AttendanceMarkedDialog from "./components/AttendanceMarkedDialog";
 
-export default function NurseAttendance() {
+export default function StaffAttendance() {
   const { state } = useLocation();
   const { clinicId } = state;
   const navigate = useNavigate();
