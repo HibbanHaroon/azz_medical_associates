@@ -23,6 +23,7 @@ import { fetchDoctors } from "../services/doctorService";
 import { fetchNurses } from "../services/nurseService";
 import { fetchModerators } from "../services/moderatorService";
 import { fetchSuperAdmins } from "../services/superAdminService";
+import { fetchHrStaff } from "../services/hrStaffService";
 import ForgotPasswordModal from "../components/ForgotPasswordModal";
 import { useAuth } from "../context/AuthContext";
 
@@ -74,6 +75,9 @@ const SigninScreen = () => {
         case "Super Admin":
           users = await fetchSuperAdmins();
           break;
+        case "HR Staff":
+          users = await fetchHrStaff();
+          break;
         default:
           return false;
       }
@@ -90,7 +94,7 @@ const SigninScreen = () => {
     e.preventDefault();
     setLoading(true);
     setErrorMessage("");
-    if (selectedUserType === "Super Admin") {
+    if (selectedUserType === "Super Admin" || selectedUserType === "HR Staff") {
       if (!email || !password || !selectedUserType) {
         setErrorMessage("All fields are required.");
         setLoading(false);
@@ -143,6 +147,15 @@ const SigninScreen = () => {
               clinicId: selectedClinic,
               clinicName: selectedClinicName,
               staffId: userId,
+            },
+          });
+          break;
+        case "HR Staff":
+          navigate(`/attendance`, {
+            state: {
+              clinicId: selectedClinic,
+              clinicName: selectedClinicName,
+              isHrStaff: true,
             },
           });
           break;
@@ -306,7 +319,8 @@ const SigninScreen = () => {
               </Select>
             </FormControl>
 
-            {selectedUserType !== "Super Admin" && (
+            {(selectedUserType !== "Super Admin" ||
+              selectedUserType !== "HR Staff") && (
               <FormControl fullWidth sx={{ mb: 2 }}>
                 <Select
                   value={selectedClinic}
