@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import ValuableProvidersPieChart from "../../components/ValuableProvidersPieChart";
 import {
   Box,
   Card,
@@ -56,40 +55,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import CEOLayout from "./components/CEOLayout";
 import StaffHours from "./graphs/Clinics/StaffHours";
 import BusyHours from "./graphs/Clinics/BusyHours";
-
-const calculateValuableProviders = (
-  allArrivals,
-  allDoctors,
-  clinicId = null
-) => {
-  const now = new Date();
-  const thirtyDaysAgo = new Date(now.setDate(now.getDate() - 30));
-
-  const filteredArrivals = clinicId
-    ? allArrivals.filter(
-        (arrival) =>
-          arrival.clinicId === clinicId &&
-          new Date(arrival.arrivalTime) >= thirtyDaysAgo
-      )
-    : allArrivals.filter(
-        (arrival) => new Date(arrival.arrivalTime) >= thirtyDaysAgo
-      );
-
-  const providerCount = filteredArrivals.reduce((acc, arrival) => {
-    const doctor = allDoctors.find((doc) => doc.id === arrival.doctorID);
-    if (doctor) {
-      acc[doctor.id] = acc[doctor.id] || { name: doctor.name, count: 0 };
-      acc[doctor.id].count += 1;
-    }
-    return acc;
-  }, {});
-
-  const sortedProviders = Object.values(providerCount).sort(
-    (a, b) => b.count - a.count
-  );
-
-  return sortedProviders.slice(0, 5);
-};
+import ProviderOfTheMonth from "./graphs/Clinics/ProviderOfTheMonth";
 
 const getAllArrivals = async () => {
   try {
@@ -183,7 +149,7 @@ export default function CEOClinics() {
   const [value, setValue] = React.useState("1");
   const [allArrivals, setAllArrivals] = useState([]);
   const [arrivalsAllGet, setArrivalsAllGet] = useState([]);
-  const [valuableProvidersData, setValuableProvidersData] = useState([]); // New state
+  const [valuableProvidersData, setValuableProvidersData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentTable, setCurrentTable] = useState(0);
   const [rows, setRows] = useState([]);
@@ -353,7 +319,7 @@ export default function CEOClinics() {
     const calculateTimeSpent = (checkInTime, checkOutTime) => {
       const checkIn = new Date(checkInTime);
       const checkOut = new Date(checkOutTime);
-      return (checkOut - checkIn) / (1000 * 60); // Convert milliseconds to minutes
+      return (checkOut - checkIn) / (1000 * 60);
     };
 
     const isWithinRange = (date, start, end) => {
@@ -625,40 +591,11 @@ export default function CEOClinics() {
       setIsAllClinics(false);
     }
     setSelectedClinic(selectedClinicName);
-
-    updateLoadingGraph("busyHoursGraph", false);
-
-    const valuableProviders = calculateValuableProviders(
-      allArrivals,
-      doctors,
-      clinicId
-    ); // New calculation
-    setValuableProvidersData(valuableProviders); // Set new data
-
-    updateLoadingGraph("providerOfTheMonthGraph", false);
   };
 
   useEffect(() => {
     updateCurrentDropdownItem(currentDropdownItem, currentTable);
   }, [clinics]);
-
-  useEffect(() => {
-    const fetchClinicsAndArrivals = async () => {
-      try {
-        const valuableProviders = calculateValuableProviders(
-          allArrivals,
-          doctors
-        );
-        setValuableProvidersData(valuableProviders);
-
-        updateLoadingGraph("providerOfTheMonthGraph", false);
-      } catch (error) {
-        console.error("Failed to fetch clinics and arrivals", error);
-      }
-    };
-
-    fetchClinicsAndArrivals();
-  }, [allArrivals, doctors]);
 
   const updateCurrentDropdownItem = async (item, tableIndex) => {
     let selectedItem;
@@ -1244,31 +1181,12 @@ export default function CEOClinics() {
                 </CardContent>
               </Card>
             </Grid>
-            <Grid item xs={12} md={6}>
-              <Card
-                sx={{
-                  p: 3,
-                  m: 1,
-                  borderRadius: 3,
-                  boxShadow: 2,
-                  height: 300,
-                }}
-                ref={providerOfTheMonthRef}
-              >
-                <CardContent sx={{ p: 2, height: "100%" }}>
-                  <Typography
-                    variant="h6"
-                    fontWeight="bold"
-                    sx={{ mb: 2, mt: -3, textAlign: "left" }}
-                  >
-                    Provider Of The Month
-                  </Typography>
-                  <Box sx={{ height: "90%", width: "100%" }}>
-                    <ValuableProvidersPieChart data={valuableProvidersData} />
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
+            <ProviderOfTheMonth
+              doctors={doctors}
+              arrivals={allArrivals}
+              clinicId={dropdownClinicId}
+              ref={providerOfTheMonthRef}
+            />
             {/* {isAllClinics && (
                 <Grid item xs={12}>
                   <Card
