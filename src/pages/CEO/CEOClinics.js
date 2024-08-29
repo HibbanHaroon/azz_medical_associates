@@ -1,10 +1,13 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import {
   Box,
-  Card,
-  CardContent,
   Grid,
-  Typography,
   Button,
   Tab,
   Select,
@@ -44,7 +47,6 @@ import {
 } from "../../services/adminService";
 import { fetchAttendance } from "../../services/attendanceService";
 import { fetchAllArrivals } from "../../services/arrivalsService";
-import AttendanceDataChart from "../../components/AttendanceDataChart";
 import DownloadIcon from "@mui/icons-material/Download";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
@@ -56,6 +58,8 @@ import CEOLayout from "./components/CEOLayout";
 import StaffHours from "./graphs/Clinics/StaffHours";
 import BusyHours from "./graphs/Clinics/BusyHours";
 import ProviderOfTheMonth from "./graphs/Clinics/ProviderOfTheMonth";
+import StaffAttendance from "./graphs/Clinics/StaffAttendance";
+import PatientTime from "./graphs/Dashboard/PatientTime";
 
 const getAllArrivals = async () => {
   try {
@@ -149,18 +153,12 @@ export default function CEOClinics() {
   const [value, setValue] = React.useState("1");
   const [allArrivals, setAllArrivals] = useState([]);
   const [arrivalsAllGet, setArrivalsAllGet] = useState([]);
-  const [valuableProvidersData, setValuableProvidersData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentTable, setCurrentTable] = useState(0);
   const [rows, setRows] = useState([]);
   const [columns, setColumns] = useState([]);
   const [recentClinic, setRecentClinic] = useState([]);
   const [downloading, setDownloading] = useState(false);
-
-  const [topDoctorsMeeting, setTopDoctorsMeeting] = useState([]);
-  const [maxAverageTimeMeeting, setMaxAverageTimeMeeting] = useState(0);
-  const [topDoctorsWaiting, setTopDoctorsWaiting] = useState([]);
-  const [maxAverageTimeWaiting, setMaxAverageTimeWaiting] = useState(0);
 
   const [selectedUser, setSelectedUser] = useState(null);
   const [openAddModal, setOpenAddModal] = useState(false);
@@ -827,111 +825,12 @@ export default function CEOClinics() {
     setColumns(columns);
   };
 
-  function calculateMeetingTime(calledInTime, endTime) {
-    return endTime !== 0 ? (endTime - calledInTime) / (1000 * 60) : 0;
-  }
-
-  function calculateWaitingTime(calledInTime, arrivalTime) {
-    let diffMs = 0;
-    if (calledInTime !== 0) {
-      diffMs = calledInTime - arrivalTime;
-    } else {
-      diffMs = Date.now() - arrivalTime;
-    }
-
-    const diffHrs = Math.floor(diffMs / 3600000);
-    const diffMins = Math.floor((diffMs % 3600000) / 60000);
-
-    return diffMins;
-  }
-
   useEffect(() => {
-    const getTimeChart = async () => {
-      let clinics = [];
-      if (isAllClinics) {
-        clinics = await getAllClinics();
-      } else {
-        clinics = [{ id: dropdownClinicId }];
-      }
-
-      const calculateDoctorTimes = (type) => {
-        const doctorTimes = {};
-
-        for (const clinic of clinics) {
-          const arrivals = allArrivals.filter(
-            (arrival) => arrival.clinicId === clinic.id
-          );
-          const clinicDoctors = doctors.filter(
-            (doctor) => doctor.clinicId === clinic.id
-          );
-
-          for (const doctor of clinicDoctors) {
-            if (!doctorTimes[doctor.name]) {
-              doctorTimes[doctor.name] = { totalTime: 0, count: 0 };
-            }
-
-            const doctorArrivals = arrivals.filter(
-              (arrival) => arrival.doctorID === doctor.id
-            );
-
-            for (const arrival of doctorArrivals) {
-              const calledInTime = new Date(arrival.calledInTime).getTime();
-              const arrivalTime = new Date(arrival.arrivalTime).getTime();
-              const endTime = new Date(arrival.endTime).getTime();
-              const time =
-                type === "meeting"
-                  ? calculateMeetingTime(calledInTime, endTime)
-                  : calculateWaitingTime(calledInTime, arrivalTime);
-
-              doctorTimes[doctor.name].totalTime += time;
-              doctorTimes[doctor.name].count += 1;
-            }
-          }
-        }
-
-        const doctorNames = Object.keys(doctorTimes);
-        const averageTimes = doctorNames.map((name) => ({
-          name,
-          averageTime:
-            doctorTimes[name].count !== 0
-              ? Math.round(
-                  doctorTimes[name].totalTime / doctorTimes[name].count
-                )
-              : 0,
-        }));
-
-        const topDoctors = averageTimes
-          .sort((a, b) => b.averageTime - a.averageTime)
-          .slice(0, 6);
-
-        return topDoctors;
-      };
-
-      const topDoctorsMeeting = calculateDoctorTimes("meeting");
-      const maxAverageTimeMeeting = Math.max(
-        ...topDoctorsMeeting.map((doctor) => doctor.averageTime)
-      );
-      setTopDoctorsMeeting(topDoctorsMeeting);
-      setMaxAverageTimeMeeting(maxAverageTimeMeeting);
-
-      const topDoctorsWaiting = calculateDoctorTimes("waiting");
-      const maxAverageTimeWaiting = Math.max(
-        ...topDoctorsWaiting.map((doctor) => doctor.averageTime)
-      );
-      setTopDoctorsWaiting(topDoctorsWaiting);
-      setMaxAverageTimeWaiting(maxAverageTimeWaiting);
-    };
-
     const fetchData = () => {
-      getTimeChart();
       getStaffHours();
-
-      updateLoadingGraph("patientWaitingTimeGraph", false);
-      updateLoadingGraph("patientMeetingTimeGraph", false);
     };
 
     fetchData();
-    updateLoadingGraph("staffHoursGraph", false);
   }, [isAllClinics, dropdownClinicId, allArrivals, doctors]);
 
   const handleDownloadReport = () => {
@@ -1152,139 +1051,51 @@ export default function CEOClinics() {
               {downloading ? <CircularProgress size={24} /> : "Download Report"}
             </Button>
           </Box>
-          {/* Loader here */}
           <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
-              <Card
-                sx={{
-                  p: 3,
-                  m: 1,
-                  borderRadius: 3,
-                  boxShadow: 2,
-                  height: 300,
-                }}
-                ref={attendanceRef}
-              >
-                <CardContent sx={{ p: 2 }}>
-                  <Typography
-                    variant="h6"
-                    fontWeight="bold"
-                    sx={{ ml: -2, mt: -3, textAlign: "left" }}
-                  >
-                    Staff Attendance
-                  </Typography>
-                  <Box sx={{ height: "90%", width: "100%" }}>
-                    <AttendanceDataChart
-                      updateLoadingGraph={updateLoadingGraph}
-                    />
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
+            <StaffAttendance
+              clinics={clinics}
+              attendanceRecords={attendanceRecords}
+              ref={attendanceRef}
+              // onDataProcessed={dataProcessedHandlers.attendance}
+            />
             <ProviderOfTheMonth
               doctors={doctors}
               arrivals={allArrivals}
               clinicId={dropdownClinicId}
               ref={providerOfTheMonthRef}
+              // onDataProcessed={dataProcessedHandlers.providerOfTheMonth}
             />
-            {/* {isAllClinics && (
-                <Grid item xs={12}>
-                  <Card
-                    sx={{
-                      p: 3,
-                      m: 1,
-                      borderRadius: 3,
-                      boxShadow: 2,
-                      height: 300,
-                    }}
-                  >
-                    <CardContent sx={{ p: 2, height: "100%" }}>
-                      <Typography
-                        variant="h6"
-                        fontWeight="bold"
-                        sx={{ mb: 2, mt: 0, textAlign: "left" }}
-                      >
-                        Arrivals to Providers Ratio
-                      </Typography>
-                      <Box sx={{ width: "100%" }}>
-                        <ClinicRatioChart height={{ height: "200px" }} />
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              )} */}
-
-            {/* <Grid item xs={12} md={6}>
-                <Card
-                  sx={{
-                    p: 3,
-                    m: 1,
-                    borderRadius: 3,
-                    boxShadow: 2,
-                    height: 300,
-                  }}
-                  ref={patientWaitingTimeRef}
-                >
-                  <CardContent sx={{ p: 2, height: "100%" }}>
-                    <Typography
-                      variant="h6"
-                      fontWeight="bold"
-                      sx={{ mb: 2, mt: 0, textAlign: "left" }}
-                    >
-                      Patient Waiting Time
-                    </Typography>
-                    <Box sx={{ width: "100%" }}>
-                      <AverageTimeChart
-                        height={{ height: "200px" }}
-                        topDoctors={topDoctorsWaiting}
-                        chartType={"waiting"}
-                        maxAverageTime={maxAverageTimeWaiting}
-                      />
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Card
-                  sx={{
-                    p: 3,
-                    m: 1,
-                    borderRadius: 3,
-                    boxShadow: 2,
-                    height: 300,
-                  }}
-                  ref={patientMeetingTimeRef}
-                >
-                  <CardContent sx={{ p: 2, height: "100%" }}>
-                    <Typography
-                      variant="h6"
-                      fontWeight="bold"
-                      sx={{ mb: 2, mt: 0, textAlign: "left" }}
-                    >
-                      Patient Meeting Time
-                    </Typography>
-                    <Box sx={{ width: "100%" }}>
-                      <AverageTimeChart
-                        height={{ height: "200px" }}
-                        topDoctors={topDoctorsMeeting}
-                        chartType={"meeting"}
-                        maxAverageTime={maxAverageTimeMeeting}
-                      />
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid> */}
+            {/* <PatientTime
+              title="Average Meeting Time"
+              ref={patientMeetingTimeRef}
+              chartType={"meeting"}
+              clinics={dropdownClinicId ? [{ id: dropdownClinicId }] : clinics}
+              arrivals={allArrivals}
+              doctors={doctors}
+              // onDataProcessed={dataProcessedHandlers.patientMeetingTime}
+            />
+            <PatientTime
+              title="Patient Waiting Time"
+              ref={patientWaitingTimeRef}
+              chartType={"waiting"}
+              clinics={dropdownClinicId ? [{ id: dropdownClinicId }] : clinics}
+              arrivals={allArrivals}
+              doctors={doctors}
+              // onDataProcessed={dataProcessedHandlers.patientWaitingTime}
+            /> */}
             <BusyHours
               key={dropdownClinicId}
               clinicId={dropdownClinicId}
               allArrivals={allArrivals}
               ref={busyHoursRef}
+              // onDataProcessed={dataProcessedHandlers.busyHours}
             />
             <StaffHours
               clinics={clinics}
               nurses={nurses}
               attendanceRecords={attendanceRecords}
               ref={staffHoursRef}
+              // onDataProcessed={dataProcessedHandlers.staffHours}
             />
           </Grid>
         </TabPanel>
