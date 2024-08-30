@@ -144,7 +144,7 @@ export const useAttendance = (clinicId) => {
       }
 
       const response = todayAttendance
-        ? await updateAttendance(clinicId, selectedNurse, attendanceData)
+        ? await updateAttendance(clinicId, attendanceData, selectedNurse)
         : await addOrUpdateAttendance(clinicId, attendanceData);
 
       if (!response) throw new Error("Failed to update attendance");
