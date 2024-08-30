@@ -1094,6 +1094,7 @@ export default function CEOClinics() {
               clinics={clinics}
               nurses={nurses}
               attendanceRecords={attendanceRecords}
+              clinicId={dropdownClinicId}
               ref={staffHoursRef}
               // onDataProcessed={dataProcessedHandlers.staffHours}
             />

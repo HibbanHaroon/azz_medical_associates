@@ -9,7 +9,7 @@ import { Chart } from "chart.js";
 Chart.register(ChartDataLabels);
 
 const StaffHours = React.forwardRef(
-  ({ clinics, nurses, attendanceRecords }, ref) => {
+  ({ clinics, nurses, attendanceRecords, clinicId }, ref) => {
     const [loading, setLoading] = useState(true);
     const [labels, setLabels] = useState([]);
     const [values, setValues] = useState([]);
@@ -24,18 +24,20 @@ const StaffHours = React.forwardRef(
     };
 
     const calculateAverageTimeSpent = useCallback(
-      async (clinicId) => {
-        const clinicNurses = nurses.filter(
-          (nurse) => nurse.clinicId === clinicId
-        );
+      async (clinicId = null) => {
+        const relevantNurses = clinicId
+          ? nurses.filter((nurse) => nurse.clinicId === clinicId)
+          : nurses;
 
-        const clinicAttendanceRecords = attendanceRecords.filter((record) =>
-          clinicNurses.some((nurse) => nurse.id === record.id)
-        );
+        const relevantAttendanceRecords = clinicId
+          ? attendanceRecords.filter((record) =>
+              relevantNurses.some((nurse) => nurse.id === record.id)
+            )
+          : attendanceRecords;
 
         const nurseTimeMap = new Map();
 
-        clinicAttendanceRecords.forEach((nurse) => {
+        relevantAttendanceRecords.forEach((nurse) => {
           nurse.pastThirtyDays.forEach((record) => {
             if (record.checkInTime && record.checkOutTime) {
               const timeSpent = calculateTimeSpent(
@@ -57,7 +59,7 @@ const StaffHours = React.forwardRef(
         let totalClinicTime = 0;
         let staffCount = 0;
 
-        clinicNurses.forEach((nurse) => {
+        relevantNurses.forEach((nurse) => {
           const nurseData = nurseTimeMap.get(nurse.id);
           if (nurseData && nurseData.count > 0) {
             const averageTimeSpent = nurseData.total / nurseData.count;
@@ -66,45 +68,84 @@ const StaffHours = React.forwardRef(
           }
         });
 
+        if (clinicId) {
+          return Array.from(nurseTimeMap.entries()).map(
+            ([nurseId, nurseData]) => ({
+              nurseId,
+              averageTimeSpent: nurseData.total / nurseData.count,
+            })
+          );
+        }
+
         return staffCount > 0 ? totalClinicTime / staffCount : 0;
       },
       [attendanceRecords, nurses]
     );
 
-    const getStaffHours = useCallback(async () => {
-      const labels = [];
-      const values = [];
-      let maxValue = 0;
+    const getStaffHours = useCallback(
+      async (clinicId = null) => {
+        const labels = [];
+        const values = [];
+        let maxValue = 0;
 
-      const averageTimePromises = clinics.map((clinic) =>
-        calculateAverageTimeSpent(clinic.id)
-      );
+        if (clinicId === null) {
+          const averageTimePromises = clinics.map((clinic) =>
+            calculateAverageTimeSpent(clinic.id)
+          );
 
-      const averageTimes = await Promise.all(averageTimePromises);
+          const averageTimes = await Promise.all(averageTimePromises);
 
-      averageTimes.forEach((averageTimeSpent, index) => {
-        labels.push(clinics[index].name);
-        values.push(parseFloat(averageTimeSpent.toFixed(2)));
+          averageTimes.forEach((nurseAverages, index) => {
+            if (Array.isArray(nurseAverages) && nurseAverages.length > 0) {
+              const totalAverageTime = nurseAverages.reduce(
+                (acc, { averageTimeSpent }) => acc + averageTimeSpent,
+                0
+              );
+              const clinicAverageTime = totalAverageTime / nurseAverages.length;
 
-        if (averageTimeSpent > maxValue) {
-          maxValue = averageTimeSpent;
+              labels.push(clinics[index].name);
+              values.push(parseFloat(clinicAverageTime.toFixed(2)));
+
+              if (clinicAverageTime > maxValue) {
+                maxValue = clinicAverageTime;
+              }
+            }
+          });
+        } else {
+          const nurseAverages = await calculateAverageTimeSpent(clinicId);
+          const clinic = clinics.find((clinic) => clinic.id === clinicId);
+
+          if (clinic) {
+            nurseAverages.forEach(({ nurseId, averageTimeSpent }) => {
+              const nurse = nurses.find((nurse) => nurse.id === nurseId);
+              if (nurse) {
+                labels.push(nurse.name);
+                values.push(parseFloat(averageTimeSpent.toFixed(2)));
+
+                if (averageTimeSpent > maxValue) {
+                  maxValue = averageTimeSpent;
+                }
+              }
+            });
+          }
         }
-      });
 
-      const yAxisUnit = maxValue >= 60 ? "h" : "m";
-      const formattedValues = values.map((value) =>
-        yAxisUnit === "h" ? value / 60 : value
-      );
+        const yAxisUnit = maxValue >= 60 ? "h" : "m";
+        const formattedValues = values.map((value) =>
+          yAxisUnit === "h" ? value / 60 : value
+        );
 
-      setLabels(labels);
-      setValues(formattedValues);
-      setYAxisUnit(yAxisUnit);
-    }, [clinics, calculateAverageTimeSpent]);
+        setLabels(labels);
+        setValues(formattedValues);
+        setYAxisUnit(yAxisUnit);
+      },
+      [clinics, nurses, calculateAverageTimeSpent]
+    );
 
     useEffect(() => {
-      getStaffHours();
+      getStaffHours(clinicId);
       setLoading(false);
-    }, [getStaffHours]);
+    }, [getStaffHours, clinicId]);
 
     const chartData = useMemo(() => {
       const maxIndex = values.indexOf(Math.max(...values));
