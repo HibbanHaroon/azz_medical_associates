@@ -2,10 +2,12 @@ import { convertToLocalTime } from "../utils/dateUtils";
 
 const API_URL = "https://az-medical-p9w9.onrender.com/api/attendance";
 
-// Fetch all attendance records for a specific clinic
-export const fetchAttendance = async (clinicId) => {
+// Fetch all attendance records for a specific clinic or IT staff
+export const fetchAttendance = async (clinicId, userId, isITStaff = false) => {
   try {
-    const response = await fetch(`${API_URL}/${clinicId}`);
+    const response = await fetch(
+      `${API_URL}/${clinicId}/${userId}?isITStaff=${isITStaff}`
+    );
     if (!response.ok) {
       throw new Error("Error fetching attendance records");
     }
@@ -35,13 +37,22 @@ export const fetchAttendance = async (clinicId) => {
 };
 
 // Add or update attendance for the last 30 days
-export const addOrUpdateAttendance = async (clinicId, attendanceData) => {
-  const { id, datetime, status, nurseName, checkInTime, checkOutTime } =
+export const addOrUpdateAttendance = async (
+  clinicId,
+  userId,
+  attendanceData,
+  isITStaff = false
+) => {
+  const { datetime, status, nurseName, checkInTime, checkOutTime } =
     attendanceData;
 
   try {
     const currentDate = new Date(datetime);
-    const existingAttendance = await fetchAttendanceById(clinicId, id);
+    const existingAttendance = await fetchAttendanceById(
+      clinicId,
+      userId,
+      isITStaff
+    );
 
     let pastThirtyDays =
       existingAttendance?.pastThirtyDays ||
@@ -49,7 +60,7 @@ export const addOrUpdateAttendance = async (clinicId, attendanceData) => {
 
     const lastRecordedDate = new Date(pastThirtyDays[0]?.datetime);
 
-    // Using ceil instead of floor, cause there was a bug where the date was being skipped
+    // Using ceil instead of floor to handle skipped days correctly
     const daysSkipped = Math.ceil(
       (currentDate - lastRecordedDate) / (1000 * 60 * 60 * 24)
     );
@@ -78,9 +89,19 @@ export const addOrUpdateAttendance = async (clinicId, attendanceData) => {
     const updatedAttendance = { nurseName, pastThirtyDays };
 
     if (existingAttendance) {
-      return await updateAttendance(clinicId, id, updatedAttendance);
+      return await updateAttendance(
+        clinicId,
+        userId,
+        updatedAttendance,
+        isITStaff
+      );
     } else {
-      return await addAttendance(clinicId, { id, ...updatedAttendance });
+      return await addAttendance(
+        clinicId,
+        userId,
+        { userId, ...updatedAttendance },
+        isITStaff
+      );
     }
   } catch (error) {
     console.error("Error adding or updating attendance record:", error);
@@ -104,9 +125,11 @@ const initializePastThirtyDays = (currentDate) => {
 };
 
 // Fetch a specific attendance record by ID
-const fetchAttendanceById = async (clinicId, id) => {
+const fetchAttendanceById = async (clinicId, userId, isITStaff = false) => {
   try {
-    const response = await fetch(`${API_URL}/${clinicId}/${id}`);
+    const response = await fetch(
+      `${API_URL}/${clinicId}/${userId}?isITStaff=${isITStaff}`
+    );
     if (response.status === 404) {
       return null; // Return null if attendance record not found
     }
@@ -140,7 +163,12 @@ const fetchAttendanceById = async (clinicId, id) => {
 
 // Existing functions for adding, updating, and deleting attendance records
 
-export const addAttendance = async (clinicId, attendanceData) => {
+export const addAttendance = async (
+  clinicId,
+  userId,
+  attendanceData,
+  isITStaff = false
+) => {
   try {
     // Convert dates to UTC before saving
     attendanceData.pastThirtyDays = attendanceData.pastThirtyDays.map((day) => {
@@ -156,13 +184,16 @@ export const addAttendance = async (clinicId, attendanceData) => {
       };
     });
 
-    const response = await fetch(`${API_URL}/${clinicId}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(attendanceData),
-    });
+    const response = await fetch(
+      `${API_URL}/${clinicId}/${userId}?isITStaff=${isITStaff}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(attendanceData),
+      }
+    );
     if (!response.ok) {
       throw new Error("Error adding attendance record");
     }
@@ -174,7 +205,12 @@ export const addAttendance = async (clinicId, attendanceData) => {
   }
 };
 
-export const updateAttendance = async (clinicId, id, attendanceData) => {
+export const updateAttendance = async (
+  clinicId,
+  userId,
+  attendanceData,
+  isITStaff = false
+) => {
   try {
     // Convert dates to UTC before updating
     attendanceData.pastThirtyDays = attendanceData.pastThirtyDays.map((day) => {
@@ -190,13 +226,16 @@ export const updateAttendance = async (clinicId, id, attendanceData) => {
       };
     });
 
-    const response = await fetch(`${API_URL}/${clinicId}/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(attendanceData),
-    });
+    const response = await fetch(
+      `${API_URL}/${clinicId}/${userId}?isITStaff=${isITStaff}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(attendanceData),
+      }
+    );
     if (!response.ok) {
       throw new Error("Error updating attendance record");
     }
@@ -208,11 +247,15 @@ export const updateAttendance = async (clinicId, id, attendanceData) => {
   }
 };
 
-export const deleteAttendance = async (clinicId, id) => {
+// Delete an attendance record by ID
+export const deleteAttendance = async (clinicId, userId, isITStaff = false) => {
   try {
-    const response = await fetch(`${API_URL}/${clinicId}/${id}`, {
-      method: "DELETE",
-    });
+    const response = await fetch(
+      `${API_URL}/${clinicId}/${userId}?isITStaff=${isITStaff}`,
+      {
+        method: "DELETE",
+      }
+    );
     if (!response.ok) {
       throw new Error("Error deleting attendance record");
     }
