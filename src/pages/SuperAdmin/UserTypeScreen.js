@@ -240,7 +240,14 @@ export default function UserTypeScreen() {
 
   const handleConfirmDelete = async () => {
     try {
-      await currentUserRole.delete(clinicId, selectedUser.id);
+      if (
+        currentUserRole.type === "hrStaff" ||
+        currentUserRole.type === "itStaff"
+      ) {
+        await currentUserRole.delete(selectedUser.id);
+      } else {
+        await currentUserRole.delete(clinicId, selectedUser.id);
+      }
       setUsers(users.filter((user) => user.id !== selectedUser.id));
       handleCloseDeleteModal();
     } catch (error) {

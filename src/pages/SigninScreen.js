@@ -319,25 +319,25 @@ const SigninScreen = () => {
               </Select>
             </FormControl>
 
-            {(selectedUserType !== "Super Admin" ||
-              selectedUserType !== "HR Staff") && (
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <Select
-                  value={selectedClinic}
-                  onChange={handleClinicChange}
-                  displayEmpty
-                >
-                  <MenuItem value="" disabled>
-                    Select Clinic
-                  </MenuItem>
-                  {clinics.map((clinic) => (
-                    <MenuItem key={clinic.id} value={clinic.id}>
-                      {clinic.name}
+            {selectedUserType !== "Super Admin" &&
+              selectedUserType !== "HR Staff" && (
+                <FormControl fullWidth sx={{ mb: 2 }}>
+                  <Select
+                    value={selectedClinic}
+                    onChange={handleClinicChange}
+                    displayEmpty
+                  >
+                    <MenuItem value="" disabled>
+                      Select Clinic
                     </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )}
+                    {clinics.map((clinic) => (
+                      <MenuItem key={clinic.id} value={clinic.id}>
+                        {clinic.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
 
             {errorMessage && (
               <Typography color="error">{errorMessage}</Typography>
