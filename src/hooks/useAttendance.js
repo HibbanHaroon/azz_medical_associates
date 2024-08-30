@@ -9,7 +9,7 @@ import showInfoToast from "../utils/showInfoToast";
 import generateAudio from "../utils/generateAudio";
 import isSameDay from "../utils/isSameDay";
 
-export const useAttendance = (clinicId) => {
+export const useAttendance = (clinicId, userId, isItStaff, setIsItStaff) => {
   const [attendance, setAttendance] = useState([]);
   const [checkInLoading, setCheckInLoading] = useState(false);
   const [checkOutLoading, setCheckOutLoading] = useState(false);
@@ -17,7 +17,9 @@ export const useAttendance = (clinicId) => {
   useEffect(() => {
     const fetchAttendanceData = async () => {
       try {
-        const attendanceData = await fetchAttendance(clinicId);
+        const attendanceData = isItStaff
+          ? await fetchAttendance(clinicId, userId, isItStaff)
+          : await fetchAttendance(clinicId);
         setAttendance(attendanceData);
       } catch (error) {
         console.error("Error fetching attendance:", error.message);
@@ -25,7 +27,7 @@ export const useAttendance = (clinicId) => {
     };
 
     fetchAttendanceData();
-  }, [clinicId]);
+  }, [clinicId, userId, isItStaff]);
 
   const handleAttendance = async (
     selectedNurse,
@@ -144,7 +146,21 @@ export const useAttendance = (clinicId) => {
       }
 
       const response = todayAttendance
-        ? await updateAttendance(clinicId, attendanceData, selectedNurse)
+        ? isItStaff
+          ? await updateAttendance(
+              clinicId,
+              attendanceData,
+              userId ? userId : selectedNurse,
+              isItStaff
+            )
+          : await updateAttendance(clinicId, attendanceData, selectedNurse)
+        : isItStaff
+        ? await addOrUpdateAttendance(
+            clinicId,
+            attendanceData,
+            userId,
+            isItStaff
+          )
         : await addOrUpdateAttendance(clinicId, attendanceData);
 
       if (!response) throw new Error("Failed to update attendance");
@@ -186,7 +202,11 @@ export const useAttendance = (clinicId) => {
 
       if (!isCheckIn) {
         setTimeout(() => {
-          navigate("/arrival", { state: { clinicId } });
+          if (isItStaff) {
+            setIsItStaff(false);
+          } else {
+            window.history.back();
+          }
         }, 3000);
       }
     } catch (error) {

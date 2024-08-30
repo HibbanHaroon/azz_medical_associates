@@ -11,13 +11,17 @@ import {
   Avatar,
 } from "@mui/material";
 import { fetchNurses } from "../../services/nurseService";
+import { fetchItStaff } from "../../services/itStaffService";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import Webcam from "react-webcam";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAttendance } from "../../hooks/useAttendance";
 import isSameDay from "../../utils/isSameDay";
 import AttendanceMarkedDialog from "./components/AttendanceMarkedDialog";
-import { Face as FaceIcon } from "@mui/icons-material";
+import {
+  Face as FaceIcon,
+  ArrowBack as ArrowBackIcon,
+} from "@mui/icons-material";
 
 export default function StaffAttendance() {
   const { state } = useLocation();
@@ -30,14 +34,18 @@ export default function StaffAttendance() {
   const [showCamera, setShowCamera] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [nurseName, setNurseName] = useState("");
+  const [isItStaff, setIsItStaff] = useState(false);
 
   const { attendance, handleAttendance, checkInLoading, checkOutLoading } =
-    useAttendance(clinicId, nurses);
+    useAttendance(clinicId, selectedNurse, isItStaff, setIsItStaff);
 
   useEffect(() => {
     const fetchNursesData = async () => {
       try {
-        const fetchedNurses = await fetchNurses(clinicId);
+        const fetchedNurses = isItStaff
+          ? await fetchItStaff()
+          : await fetchNurses(clinicId);
+
         setNurses(fetchedNurses);
       } catch (error) {
         console.error("Error fetching nurses:", error.message);
@@ -45,7 +53,17 @@ export default function StaffAttendance() {
     };
 
     fetchNursesData();
-  }, [clinicId]);
+  }, [clinicId, isItStaff]);
+
+  useEffect(() => {
+    // Reset states immediately when clinicId or isItStaff changes
+    setSelectedNurse("");
+    setNurseName("");
+    setShowCheckInButton(false);
+    setShowCheckOutButton(false);
+    setShowCamera(false);
+    setShowConfirmation(false);
+  }, [clinicId, isItStaff]);
 
   useEffect(() => {
     if (showCamera) {
@@ -76,7 +94,7 @@ export default function StaffAttendance() {
   };
 
   useEffect(() => {
-    if (selectedNurse) {
+    if (selectedNurse && nurses.length > 0 && attendance.length > 0) {
       const nurse = nurses.find((nurse) => nurse.id === selectedNurse);
       const nurseAttendance = attendance.find(
         (record) => record.id === nurse.id
@@ -97,7 +115,7 @@ export default function StaffAttendance() {
         setShowCheckOutButton(false);
       }
     }
-  }, [nurses, selectedNurse, attendance]);
+  }, [nurses, selectedNurse, attendance, isItStaff]);
 
   const handleConfirmationClose = () => {
     setShowConfirmation(false);
@@ -172,7 +190,7 @@ export default function StaffAttendance() {
             <CameraAltIcon />
           </Avatar>
           <Typography component="h1" variant="h5">
-            Staff Attendance
+            {isItStaff ? "IT Staff Attendance" : "Staff Attendance"}
           </Typography>
           {!showCamera ? (
             <Box component="form" noValidate sx={{ mt: 3, width: "100%" }}>
@@ -209,7 +227,7 @@ export default function StaffAttendance() {
             />
           )}
           <Box sx={{ display: "flex" }}>
-            {showCheckInButton && (
+            {showCheckInButton && selectedNurse !== "" && (
               <Button
                 onClick={handleCheckIn}
                 variant="outlined"
@@ -234,7 +252,7 @@ export default function StaffAttendance() {
                 )}
               </Button>
             )}
-            {showCheckOutButton && (
+            {showCheckOutButton && selectedNurse !== "" && (
               <Button
                 onClick={handleCheckOut}
                 variant="outlined"
@@ -267,31 +285,55 @@ export default function StaffAttendance() {
           nurseName={nurseName}
         />
       </Container>
-      <Button
-        onClick={() => {}}
-        variant="contained"
-        color="primary"
-        sx={{
-          position: "fixed",
-          bottom: "2rem",
-          left: "2rem",
-          zIndex: 999,
-          padding: 1,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          "@media (max-width: 600px)": {
-            padding: "4px 8px",
-            fontSize: "large",
-            marginTop: 90,
-          },
-        }}
-      >
-        <Box display="flex" flexDirection="column" alignItems="center">
-          <FaceIcon fontSize="large" />
-          <Typography variant="body2">IT Staff Attendance</Typography>
-        </Box>
-      </Button>
+      {isItStaff ? (
+        <Button
+          onClick={() => setIsItStaff(false)}
+          variant="contained"
+          color="secondary"
+          sx={{
+            position: "fixed",
+            top: "2rem",
+            left: "2rem",
+            zIndex: 999,
+            padding: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            "@media (max-width: 600px)": {
+              padding: "4px 8px",
+              fontSize: "large",
+              marginTop: 90,
+            },
+          }}
+        >
+          <ArrowBackIcon sx={{ marginRight: 1 }} />
+          Back to Staff Attendance
+        </Button>
+      ) : (
+        <Button
+          onClick={() => setIsItStaff(true)}
+          variant="contained"
+          color="primary"
+          sx={{
+            position: "fixed",
+            bottom: "2rem",
+            left: "2rem",
+            zIndex: 999,
+            padding: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            "@media (max-width: 600px)": {
+              padding: "4px 8px",
+              fontSize: "large",
+              marginTop: 90,
+            },
+          }}
+        >
+          <FaceIcon sx={{ marginRight: 1 }} />
+          IT Staff Attendance
+        </Button>
+      )}
     </div>
   );
 }
