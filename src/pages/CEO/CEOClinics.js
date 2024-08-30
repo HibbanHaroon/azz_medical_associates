@@ -48,9 +48,7 @@ import {
 import { fetchAttendance } from "../../services/attendanceService";
 import { fetchAllArrivals } from "../../services/arrivalsService";
 import DownloadIcon from "@mui/icons-material/Download";
-import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
-import "jspdf-autotable";
+import { downloadReport } from "../../utils/downloadReportUtils";
 import { ArrowBack } from "@mui/icons-material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -840,162 +838,40 @@ export default function CEOClinics() {
     fetchData();
   }, [isAllClinics, dropdownClinicId, allArrivals, doctors]);
 
-  const handleDownloadReport = () => {
-    setDownloading(true);
-    try {
-      const doc = new jsPDF();
-
-      const logo = new Image();
-      logo.src = "/assets/logos/logoHAUTO.png";
-      logo.onload = () => {
-        doc.addImage(logo, "PNG", 20, 20, 50, 10);
-
-        const pageWidth = doc.internal.pageSize.getWidth();
-
-        doc.setFontSize(22);
-        const title = "Staff Attendance";
-        const titleWidth =
-          (doc.getStringUnitWidth(title) * doc.internal.getFontSize()) /
-          doc.internal.scaleFactor;
-        const titleX = (pageWidth - titleWidth) / 2;
-        doc.text(title, titleX, 47);
-
-        doc.setFontSize(16);
-        const subtitle = "For CEO";
-        const subtitleWidth =
-          (doc.getStringUnitWidth(subtitle) * doc.internal.getFontSize()) /
-          doc.internal.scaleFactor;
-        const subtitleX = (pageWidth - subtitleWidth) / 2;
-        doc.setTextColor(128, 128, 128);
-        doc.text(subtitle, subtitleX, 56);
-
-        doc.setTextColor(0, 0, 0);
-
-        doc.setFontSize(12);
-        const currentDate = new Date();
-        const dateTimeStr = `Date and Time: ${currentDate.toLocaleString()}`;
-        const durationStr = `Duration: ${currentDate.toLocaleString("en-US", {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        })}`;
-
-        doc.text(dateTimeStr, 20, 70);
-        doc.text(durationStr, 130, 70);
-
-        const tableColumn = columns.map((column) => {
-          return column.label;
-        });
-        const tableRows = [];
-
-        const rowData = rows.map((row) => {
-          return [row.name, row.total, row.average];
-        });
-
-        tableRows.push(...rowData);
-
-        doc.autoTable({
-          head: [tableColumn],
-          body: tableRows,
-          startY: 80,
-        });
-
-        doc.setFontSize(10);
-        doc.text(
-          "This report is system generated.",
-          20,
-          doc.internal.pageSize.height - 10
-        );
-
-        doc.save("staff_attendance_report.pdf");
-      };
-    } catch (error) {
-      console.error("Error downloading report:", error);
-    } finally {
-      setDownloading(false);
-    }
-  };
-
   const handleDownloadAnalyticsReport = async () => {
     setDownloading(true);
     try {
-      const doc = new jsPDF();
-
-      const logo = new Image();
-      logo.src = "/assets/logos/logoHAUTO.png";
-      logo.onload = async () => {
-        doc.addImage(logo, "PNG", 20, 20, 50, 10);
-
-        const pageWidth = doc.internal.pageSize.getWidth();
-
-        doc.setFontSize(22);
-        const title = "Analytics Report";
-        const titleWidth =
-          (doc.getStringUnitWidth(title) * doc.internal.getFontSize()) /
-          doc.internal.scaleFactor;
-        const titleX = (pageWidth - titleWidth) / 2;
-        doc.text(title, titleX, 47);
-
-        doc.setFontSize(16);
-        const subtitle = "For CEO";
-        const subtitleWidth =
-          (doc.getStringUnitWidth(subtitle) * doc.internal.getFontSize()) /
-          doc.internal.scaleFactor;
-        const subtitleX = (pageWidth - subtitleWidth) / 2;
-        doc.setTextColor(128, 128, 128);
-        doc.text(subtitle, subtitleX, 56);
-
-        doc.setTextColor(0, 0, 0);
-
-        doc.setFontSize(12);
-        const currentDate = new Date();
-        const dateTimeStr = `Date and Time: ${currentDate.toLocaleString()}`;
-        const durationStr = `Duration: ${currentDate.toLocaleString("en-US", {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        })}`;
-
-        doc.text(dateTimeStr, 20, 70);
-        doc.text(durationStr, 130, 70);
-
-        const charts = [
+      await downloadReport({
+        title: "Analytics Report",
+        subtitle: "For CEO",
+        charts: [
           attendanceRef.current,
           providerOfTheMonthRef.current,
           patientWaitingTimeRef.current,
           patientMeetingTimeRef.current,
           busyHoursRef.current,
           staffHoursRef.current,
-        ];
+        ],
+        docName: "Analytics_Report.pdf",
+      });
+    } finally {
+      setDownloading(false);
+    }
+  };
 
-        for (let i = 0; i < charts.length; i++) {
-          const chart = charts[i];
-          const canvas = await html2canvas(chart);
-          const imgData = canvas.toDataURL("image/png");
+  const handleDownloadReport = async () => {
+    setDownloading(true);
+    try {
+      const tableColumn = columns.map((column) => column.label);
+      const tableRows = rows.map((row) => [row.name, row.total, row.average]);
 
-          const pageWidth = doc.internal.pageSize.getWidth();
-          const imgWidth = (pageWidth - 40) / 2;
-          const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-          const x = (i % 2) * (imgWidth + 20) + 10; // 20px margin on both sides
-          const y = 80 + Math.floor(i / 2) * (imgHeight + 20); // 20px margin between rows
-
-          doc.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
-        }
-
-        doc.setFontSize(10);
-        doc.text(
-          "This report is system generated.",
-          20,
-          doc.internal.pageSize.height - 10
-        );
-
-        doc.save("analytics_report.pdf");
-      };
-    } catch (error) {
-      console.error("Error downloading report:", error);
+      await downloadReport({
+        title: "Staff Attendance",
+        subtitle: "For CEO",
+        tableColumns: tableColumn,
+        tableRows: tableRows,
+        docName: "Staff_Attendance_Report.pdf",
+      });
     } finally {
       setDownloading(false);
     }
