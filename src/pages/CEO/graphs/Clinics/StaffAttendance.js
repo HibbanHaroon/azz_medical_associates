@@ -20,7 +20,7 @@ import {
 import { subDays, format } from "date-fns";
 
 const StaffAttendance = React.forwardRef(
-  ({ clinics, attendanceRecords }, ref) => {
+  ({ clinics, attendanceRecords, onDataProcessed }, ref) => {
     const [loading, setLoading] = useState(true);
     const [attendanceData, setAttendanceData] = useState([]);
     const [clinicColors, setClinicColors] = useState({});
@@ -45,8 +45,6 @@ const StaffAttendance = React.forwardRef(
       });
       setClinicColors(colorMapping);
     }, [clinics]);
-
-    console.log(attendanceRecords);
 
     // Process attendance data based on the provided records
     const processAttendanceData = useMemo(() => {
@@ -82,13 +80,14 @@ const StaffAttendance = React.forwardRef(
 
     useEffect(() => {
       setAttendanceData(processAttendanceData);
-      setLoading(false);
-
-      //   if (processAttendanceData.length > 0) {
-      //     setLoading(false);
-      //     onDataProcessed();
-      //   }
     }, [processAttendanceData]);
+
+    useEffect(() => {
+      if (attendanceData.length > 0) {
+        setLoading(false);
+        onDataProcessed();
+      }
+    }, [attendanceData.length, onDataProcessed]);
 
     // Tooltip component for displaying attendance details on hover
     const CustomTooltip = ({ active, payload, label }) => {

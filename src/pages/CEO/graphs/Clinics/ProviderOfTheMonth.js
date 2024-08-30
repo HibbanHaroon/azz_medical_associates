@@ -15,7 +15,7 @@ import { useTheme } from "@mui/material/styles";
 ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels);
 
 const ProviderOfTheMonth = React.forwardRef(
-  ({ arrivals, doctors, clinicId }, ref) => {
+  ({ arrivals, doctors, clinicId, onDataProcessed }, ref) => {
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState([]);
     const theme = useTheme();
@@ -49,12 +49,15 @@ const ProviderOfTheMonth = React.forwardRef(
       );
 
       setData(sortedProviders.slice(0, 5));
-      setLoading(false);
     }, [arrivals, doctors, clinicId]);
 
     useEffect(() => {
       calculateValuableProviders();
-    }, [calculateValuableProviders]);
+      if (data.length > 0) {
+        setLoading(false);
+        onDataProcessed();
+      }
+    }, [calculateValuableProviders, onDataProcessed, data.length]);
 
     const generateGradientColors = useCallback(
       (startColor, endColor, steps) => {

@@ -73,6 +73,13 @@ const BusyHours = React.forwardRef(
       calculateBusyHours();
     }, [calculateBusyHours]);
 
+    useEffect(() => {
+      if (data.length > 0) {
+        setLoading(false);
+        onDataProcessed();
+      }
+    }, [data.length, onDataProcessed]);
+
     const chartData = useMemo(() => {
       return {
         labels: data.map((point) => point.hour),

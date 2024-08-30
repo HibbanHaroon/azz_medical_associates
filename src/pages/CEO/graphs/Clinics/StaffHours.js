@@ -9,7 +9,7 @@ import { Chart } from "chart.js";
 Chart.register(ChartDataLabels);
 
 const StaffHours = React.forwardRef(
-  ({ clinics, nurses, attendanceRecords, clinicId }, ref) => {
+  ({ clinics, nurses, attendanceRecords, clinicId, onDataProcessed }, ref) => {
     const [loading, setLoading] = useState(true);
     const [labels, setLabels] = useState([]);
     const [values, setValues] = useState([]);
@@ -144,8 +144,12 @@ const StaffHours = React.forwardRef(
 
     useEffect(() => {
       getStaffHours(clinicId);
-      setLoading(false);
-    }, [getStaffHours, clinicId]);
+
+      if (values.length > 0) {
+        setLoading(false);
+        onDataProcessed();
+      }
+    }, [getStaffHours, clinicId, onDataProcessed, values.length]);
 
     const chartData = useMemo(() => {
       const maxIndex = values.indexOf(Math.max(...values));

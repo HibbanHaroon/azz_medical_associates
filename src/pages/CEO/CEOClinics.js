@@ -143,7 +143,6 @@ const getAllArrivals = async () => {
 };
 
 export default function CEOClinics() {
-  const [data, setData] = useState([]);
   const [selectedClinic, setSelectedClinic] = useState("All Clinics");
   const [clinics, setClinics] = useState([]);
   const [nurses, setNurses] = useState([]);
@@ -152,8 +151,6 @@ export default function CEOClinics() {
   const [doctors, setDoctors] = useState([]);
   const [value, setValue] = React.useState("1");
   const [allArrivals, setAllArrivals] = useState([]);
-  const [arrivalsAllGet, setArrivalsAllGet] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [currentTable, setCurrentTable] = useState(0);
   const [rows, setRows] = useState([]);
   const [columns, setColumns] = useState([]);
@@ -191,18 +188,32 @@ export default function CEOClinics() {
   });
 
   // Function to check if all data is loaded
-  const isAllDataLoaded = () => {
+  const isAllDataLoaded = useCallback(() => {
     return Object.values(loadingGraph).every((value) => value === false);
-  };
+  }, [loadingGraph]);
 
   const updateLoadingGraph = (graphKey, isLoading) => {
     setLoadingGraph((prevMap) => ({ ...prevMap, [graphKey]: isLoading }));
   };
 
+  const handleDataProcessed = useCallback((graphKey) => {
+    updateLoadingGraph(graphKey, false);
+  }, []);
+
+  const dataProcessedHandlers = useMemo(
+    () => ({
+      attendance: () => handleDataProcessed("attendanceGraph"),
+      providerOfTheMonth: () => handleDataProcessed("providerOfTheMonthGraph"),
+      patientWaitingTime: () => handleDataProcessed("patientWaitingTimeGraph"),
+      patientMeetingTime: () => handleDataProcessed("patientMeetingTimeGraph"),
+      busyHours: () => handleDataProcessed("busyHoursGraph"),
+      staffHours: () => handleDataProcessed("staffHoursGraph"),
+    }),
+    [handleDataProcessed]
+  );
+
   useEffect(() => {
     const fetchInitialData = async () => {
-      setLoading(true);
-
       try {
         // Fetch Clinics Data
         const clinicData = await getAllClinics();
@@ -268,8 +279,6 @@ export default function CEOClinics() {
         setAttendanceRecords(attendanceData);
       } catch (error) {
         console.error("Error fetching initial data:", error);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -619,7 +628,6 @@ export default function CEOClinics() {
 
           setClinicsDetails(response);
 
-          setData(response);
           const rows = response.map((clinic) => ({
             id: clinic.id,
             name: clinic.name,
@@ -644,7 +652,6 @@ export default function CEOClinics() {
         } else if (selectedItem.item === "Arrivals") {
           // Fetching arrivals data
           const allArrivals = await getAllArrivals();
-          setArrivalsAllGet(allArrivals);
           const clinicId =
             selectedClinic === "All Clinics" ? "all" : selectedClinicId;
           const data = allArrivals[clinicId];
@@ -969,7 +976,6 @@ export default function CEOClinics() {
           const imgData = canvas.toDataURL("image/png");
 
           const pageWidth = doc.internal.pageSize.getWidth();
-          const pageHeight = doc.internal.pageSize.getHeight();
           const imgWidth = (pageWidth - 40) / 2;
           const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
@@ -1056,23 +1062,23 @@ export default function CEOClinics() {
               clinics={clinics}
               attendanceRecords={attendanceRecords}
               ref={attendanceRef}
-              // onDataProcessed={dataProcessedHandlers.attendance}
+              onDataProcessed={dataProcessedHandlers.attendance}
             />
             <ProviderOfTheMonth
               doctors={doctors}
               arrivals={allArrivals}
               clinicId={dropdownClinicId}
               ref={providerOfTheMonthRef}
-              // onDataProcessed={dataProcessedHandlers.providerOfTheMonth}
+              onDataProcessed={dataProcessedHandlers.providerOfTheMonth}
             />
-            {/* <PatientTime
+            <PatientTime
               title="Average Meeting Time"
               ref={patientMeetingTimeRef}
               chartType={"meeting"}
               clinics={dropdownClinicId ? [{ id: dropdownClinicId }] : clinics}
               arrivals={allArrivals}
               doctors={doctors}
-              // onDataProcessed={dataProcessedHandlers.patientMeetingTime}
+              onDataProcessed={dataProcessedHandlers.patientMeetingTime}
             />
             <PatientTime
               title="Patient Waiting Time"
@@ -1081,14 +1087,14 @@ export default function CEOClinics() {
               clinics={dropdownClinicId ? [{ id: dropdownClinicId }] : clinics}
               arrivals={allArrivals}
               doctors={doctors}
-              // onDataProcessed={dataProcessedHandlers.patientWaitingTime}
-            /> */}
+              onDataProcessed={dataProcessedHandlers.patientWaitingTime}
+            />
             <BusyHours
               key={dropdownClinicId}
               clinicId={dropdownClinicId}
               allArrivals={allArrivals}
               ref={busyHoursRef}
-              // onDataProcessed={dataProcessedHandlers.busyHours}
+              onDataProcessed={dataProcessedHandlers.busyHours}
             />
             <StaffHours
               clinics={clinics}
@@ -1096,7 +1102,7 @@ export default function CEOClinics() {
               attendanceRecords={attendanceRecords}
               clinicId={dropdownClinicId}
               ref={staffHoursRef}
-              // onDataProcessed={dataProcessedHandlers.staffHours}
+              onDataProcessed={dataProcessedHandlers.staffHours}
             />
           </Grid>
         </TabPanel>
