@@ -149,6 +149,7 @@ export default function PatientWaitingScreen(props) {
             minute: "2-digit",
             second: "2-digit",
             hour12: true,
+            timeZone: "UTC",
           }
         );
 
