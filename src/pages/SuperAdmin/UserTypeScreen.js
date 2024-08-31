@@ -51,6 +51,18 @@ import {
   deleteAdmin,
 } from "../../services/adminService";
 import {
+  fetchHrStaff,
+  addHrStaff,
+  updateHrStaff,
+  deleteHrStaff,
+} from "../../services/hrStaffService";
+import {
+  fetchItStaff,
+  addItStaff,
+  updateItStaff,
+  deleteItStaff,
+} from "../../services/itStaffService";
+import {
   createUserWithEmailAndPassword,
   sendEmailVerification,
 } from "firebase/auth";
@@ -159,6 +171,22 @@ const userRoles = [
     update: updateAdmin,
     delete: deleteAdmin,
   },
+  {
+    role: "HR Staff",
+    type: "hrStaff",
+    fetch: fetchHrStaff,
+    add: addHrStaff,
+    update: updateHrStaff,
+    delete: deleteHrStaff,
+  },
+  {
+    role: "IT Staff",
+    type: "itStaff",
+    fetch: fetchItStaff,
+    add: addItStaff,
+    update: updateItStaff,
+    delete: deleteItStaff,
+  },
 ];
 
 export default function UserTypeScreen() {
@@ -212,7 +240,14 @@ export default function UserTypeScreen() {
 
   const handleConfirmDelete = async () => {
     try {
-      await currentUserRole.delete(clinicId, selectedUser.id);
+      if (
+        currentUserRole.type === "hrStaff" ||
+        currentUserRole.type === "itStaff"
+      ) {
+        await currentUserRole.delete(selectedUser.id);
+      } else {
+        await currentUserRole.delete(clinicId, selectedUser.id);
+      }
       setUsers(users.filter((user) => user.id !== selectedUser.id));
       handleCloseDeleteModal();
     } catch (error) {
@@ -257,16 +292,33 @@ export default function UserTypeScreen() {
 
         userData.id = userId;
 
-        const newUser = await currentUserRole.add(clinicId, userData);
+        let newUser;
+
+        if (
+          currentUserRole.type === "hrStaff" ||
+          currentUserRole.type === "itStaff"
+        ) {
+          newUser = await currentUserRole.add(userData);
+        } else {
+          newUser = await currentUserRole.add(clinicId, userData);
+        }
         newUser.id = userId;
         console.log(newUser);
         setUsers([...users, newUser]);
       } else if (modalMode === "edit") {
-        const updatedUser = await currentUserRole.update(
-          clinicId,
-          selectedUser.id,
-          formData
-        );
+        let updatedUser;
+        if (
+          currentUserRole.type === "hrStaff" ||
+          currentUserRole.type === "itStaff"
+        ) {
+          updatedUser = await currentUserRole.update(selectedUser.id, formData);
+        } else {
+          updatedUser = await currentUserRole.update(
+            clinicId,
+            selectedUser.id,
+            formData
+          );
+        }
 
         console.log(updatedUser);
         setUsers(

@@ -5,4 +5,5 @@ export const UserTypes = {
   SUPER_ADMIN: "Super Admin",
   PROVIDER: "Provider",
   NURSE: "Nurse",
+  HR_STAFF: "HR Staff",
 };
