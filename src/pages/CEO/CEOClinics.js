@@ -868,6 +868,7 @@ export default function CEOClinics() {
       await downloadReport({
         title: "Staff Attendance",
         subtitle: "For CEO",
+        table: true,
         tableColumns: tableColumn,
         tableRows: tableRows,
         docName: "Staff_Attendance_Report.pdf",

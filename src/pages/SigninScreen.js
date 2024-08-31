@@ -153,8 +153,7 @@ const SigninScreen = () => {
         case "HR Staff":
           navigate(`/attendance`, {
             state: {
-              clinicId: selectedClinic,
-              clinicName: selectedClinicName,
+              clinics: clinics,
               isHrStaff: true,
             },
           });

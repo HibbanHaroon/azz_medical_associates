@@ -14,12 +14,10 @@ import {
 import TableComponent from "../components/TableComponent";
 import { fetchAttendance } from "../services/attendanceService";
 import { fetchNurses } from "../services/nurseService";
+import { fetchItStaff } from "../services/itStaffService";
 import DownloadIcon from "@mui/icons-material/Download";
 import { parse, format } from "date-fns";
-import {
-  DatePicker,
-  LocalizationProvider,
-} from "@mui/x-date-pickers";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { downloadReport } from "../utils/downloadReportUtils";
 
@@ -36,7 +34,7 @@ const generateDateRange = (filter) => {
   let startDate;
 
   if (filter === "Today") {
-    startDate = new Date(now.setHours(0, 0, 0, 0));
+    startDate = new Date(now.setHours(24, 0, 0, 0));
     dates.push(startDate);
   } else if (filter === "Weekly") {
     startDate = new Date(now.setDate(now.getDate() - 7));
@@ -66,6 +64,15 @@ const generateDateRange = (filter) => {
 };
 
 const AttendanceScreen = () => {
+  const location = useLocation();
+  const { clinics = null, staffId = null, isHrStaff = false } = location.state;
+
+  const [selectedClinic, setSelectedClinic] = useState(
+    location.state?.clinicId || "All Clinics"
+  );
+  const [clinicName, setClinicName] = useState(
+    location.state?.clinicName || "All Clinics"
+  );
   const [selectedNurse, setSelectedNurse] = useState("All Staff");
   const [nurses, setNurses] = useState([]);
   const [startDate, setStartDate] = useState(null);
@@ -73,8 +80,7 @@ const AttendanceScreen = () => {
   const [rows, setRows] = useState([]);
   const [columns, setColumns] = useState([]);
   const [downloading, setDownloading] = useState(false);
-  const location = useLocation();
-  const { clinicId, clinicName, staffId = null } = location.state;
+  const [isItStaff, setIsItStaff] = useState(false);
 
   const dropdownItems = ["Today", "Weekly", "Monthly"];
   const [currentDropdownItem, setCurrentDropdownItem] = useState(
@@ -94,12 +100,45 @@ const AttendanceScreen = () => {
 
   const getStaffHours = useCallback(
     async (filter, nurseName = null, start = null, end = null) => {
-      const [nurses, attendanceRecords] = await Promise.all([
-        fetchNurses(clinicId),
-        fetchAttendance(clinicId),
-      ]);
+      let nurses = [];
+
+      if (isItStaff) {
+        nurses = await fetchItStaff();
+      } else if (selectedClinic === "All Clinics") {
+        for (const clinic of clinics) {
+          const clinicNurses = await fetchNurses(clinic.id);
+          nurses.push(...clinicNurses);
+        }
+      } else {
+        nurses = await fetchNurses(selectedClinic);
+      }
 
       setNurses(nurses);
+
+      let attendanceRecords = [];
+
+      if (nurseName === "All Staff" || nurseName === null) {
+        for (const nurse of nurses) {
+          const records = await fetchAttendance(
+            selectedClinic,
+            nurse.id,
+            isItStaff
+          );
+          attendanceRecords.push(...records);
+        }
+      } else {
+        const selectedNurseRecord = nurses.find(
+          (nurse) => nurse.name === nurseName
+        );
+        if (selectedNurseRecord) {
+          const records = await fetchAttendance(
+            selectedClinic,
+            selectedNurseRecord.id,
+            isItStaff
+          );
+          attendanceRecords.push(...records);
+        }
+      }
 
       let dateRange = [];
 
@@ -217,10 +256,8 @@ const AttendanceScreen = () => {
         { id: "checkOut", label: "Check Out Time", align: "right" },
         { id: "hoursSpent", label: "Hours Spent", align: "right" },
       ]);
-
-      console.log("twice");
     },
-    [clinicId, staffId]
+    [selectedClinic, staffId, isItStaff, clinics]
   );
 
   const handleDownloadReport = async () => {
@@ -235,9 +272,13 @@ const AttendanceScreen = () => {
         return rowData;
       });
 
+      console.log(columns, tableColumn);
+      console.log(rows, tableRows);
+
       await downloadReport({
         title: "Staff Attendance",
         subtitle: `${clinicName}`,
+        table: true,
         tableColumns: tableColumn,
         tableRows: tableRows,
         docName: "Staff_Attendance_Report.pdf",
@@ -245,6 +286,26 @@ const AttendanceScreen = () => {
     } finally {
       setDownloading(false);
     }
+  };
+
+  const handleClinicChange = async (event) => {
+    const clinicName = event.target.value;
+    const clinic = clinics.find((c) => c.name === clinicName);
+
+    setSelectedClinic(clinic ? clinic.id : "All Clinics");
+    setClinicName(clinicName);
+  };
+  const handleTypeOfStaffChange = async (event) => {
+    const staffType = event.target.value;
+    setIsItStaff(staffType === "IT Staff");
+
+    // Reset states
+    setCurrentDropdownItem(dropdownItems[0]);
+    setStartDate(null);
+    setEndDate(null);
+    setSelectedNurse("All Staff");
+    setSelectedClinic(location.state?.clinicId || "All Clinics");
+    setClinicName(location.state?.clinicName || "");
   };
 
   useEffect(() => {
@@ -325,23 +386,38 @@ const AttendanceScreen = () => {
               }}
             >
               <Box sx={{ display: "flex", flexDirection: "row" }}>
-                {/* Today, Weekly, Monthly Dropdown */}
-                <Select
-                  value={currentDropdownItem}
-                  onChange={(e) => {
-                    setStartDate(null);
-                    setEndDate(null);
-                    updateCurrentDropdownItem(e.target.value);
-                  }}
-                >
-                  {dropdownItems.map((item, index) => (
-                    <MenuItem key={index} value={item}>
-                      {item}
-                    </MenuItem>
-                  ))}
-                </Select>
-                <Box sx={{ ml: 2 }}> </Box>
+                {/* Type of Staff Dropdown */}
+                {isHrStaff && (
+                  <Select
+                    value={isItStaff ? "IT Staff" : "Normal Staff"}
+                    onChange={handleTypeOfStaffChange}
+                  >
+                    <MenuItem value="Normal Staff">Normal Staff</MenuItem>
+                    <MenuItem value="IT Staff">IT Staff</MenuItem>
+                  </Select>
+                )}
+                {/* All Clinics Dropdown */}
+                {isHrStaff && !isItStaff && (
+                  <>
+                    <Box sx={{ ml: 2 }}> </Box>
+                    <Select
+                      labelId="clinic-select-label"
+                      id="clinic-select"
+                      value={clinicName}
+                      label="Clinic"
+                      onChange={handleClinicChange}
+                    >
+                      <MenuItem value="All Clinics">All Clinics</MenuItem>
+                      {clinics.map((clinic) => (
+                        <MenuItem key={clinic.id} value={clinic.name}>
+                          {clinic.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </>
+                )}
                 {/* All Staff Dropdown */}
+                <Box sx={{ ml: 2 }}> </Box>
                 <Select
                   value={selectedNurse}
                   onChange={async (e) => {
@@ -362,8 +438,24 @@ const AttendanceScreen = () => {
                     </MenuItem>
                   ))}
                 </Select>
+                {/* Today, Weekly, Monthly Dropdown */}
                 <Box sx={{ ml: 2 }}> </Box>
+                <Select
+                  value={currentDropdownItem}
+                  onChange={(e) => {
+                    setStartDate(null);
+                    setEndDate(null);
+                    updateCurrentDropdownItem(e.target.value);
+                  }}
+                >
+                  {dropdownItems.map((item, index) => (
+                    <MenuItem key={index} value={item}>
+                      {item}
+                    </MenuItem>
+                  ))}
+                </Select>
                 {/* Start & End Date Dropdown */}
+                <Box sx={{ ml: 2 }}> </Box>
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <DatePicker
                     label="Start Date"
@@ -396,7 +488,7 @@ const AttendanceScreen = () => {
                   />
                 </LocalizationProvider>
               </Box>
-
+              <Box sx={{ ml: 2 }}> </Box>
               <Button
                 variant="outlined"
                 startIcon={!downloading && <DownloadIcon />}

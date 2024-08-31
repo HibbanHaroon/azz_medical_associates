@@ -217,6 +217,7 @@ const HomeScreen = () => {
     await downloadReport({
       title: "Patient List",
       subtitle: `${clinicName}`,
+      table: true,
       tableColumns: tableColumn,
       tableRows: tableRows,
       docName: "Arrivals_Report.pdf",
