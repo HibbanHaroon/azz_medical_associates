@@ -111,6 +111,16 @@ const AttendanceScreen = () => {
         }
       } else {
         nurses = await fetchNurses(selectedClinic);
+
+        nurses = nurses.map((nurse) => ({
+          ...nurse,
+          clinicId: selectedClinic,
+        }));
+
+        nurses =
+          selectedClinic === "All Clinics"
+            ? nurses
+            : nurses.filter((nurse) => nurse.clinicId === selectedClinic);
       }
 
       setNurses(nurses);
@@ -305,7 +315,7 @@ const AttendanceScreen = () => {
     setEndDate(null);
     setSelectedNurse("All Staff");
     setSelectedClinic(location.state?.clinicId || "All Clinics");
-    setClinicName(location.state?.clinicName || "");
+    setClinicName(location.state?.clinicName || "All Clinics");
   };
 
   useEffect(() => {
@@ -400,13 +410,7 @@ const AttendanceScreen = () => {
                 {isHrStaff && !isItStaff && (
                   <>
                     <Box sx={{ ml: 2 }}> </Box>
-                    <Select
-                      labelId="clinic-select-label"
-                      id="clinic-select"
-                      value={clinicName}
-                      label="Clinic"
-                      onChange={handleClinicChange}
-                    >
+                    <Select value={clinicName} onChange={handleClinicChange}>
                       <MenuItem value="All Clinics">All Clinics</MenuItem>
                       {clinics.map((clinic) => (
                         <MenuItem key={clinic.id} value={clinic.name}>
@@ -423,6 +427,7 @@ const AttendanceScreen = () => {
                   onChange={async (e) => {
                     const selected = e.target.value;
                     setSelectedNurse(selected);
+                    console.log(nurses);
                     await getStaffHours(
                       currentDropdownItem,
                       selected,
