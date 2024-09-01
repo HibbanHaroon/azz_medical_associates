@@ -34,7 +34,7 @@ const generateDateRange = (filter) => {
   let startDate;
 
   if (filter === "Today") {
-    startDate = new Date(now.setHours(24, 0, 0, 0));
+    startDate = new Date(now.setHours(0, 0, 0, 0));
     dates.push(startDate);
   } else if (filter === "Weekly") {
     startDate = new Date(now.setDate(now.getDate() - 7));
@@ -106,7 +106,11 @@ const AttendanceScreen = () => {
         nurses = await fetchItStaff();
       } else if (selectedClinic === "All Clinics") {
         for (const clinic of clinics) {
-          const clinicNurses = await fetchNurses(clinic.id);
+          let clinicNurses = await fetchNurses(clinic.id);
+          clinicNurses = clinicNurses.map((nurse) => ({
+            ...nurse,
+            clinicId: clinic.id,
+          }));
           nurses.push(...clinicNurses);
         }
       } else {
@@ -130,7 +134,7 @@ const AttendanceScreen = () => {
       if (nurseName === "All Staff" || nurseName === null) {
         for (const nurse of nurses) {
           const records = await fetchAttendance(
-            selectedClinic,
+            isItStaff ? null : nurse.clinicId,
             nurse.id,
             isItStaff
           );
@@ -142,7 +146,7 @@ const AttendanceScreen = () => {
         );
         if (selectedNurseRecord) {
           const records = await fetchAttendance(
-            selectedClinic,
+            isItStaff ? null : selectedNurseRecord.clinicId,
             selectedNurseRecord.id,
             isItStaff
           );
@@ -282,9 +286,6 @@ const AttendanceScreen = () => {
         return rowData;
       });
 
-      console.log(columns, tableColumn);
-      console.log(rows, tableRows);
-
       await downloadReport({
         title: "Staff Attendance",
         subtitle: `${clinicName}`,
@@ -304,6 +305,7 @@ const AttendanceScreen = () => {
 
     setSelectedClinic(clinic ? clinic.id : "All Clinics");
     setClinicName(clinicName);
+    setRows([]);
   };
   const handleTypeOfStaffChange = async (event) => {
     const staffType = event.target.value;
@@ -316,6 +318,7 @@ const AttendanceScreen = () => {
     setSelectedNurse("All Staff");
     setSelectedClinic(location.state?.clinicId || "All Clinics");
     setClinicName(location.state?.clinicName || "All Clinics");
+    setRows([]);
   };
 
   useEffect(() => {
@@ -427,7 +430,7 @@ const AttendanceScreen = () => {
                   onChange={async (e) => {
                     const selected = e.target.value;
                     setSelectedNurse(selected);
-                    console.log(nurses);
+                    setRows([]);
                     await getStaffHours(
                       currentDropdownItem,
                       selected,
@@ -450,6 +453,7 @@ const AttendanceScreen = () => {
                   onChange={(e) => {
                     setStartDate(null);
                     setEndDate(null);
+                    setRows([]);
                     updateCurrentDropdownItem(e.target.value);
                   }}
                 >
@@ -468,6 +472,7 @@ const AttendanceScreen = () => {
                     onChange={(date) => {
                       const todaysDate = new Date();
                       setStartDate(date);
+                      setRows([]);
                       setCurrentDropdownItem("");
                       getStaffHours(null, selectedNurse, date, todaysDate);
                     }}
@@ -484,6 +489,7 @@ const AttendanceScreen = () => {
                     value={endDate}
                     onChange={(date) => {
                       setEndDate(date);
+                      setRows([]);
                       setCurrentDropdownItem("");
                       getStaffHours(null, selectedNurse, startDate, date);
                     }}
