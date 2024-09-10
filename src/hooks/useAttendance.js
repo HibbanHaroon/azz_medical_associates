@@ -200,13 +200,9 @@ export const useAttendance = (clinicId, userId, isItStaff, setIsItStaff) => {
         } for the day has been marked successfully!`
       );
 
-      if (!isCheckIn) {
+      if (isItStaff) {
         setTimeout(() => {
-          if (isItStaff) {
-            setIsItStaff(false);
-          } else {
-            window.history.back();
-          }
+          setIsItStaff(false);
         }, 3000);
       }
     } catch (error) {

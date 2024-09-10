@@ -281,7 +281,7 @@ const HomeScreen = () => {
         text="Attendance"
         onClick={handleNurseAttendance}
       />
-      <AdminOption
+      {/* <AdminOption
         icon={AssignmentTurnedInIcon}
         text="View Attendance Report"
         onClick={handleAdminAttendanceScreenNavigation}
@@ -290,7 +290,7 @@ const HomeScreen = () => {
         icon={ListAltIcon}
         text="Download Patient List"
         onClick={handleDownloadPatientList}
-      />
+      /> */}
     </>
   );
 

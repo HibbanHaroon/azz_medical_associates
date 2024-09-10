@@ -94,11 +94,11 @@ export default function StaffAttendance() {
   };
 
   useEffect(() => {
-    if (selectedNurse && nurses.length > 0 && attendance.length > 0) {
+    if (selectedNurse && nurses.length > 0) {
       const nurse = nurses.find((nurse) => nurse.id === selectedNurse);
-      const nurseAttendance = attendance.find(
-        (record) => record.id === nurse.id
-      );
+      const nurseAttendance = attendance
+        ? attendance.find((record) => record.id === nurse.id)
+        : null;
 
       const today = new Date();
       const todayAttendance = nurseAttendance
